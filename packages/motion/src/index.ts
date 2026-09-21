@@ -5,4 +5,4 @@
  * the GSAP adapter: inside a Motion host, Motion owns the clock.
  */
 
-export { VERSION } from "@motly/core";
+export { VERSION } from '@motly/core';

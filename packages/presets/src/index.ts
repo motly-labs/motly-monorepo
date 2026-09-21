@@ -5,4 +5,4 @@
  * short — add it to core, do not reach inside.
  */
 
-export { VERSION } from "@motly/core";
+export { VERSION } from '@motly/core';

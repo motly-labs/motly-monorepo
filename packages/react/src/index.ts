@@ -5,4 +5,4 @@
  * dumb: no animation logic lives here that core could own.
  */
 
-export { VERSION } from "@motly/core";
+export { VERSION } from '@motly/core';

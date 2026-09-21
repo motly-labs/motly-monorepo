@@ -10,4 +10,4 @@
  * a GSAP host, GSAP owns the clock; core's driver has to be replaceable.
  */
 
-export { VERSION } from "@motly/core";
+export { VERSION } from '@motly/core';
