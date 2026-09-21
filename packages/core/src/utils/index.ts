@@ -1,6 +1,6 @@
 /**
  * `@motly/core/utils` — the small numeric helpers the engine and the adapters
- * share. Published as a subpath rather than a sixth package (see DECISIONS.md).
+ * share. Published as a subpath rather than a sixth package (see docs/adr/0006).
  */
 
 /** Clamp `value` into the inclusive range [`min`, `max`]. */

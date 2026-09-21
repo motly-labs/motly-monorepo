@@ -1,6 +1,6 @@
 # motly
 
-> Working codename. The name is not locked — see `DECISIONS.md`.
+> Working codename. The name is not locked — see `.scratch/phase-0/issues/02-lock-name-and-npm-scope.md`.
 
 Procedural motion graphics for the web: bursts, swirls, generated shapes, declarative
 parametric animation. After Effects thinking, in code you'd write for React.
@@ -36,7 +36,8 @@ pnpm lint
 - `product.md` — the plan: problem, API, architecture, phases.
 - `product-review.md` — critical review of that plan.
 - `mojs-exploration.md` — why the mojs rewrite was rejected.
-- `DECISIONS.md` — every locked choice, and what's still open.
+- `docs/adr/` — every locked decision, one file each.
+- `.scratch/` — open questions and tickets.
 - `CLAUDE.md` — working rules and architecture invariants.
 
 ## License

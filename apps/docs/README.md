@@ -1,6 +1,6 @@
 # `apps/docs`
 
-Placeholder. The docs site is **Astro Starlight** (decided — see `DECISIONS.md`).
+Placeholder. The docs site is **Astro Starlight** (decided — see `docs/adr/0002-astro-starlight-for-docs.md`).
 
 Scaffold it when Phase 3 pays for it, from this directory:
 

@@ -152,7 +152,7 @@ The genuinely current argument is the third one - the copy-paste-component chann
 
 ### 4.4 Name collision, flagged by the document's own appendix
 
-`motly` collides with Apache Spark, Adobe Spark/Express, and Spark Mail. And `§D.9` links **CodePen's own "Spark" newsletter** (`https://codepen.io/motly/`) - a collision sitting inside the document's reference list, in the single most important distribution channel the plan names.
+`spark` (the original codename) collides with Apache Spark, Adobe Spark/Express, and Spark Mail. And `§D.9` links **CodePen's own "Spark" newsletter** (`https://codepen.io/spark/`) - a collision sitting inside the document's reference list, in the single most important distribution channel the plan names.
 
 `§1.4` already marks the name as a placeholder, but `§2.5` recommends trademark registration. "Spark" is not registrable in software. Worth noting alongside the §1.4 requirements.
 

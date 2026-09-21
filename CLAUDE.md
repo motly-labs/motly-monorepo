@@ -22,10 +22,11 @@ plus `@motly/presets`.
 | `product.md` | The plan: problem, API synthesis, architecture, six phases | Source of truth for *intent*. Do not edit it to match code. |
 | `product-review.md` | Critical review of the plan; rationale for every correction in it | Read before re-litigating a decision it already settled. |
 | `mojs-exploration.md` | Why the naive mojs rewrite was rejected | Contains the 3-month timebox the plan overruns. |
-| `DECISIONS.md` | Dated log of every locked choice + open questions | **Append here whenever a decision is made or changed.** |
+| `docs/adr/` | One file per locked decision (ADR) | **Add one whenever a hard-to-reverse decision is made or changed.** |
+| `.scratch/` | Open questions, proposals, and tickets | Local issue tracker; see `## Agent skills`. |
 
 Deviating from `product.md` is allowed. Deviating *silently* is not — log it in
-`DECISIONS.md` with the reason.
+an ADR in `docs/adr/` with the reason.
 
 ## Status
 
@@ -59,7 +60,7 @@ change, not a refactor — raise it before writing the code.
    Everything is per-instance or per-scope. This is the specific mojs mistake the
    plan calls out (§1.8) — enforce it with types.
 4. **Specs stay JSON-serializable.** Inline randomness returns a tagged descriptor,
-   `{ __spark: 'rand', min, max }`, never an eagerly-evaluated number. A spec that
+   `{ __motly: 'rand', min, max }`, never an eagerly-evaluated number. A spec that
    does not survive `JSON.stringify` breaks the editor-export story it exists for.
 5. **The ticker driver is replaceable.** Inside a GSAP host, GSAP owns the clock;
    inside Motion, Motion does; standalone, core's rAF loop does. Core must never
@@ -115,9 +116,23 @@ change, not a refactor — raise it before writing the code.
 - **Don't copy mojs or canvas-confetti source** without adding a `NOTICE` entry. Both
   are MIT: the ideas are free, the code carries a copyright notice.
 - **Don't bump `typescript` or `tsdown`** without running the full build. tsdown warns
-  that the TS 7 API is experimental — see `DECISIONS.md` for the standing risk.
+  that the TS 7 API is experimental — see ADR-0005 for the standing risk.
 - **Don't quote competitor metrics** (download counts, star counts) from `product.md`
   without re-verifying. Several are flagged as inflated in-doc.
 - **Don't widen v1 scope.** The plan already commits to more than the effort argument
-  that killed the mojs rewrite allows. New ideas go in `DECISIONS.md` as proposals.
+  that killed the mojs rewrite allows. New ideas go in `.scratch/` as tickets.
 - **Don't co-author any commits**
+
+## Agent skills
+
+### Issue tracker
+
+Local markdown under `.scratch/<feature>/`, one file per ticket. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default roles (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`), recorded as `Status:` lines. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.

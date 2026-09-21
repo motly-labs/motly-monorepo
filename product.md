@@ -193,7 +193,7 @@ Codename `motly` for now. Requirements for the real name:
 - Not derivative of mojs (don't call it `mojs-next` — burn the name, start fresh).
 - Speaks motion-graphics vocabulary (`motly`, `flux`, `emit`, `motif`, `plume`, `kinet`, `pulse`, `flare`).
 - npm availability check (all four packages under the same scope).
-- Trademark viability. **`motly` fails this** — Apache Spark, Adobe Spark/Express, Spark Mail, and CodePen's own "Spark" newsletter (§D.9), which sits inside the single most important distribution channel in this plan. Codename only; do not ship it.
+- Trademark viability. **`spark`, the original codename, failed this** — Apache Spark, Adobe Spark/Express, Spark Mail, and CodePen's own "Spark" newsletter (§D.9), which sits inside the single most important distribution channel in this plan. That is why it was renamed to `motly`, which still needs its own check before it ships.
 - Domain availability (.dev preferred).
 
 **Decision to make in week 1.** Don't ship anything public until this is locked.
@@ -291,7 +291,7 @@ Subtle but powerful: an array in a property slot means "distribute across childr
 angle: rand(-180, 180)          // returns a tagged RandomSpec, NOT a raw number
 angle: 'rand(-180, 180)'        // string form, for hand-written JSON
 ```
-Keeping randomness inside the property definition means the whole animation *can be* a single serializable data structure — which matters *enormously* for the visual editor SaaS (§1.7). **This only holds if `rand()` returns a tagged descriptor (`{ __spark: 'rand', min, max }`) rather than evaluating to a number at call time.** A plain helper that returns a number is not serializable and silently breaks the editor story — the exact thing this idea is being justified by. Both forms must round-trip through `JSON.stringify`. GSAP's `gsap.utils.random()` evaluates eagerly and lives outside the definition, so it breaks this. **Steal it, expose both forms, make both serializable.**
+Keeping randomness inside the property definition means the whole animation *can be* a single serializable data structure — which matters *enormously* for the visual editor SaaS (§1.7). **This only holds if `rand()` returns a tagged descriptor (`{ __motly: 'rand', min, max }`) rather than evaluating to a number at call time.** A plain helper that returns a number is not serializable and silently breaks the editor story — the exact thing this idea is being justified by. Both forms must round-trip through `JSON.stringify`. GSAP's `gsap.utils.random()` evaluates eagerly and lives outside the definition, so it breaks this. **Steal it, expose both forms, make both serializable.**
 *Reference:* https://mojs.github.io/api/tween/randomness.html
 
 **5. Curve-as-data.**
@@ -1246,7 +1246,7 @@ All the links you'll actually need while building this, grouped by why you'd ope
 - **Reactiflux Discord** (React community): https://www.reactiflux.com/
 - **r/webdev**: https://www.reddit.com/r/webdev/
 - **r/reactjs**: https://www.reddit.com/r/reactjs/
-- **CodePen Spark newsletter** (get featured here and traffic spikes): https://codepen.io/motly/
+- **CodePen Spark newsletter** (get featured here and traffic spikes): https://codepen.io/spark/
 
 ### D.10 Legal / OSS-hygiene templates
 
