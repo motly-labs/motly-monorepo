@@ -27,7 +27,7 @@ The plan then commits to, in six months solo part-time:
 - SVG renderer **and** Canvas 2D renderer
 - four adapters (GSAP, Motion, React, standalone)
 - ~10 React components + shadcn-compatible registry
-- `@spark/presets` package
+- `@motly/presets` package
 - docs site + playground app + demos site
 - 15 killer demos
 - 85% core test coverage + Playwright visual regression
@@ -56,13 +56,13 @@ Each of these is two statements inside `product.md` that cannot both be true.
 | 2.3 | `§1.5` vs `§1.8.2#4` | Renderer is "chosen per-instance" (manual) in §1.5; "Canvas renderer becomes default above a child-count threshold" (automatic) in §1.8.2. Which one ships? |
 | 2.4 | `§1.5` vs `§2.1` | v1 explicitly excludes a Vue adapter ("Won't have in v1"). The repo tree ships `examples/vue-nuxt/`. |
 | 2.5 | `§1.5` vs `§1.8.4` | §1.5: "Every primitive works in every adapter (no adapter-only features in v1)." §1.8.4: `AnimatePresence`-style exit animations are "table stakes for the Phase 4 React components." That is a React-adapter-only feature. |
-| 2.6 | `§1.8.3` vs `§2.1` / Phase 0 Day 3 | §1.8.3: "Ship a `@spark/utils` from day 1." The package appears in neither the repo tree nor the Phase 0 scaffold checklist. |
-| 2.7 | `§2.6.1` vs `§2.6.3` | The first argument for using an org is namespace alignment: "`@spark/core` should map to `github.com/spark/core`." The chosen structure is a single monorepo, so `github.com/spark/core` never exists. Argument #1 is refuted by the structure the same section recommends. |
+| 2.6 | `§1.8.3` vs `§2.1` / Phase 0 Day 3 | §1.8.3: "Ship a `@motly/utils` from day 1." The package appears in neither the repo tree nor the Phase 0 scaffold checklist. |
+| 2.7 | `§2.6.1` vs `§2.6.3` | The first argument for using an org is namespace alignment: "`@motly/core` should map to `github.com/motly/core`." The chosen structure is a single monorepo, so `github.com/motly/core` never exists. Argument #1 is refuted by the structure the same section recommends. |
 | 2.8 | `§2.6.2`, Pattern C | Self-refuting inside its own block: "Commercial services built by separate companies (Vercel builds on Next.js, but Next.js is owned by Vercel - **this is actually Pattern A**)." The example given for Pattern C is an example of Pattern A. |
 | 2.9 | `§3.5` vs `Appendix A` | Budget assumes 15 hrs/week. The Appendix A cadence sums to 12-13 (2+2+2+4+2.5). 25 weeks × 13 ≈ **325 hrs, not 375**. |
 | 2.10 | `Appendix A` vs `§3.5` | "Take one full week off every 6-8 weeks. Non-negotiable." Over 25 weeks that is 3-4 additional weeks, absent from the 25-week total. Real calendar ≈ **29 weeks**. |
 | 2.11 | `Appendix A` vs `§4` Phase 1 | The weekly cadence allocates ~4-5 hrs/week to docs/demos/content. Phase 1 runs 8 weeks and "ships nothing publicly." ~40 hrs are budgeted to content that does not exist yet. |
-| 2.12 | `§1.7` vs `§5.3` | Editor SaaS gate: **10k weekly downloads on `@spark/core`**. v1.0 30-day success target: **5k weekly downloads combined across all packages**. The gate sits at ~2× the plan's own definition of success - the SaaS can never trigger inside this plan's horizon. |
+| 2.12 | `§1.7` vs `§5.3` | Editor SaaS gate: **10k weekly downloads on `@motly/core`**. v1.0 30-day success target: **5k weekly downloads combined across all packages**. The gate sits at ~2× the plan's own definition of success - the SaaS can never trigger inside this plan's horizon. |
 | 2.13 | `§1.8.1#4` | "Keeping randomness inside the property definition means the whole animation is a single serializable data structure" - the stated justification. It then recommends the **function form** `rand(-180, 180)` as the default ("TypeScript-friendly (recommended default)"). A function does not serialize. Only the string form delivers the benefit being used to justify the design. |
 | 2.14 | `§1.2` vs `§1.5` / Phase 1 | "NOT building: a tweening engine to compete with GSAP." Phase 1 builds a property tween engine, an easing library, and a Timeline with play/pause/seek/reverse. You are building a tweening engine - only the marketing differs. The build cost is unchanged by the framing. |
 | 2.15 | `§2.5` vs `§3.6` | §2.5 recommends registering the trademark. The money budget has no trademark line (EU word mark ≈ €850+) and no `.com` domain, despite Phase 0 Day 1 instructing you to check and claim `.com`. |
@@ -152,7 +152,7 @@ The genuinely current argument is the third one - the copy-paste-component chann
 
 ### 4.4 Name collision, flagged by the document's own appendix
 
-`spark` collides with Apache Spark, Adobe Spark/Express, and Spark Mail. And `§D.9` links **CodePen's own "Spark" newsletter** (`https://codepen.io/spark/`) - a collision sitting inside the document's reference list, in the single most important distribution channel the plan names.
+`motly` collides with Apache Spark, Adobe Spark/Express, and Spark Mail. And `§D.9` links **CodePen's own "Spark" newsletter** (`https://codepen.io/motly/`) - a collision sitting inside the document's reference list, in the single most important distribution channel the plan names.
 
 `§1.4` already marks the name as a placeholder, but `§2.5` recommends trademark registration. "Spark" is not registrable in software. Worth noting alongside the §1.4 requirements.
 

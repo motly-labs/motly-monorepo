@@ -1,6 +1,6 @@
 # Product Plan — Procedural Motion Graphics Library
 
-> **Working codename:** `spark` (placeholder — see §1.4)
+> **Working codename:** `motly` (placeholder — see §1.4)
 > **One-liner:** Procedural motion graphics for the web. Compose bursts, swirls, and shape animations with a declarative API — After Effects thinking, in code you'd write for React.
 > **Prepared for:** Mo
 > **Date:** September 2026
@@ -51,16 +51,16 @@ Three market shifts make this a reasonable moment. Be honest about the timing: t
 A developer opens their terminal and:
 
 ```bash
-npm install @spark/core @spark/gsap
+npm install @motly/core @motly/gsap
 ```
 
 Inside 30 seconds they have a GSAP-composed timeline with a procedurally generated burst effect. Same developer, six months later, wants a pre-built "confetti on checkout success" React component:
 
 ```bash
-npx shadcn add @spark/confetti
+npx shadcn add @motly/confetti
 ```
 
-Both flows share the same underlying engine, the same mental model, and the same reduced-motion accessibility guarantees. The library respects their existing choice of animation ecosystem (GSAP, Motion, or standalone) rather than demanding they migrate to a new one. A designer on the team can, later, open a visual editor at `editor.spark.dev`, tweak the burst's timing curve visually, and export it back as code the developer can paste in.
+Both flows share the same underlying engine, the same mental model, and the same reduced-motion accessibility guarantees. The library respects their existing choice of animation ecosystem (GSAP, Motion, or standalone) rather than demanding they migrate to a new one. A designer on the team can, later, open a visual editor at `editor.motly.dev`, tweak the burst's timing curve visually, and export it back as code the developer can paste in.
 
 **None of this is possible today with any single library.** That is the gap this project exists to fill.
 
@@ -118,7 +118,7 @@ The plugin framing and the After Effects framing turned out to be the same produ
 Several sub-questions came up along the way; each got a deliberate answer that shaped the final plan:
 
 - **anime.js adapter?** No — anime.js v4 has no formal plugin API. A dedicated package would do nothing a compatibility docs page couldn't do better. Documented, not built.
-- **All four mojs repos?** No — rewrite core only. Player has ~22 weekly downloads, curve-editor ~5 (`mojs-exploration.md` quotes the same figures monthly: 97 and 21). Deprecate them. The visual editor gets rebuilt later as a separate SaaS if `@spark/core` clears 10k weekly downloads.
+- **All four mojs repos?** No — rewrite core only. Player has ~22 weekly downloads, curve-editor ~5 (`mojs-exploration.md` quotes the same figures monthly: 97 and 21). Deprecate them. The visual editor gets rebuilt later as a separate SaaS if `@motly/core` clears 10k weekly downloads.
 - **Personal profile or GitHub org?** Org, from day 1. Multi-package products belong to their own namespace. Migration later is painful; setup now is 5 minutes.
 - **OSS + SaaS legal structure?** Pattern A (single GitHub org, MIT libraries public, SaaS repo private and proprietary). Matches Supabase, Cal.com, PostHog, Plausible. Migrate to Pattern B (two orgs) only if the SaaS clears meaningful revenue.
 - **API shape?** Steal delta-syntax + children-composition + curve-as-data from mojs; steal Promises + `context()` + central ticker + `utils` from GSAP; steal TypeScript-first + hybrid engine + reduced-motion + `AnimatePresence` from Motion. Full synthesis in §1.8.
@@ -138,7 +138,7 @@ The companion document `mojs-exploration.md` is the honest assessment that ruled
 
 ### 0.7 One-paragraph elevator pitch
 
-> There is a gap in the modern web animation ecosystem: no serious library handles *procedural motion graphics* — burst effects, particle systems, generated shapes with declarative composition — the way After Effects thinks about motion. GSAP, Motion, and anime.js all animate existing DOM; none of them generate it. mo.js had the right ideas ten years ago but stopped moving in 2019, leaves TypeScript users unserved, and has been passed by a market that now expects tree-shakeable ESM, a real performance story, and framework-native ergonomics. **`spark`** rebuilds those ideas — delta-syntax, children composition, curve-as-data, procedural shape generation — as a modern TypeScript-first library with a hexagonal core and four distribution surfaces: a GSAP plugin, a Motion adapter, a React copy-paste-components package, and a standalone library. Six-month solo build, phased releases starting with the GSAP plugin as the wedge, standalone framing as the destination, and a visual editor SaaS as the eventual commercial extension.
+> There is a gap in the modern web animation ecosystem: no serious library handles *procedural motion graphics* — burst effects, particle systems, generated shapes with declarative composition — the way After Effects thinks about motion. GSAP, Motion, and anime.js all animate existing DOM; none of them generate it. mo.js had the right ideas ten years ago but stopped moving in 2019, leaves TypeScript users unserved, and has been passed by a market that now expects tree-shakeable ESM, a real performance story, and framework-native ergonomics. **`motly`** rebuilds those ideas — delta-syntax, children composition, curve-as-data, procedural shape generation — as a modern TypeScript-first library with a hexagonal core and four distribution surfaces: a GSAP plugin, a Motion adapter, a React copy-paste-components package, and a standalone library. Six-month solo build, phased releases starting with the GSAP plugin as the wedge, standalone framing as the destination, and a visual editor SaaS as the eventual commercial extension.
 
 That's the whole thing in a paragraph. Everything below is the detail.
 
@@ -152,10 +152,10 @@ A **single core motion-graphics engine** with **four distribution surfaces**:
 
 | Surface | Package | Audience | Distribution |
 |---|---|---|---|
-| GSAP plugin | `@spark/gsap` | GSAP users (largest install base) | GSAP forum, GreenSock ecosystem |
-| Motion adapter | `@spark/motion` | Motion (ex-Framer Motion) users | Motion docs, React ecosystem |
-| React components | `@spark/react` | Copy-paste-component crowd | shadcn-style registry, Twitter/X |
-| Standalone library | `@spark/core` | Creative devs, motion designers, agencies | Docs site, CodePen, awwwards |
+| GSAP plugin | `@motly/gsap` | GSAP users (largest install base) | GSAP forum, GreenSock ecosystem |
+| Motion adapter | `@motly/motion` | Motion (ex-Framer Motion) users | Motion docs, React ecosystem |
+| React components | `@motly/react` | Copy-paste-component crowd | shadcn-style registry, Twitter/X |
+| Standalone library | `@motly/core` | Creative devs, motion designers, agencies | Docs site, CodePen, awwwards |
 
 All four are **the same engine, different adapters**. The engine is where the work lives; the adapters are 200–500 lines each.
 
@@ -187,13 +187,13 @@ The engine ships **five composable primitives**. Everything the library does is 
 
 ### 1.4 Naming
 
-Codename `spark` for now. Requirements for the real name:
+Codename `motly` for now. Requirements for the real name:
 
-- Reads well as `gsap.burst()` and `<Burst />` and `spark.timeline()`.
+- Reads well as `gsap.burst()` and `<Burst />` and `motly.timeline()`.
 - Not derivative of mojs (don't call it `mojs-next` — burn the name, start fresh).
-- Speaks motion-graphics vocabulary (`spark`, `flux`, `emit`, `motif`, `plume`, `kinet`, `pulse`, `flare`).
+- Speaks motion-graphics vocabulary (`motly`, `flux`, `emit`, `motif`, `plume`, `kinet`, `pulse`, `flare`).
 - npm availability check (all four packages under the same scope).
-- Trademark viability. **`spark` fails this** — Apache Spark, Adobe Spark/Express, Spark Mail, and CodePen's own "Spark" newsletter (§D.9), which sits inside the single most important distribution channel in this plan. Codename only; do not ship it.
+- Trademark viability. **`motly` fails this** — Apache Spark, Adobe Spark/Express, Spark Mail, and CodePen's own "Spark" newsletter (§D.9), which sits inside the single most important distribution channel in this plan. Codename only; do not ship it.
 - Domain availability (.dev preferred).
 
 **Decision to make in week 1.** Don't ship anything public until this is locked.
@@ -207,13 +207,13 @@ Codename `spark` for now. Requirements for the real name:
 - Promise-based completion (`await burst.play()`), plus event callbacks.
 - `.destroy()` that actually cleans up DOM + listeners (mojs's #144).
 - SSR-safe: importable in Next.js/Remix without crashing; no-ops during SSR.
-- Zero runtime dependencies in `@spark/core`.
+- Zero runtime dependencies in `@motly/core`.
 - Every primitive works in every adapter. Adapter-idiomatic *wrappers* may add surface (React exit animations, §1.8.4) — but no primitive is adapter-exclusive.
 
 **Should have:**
 - Deterministic seeded randomness (`seed: 42` reproduces the exact same burst).
 - Timeline that composes primitives (play, pause, seek, reverse).
-- Preset library (~10 ready-to-use effects) shipped separately as `@spark/presets`.
+- Preset library (~10 ready-to-use effects) shipped separately as `@motly/presets`.
 
 **Won't have in v1 (roadmap for later):**
 - WebGL renderer (v2).
@@ -224,7 +224,7 @@ Codename `spark` for now. Requirements for the real name:
 
 ### 1.6 Non-functional requirements
 
-- **Bundle size:** `@spark/core` under 15 kB min+gzip **per realistic entry point after tree-shaking** (e.g. `Burst` + `Shape` + one renderer) — not for the full barrel import. Adapters under 3 kB each. For scale: mojs core is ~50 kB min for a smaller feature set. The budget is only reachable because renderers and easings are independently shakeable.
+- **Bundle size:** `@motly/core` under 15 kB min+gzip **per realistic entry point after tree-shaking** (e.g. `Burst` + `Shape` + one renderer) — not for the full barrel import. Adapters under 3 kB each. For scale: mojs core is ~50 kB min for a smaller feature set. The budget is only reachable because renderers and easings are independently shakeable.
 - **Performance:** 60fps with 500 animated SVG shapes; 60fps with 5,000 Canvas shapes.
 - **Browser support:** Evergreen only. No IE, no legacy Safari heroics. Modern JS ecosystem is post-IE.
 - **Accessibility:** Reduced-motion is default-on, not opt-in.
@@ -233,19 +233,19 @@ Codename `spark` for now. Requirements for the real name:
 
 ### 1.7 SaaS extension (optional, later)
 
-A separate product, not part of v1: **a visual editor** (curve editor + timeline scrubber) that outputs code for GSAP, Motion, or `@spark/core`. This is the mojs-curve-editor / mojs-timeline-editor idea, done modern, as its own web app.
+A separate product, not part of v1: **a visual editor** (curve editor + timeline scrubber) that outputs code for GSAP, Motion, or `@motly/core`. This is the mojs-curve-editor / mojs-timeline-editor idea, done modern, as its own web app.
 
 Business model options: free OSS with sponsor tier, or freemium SaaS (~€9/mo pro for team libraries and export presets). Decide after v1 traction data.
 
-**Structural note:** the SaaS lives as a private, proprietary-licensed repo inside the same GitHub org as the OSS packages (Pattern A in §2.6). Its **embeddable JS runtime** (`@spark/editor-runtime`) stays MIT — that package is a library, not the product. This split is deliberate and matches how Supabase, PostHog, Cal.com, and Plausible are structured. Full reasoning, license options (proprietary vs. AGPL vs. BSL vs. FSL), and NL-specific legal-entity guidance are in §2.6.
+**Structural note:** the SaaS lives as a private, proprietary-licensed repo inside the same GitHub org as the OSS packages (Pattern A in §2.6). Its **embeddable JS runtime** (`@motly/editor-runtime`) stays MIT — that package is a library, not the product. This split is deliberate and matches how Supabase, PostHog, Cal.com, and Plausible are structured. Full reasoning, license options (proprietary vs. AGPL vs. BSL vs. FSL), and NL-specific legal-entity guidance are in §2.6.
 
-**Do not start this until `@spark/core` has 10k+ weekly npm downloads.** It's a product; it needs an audience to sell to.
+**Do not start this until `@motly/core` has 10k+ weekly npm downloads.** It's a product; it needs an audience to sell to.
 
 Note the distance, deliberately: §5.3's 30-day post-v1 success signal is 5k weekly downloads *combined across all packages*. This gate sits at roughly twice the plan's own definition of success — which makes the editor a year-two decision, not a Phase 6 one. Don't let it drift onto the v1 roadmap.
 
 ### 1.8 API design synthesis — what to steal from mojs, GSAP, and Motion
 
-This section is the concrete API blueprint. Before writing a line of `@spark/core` (Phase 1), read this whole section. It answers "what does my API actually look like?" — the question you'll otherwise waste weeks re-deciding while coding. Each idea below is anchored in a specific real-library reference so future-you can go read the source when a design decision comes up.
+This section is the concrete API blueprint. Before writing a line of `@motly/core` (Phase 1), read this whole section. It answers "what does my API actually look like?" — the question you'll otherwise waste weeks re-deciding while coding. Each idea below is anchored in a specific real-library reference so future-you can go read the source when a design decision comes up.
 
 #### 1.8.1 Seven things mojs got right — steal these
 
@@ -345,7 +345,7 @@ mojs docs are a series of "here's a cool thing" examples. Users copy them withou
   *Reference:* https://gsap.com/docs/v3/GSAP/gsap.ticker/
 - **`gsap.context()` for scoped cleanup.** Massively better than mojs's manual `.destroy()` calls. Look at how `useGSAP` uses context — that's the pattern.
   *Reference:* https://gsap.com/docs/v3/GSAP/gsap.context()/ · React hook: https://gsap.com/resources/React/
-- **`gsap.utils` namespace.** `wrap`, `clamp`, `mapRange`, `snap`, `random`, `interpolate`, `pipe`. Utilities that support the main API. mojs had these scattered or missing. **Ship these from day 1 as a `@spark/core/utils` subpath export** — tree-shakeable, no extra package, no extra version to manage.
+- **`gsap.utils` namespace.** `wrap`, `clamp`, `mapRange`, `snap`, `random`, `interpolate`, `pipe`. Utilities that support the main API. mojs had these scattered or missing. **Ship these from day 1 as a `@motly/core/utils` subpath export** — tree-shakeable, no extra package, no extra version to manage.
   *Reference:* https://gsap.com/docs/v3/GSAP/UtilityMethods
 - **Community-first docs.** Every page has example CodePens, forum-thread links, video walkthroughs. Decade of investment — you can't match it, but you can start smaller: **every primitive page has one CodePen embed at minimum.**
 
@@ -367,7 +367,7 @@ mojs docs are a series of "here's a cool thing" examples. Users copy them withou
 Combining the best of all three:
 
 ```typescript
-import { Shape, Burst, Swirl, Timeline, createContext, rand } from '@spark/core';
+import { Shape, Burst, Swirl, Timeline, createContext, rand } from '@motly/core';
 
 // mojs DNA: delta-syntax, children composition, procedural
 const burst = new Burst({
@@ -407,7 +407,7 @@ Every line above is:
 - **From GSAP:** the *how to control it* (Promises, scoping, utilities, central ticker)
 - **From Motion:** the *how it feels in modern code* (TypeScript, reduced-motion, renderer choice)
 
-**None of the three current libraries writes like this.** That's your opening — and it's the concrete API contract you build `@spark/core` against in Phase 1.
+**None of the three current libraries writes like this.** That's your opening — and it's the concrete API contract you build `@motly/core` against in Phase 1.
 
 #### 1.8.6 Design-decision quick reference
 
@@ -440,18 +440,18 @@ Print this table. Tape it above your monitor while you write Phase 1.
 Single monorepo. pnpm workspaces + Turborepo (or Nx if you prefer).
 
 ```
-spark/
+motly/
 ├── packages/
-│   ├── core/                 → @spark/core         (engine + /utils subpath, no deps)
-│   ├── gsap/                 → @spark/gsap         (GSAP plugin adapter)
-│   ├── motion/               → @spark/motion       (Motion adapter)
-│   ├── react/                → @spark/react        (React components)
-│   ├── presets/              → @spark/presets      (Heart, Confetti, etc.)
+│   ├── core/                 → @motly/core         (engine + /utils subpath, no deps)
+│   ├── gsap/                 → @motly/gsap         (GSAP plugin adapter)
+│   ├── motion/               → @motly/motion       (Motion adapter)
+│   ├── react/                → @motly/react        (React components)
+│   ├── presets/              → @motly/presets      (Heart, Confetti, etc.)
 │   └── shared/               → internal utilities  (private)
 ├── apps/
-│   ├── docs/                 → docs.spark.dev      (Astro or Nextra)
-│   ├── playground/           → play.spark.dev      (live editor — UNBUDGETED, see §3.5)
-│   └── demos/                → demos.spark.dev     (killer visual gallery)
+│   ├── docs/                 → docs.motly.dev      (Astro or Nextra)
+│   ├── playground/           → play.motly.dev      (live editor — UNBUDGETED, see §3.5)
+│   └── demos/                → demos.motly.dev     (killer visual gallery)
 ├── examples/
 │   ├── react-next/
 │   ├── vanilla-vite/
@@ -468,7 +468,7 @@ This is where your day-job architecture pattern maps 1:1.
 
 ```
                     ┌─────────────────────────────┐
-                    │      @spark/core            │
+                    │      @motly/core            │
                     │  (domain: primitives)       │
                     │                             │
                     │  Shape, Burst, Swirl,       │
@@ -494,7 +494,7 @@ This is where your day-job architecture pattern maps 1:1.
   **The draw list must be pooled and mutated in place, never reallocated per frame.** 5,000 Canvas shapes at 60fps (§1.6) is 300k object allocations/sec crossing this boundary — a GC problem before it is a rendering one. Use a reused buffer of flat structs or a typed array; do not emit fresh objects.
 - **Renderer adapters** (`SVGRenderer`, `CanvasRenderer`, later `WebGLRenderer`) consume the draw list and paint.
 - **Timeline adapters** (`GSAPAdapter`, `MotionAdapter`, `VanillaTimeline`) wrap the engine so it plays inside `gsap.timeline()`, `animate()`, or standalone.
-- **Framework adapters** (`@spark/react` — components, hooks; later Vue/Svelte) provide idiomatic wrappers.
+- **Framework adapters** (`@motly/react` — components, hooks; later Vue/Svelte) provide idiomatic wrappers.
 
 **Why this matters for shipping:**
 - New renderer = new package, no core changes.
@@ -503,7 +503,7 @@ This is where your day-job architecture pattern maps 1:1.
 
 ### 2.3 Package publishing strategy
 
-- **All packages under the same npm scope** (`@spark/*`) once name is locked.
+- **All packages under the same npm scope** (`@motly/*`) once name is locked.
 - **Changesets** for version management and changelog generation.
 - **Independent versioning** (core can be at 1.4.0 while gsap adapter is at 0.9.2).
 - **Peer dependencies** for GSAP and Motion (`peerDependencies: { gsap: ">=3.13.0" }`), never bundled.
@@ -544,8 +544,8 @@ This is where projects that grow past "solo library" hit friction they didn't pl
 
 **Use a GitHub organization from day 1.** Not a personal profile. Every argument below assumes the org exists.
 
-Why an org, not `github.com/<your-handle>/spark-core`:
-1. **Namespace alignment.** The npm scope `@spark/*` and the org `github.com/spark` should be the same word. (The mapping is scope→org, not package→repo — packages live inside the monorepo, per §2.1.) Mismatched names read as amateur.
+Why an org, not `github.com/<your-handle>/motly-core`:
+1. **Namespace alignment.** The npm scope `@motly/*` and the org `github.com/motly` should be the same word. (The mapping is scope→org, not package→repo — packages live inside the monorepo, per §2.1.) Mismatched names read as amateur.
 2. **Multi-repo project.** You will have 8–10 repos (core + adapters + docs + playground + examples + presets + registry + editor). Personal profiles get cluttered fast.
 3. **Contributor scaling.** Orgs have teams, permissions, and shared secrets. Personal profiles have "collaborators" — doesn't scale.
 4. **Transfer pain later.** GitHub *does* preserve stars and forks on transfer, but not CI secrets, npm auth, README badges, or third-party links. At 100 stars the migration is annoying; at 10k it's a lost weekend.
@@ -562,8 +562,8 @@ This is the map. Pick the one that fits your stage.
 Real examples: **Supabase** (`github.com/supabase/supabase`), **Cal.com** (`github.com/calcom/cal.com`), **PostHog** (`github.com/PostHog/posthog`), **Plausible** (`github.com/plausible/analytics`).
 
 ```
-github.com/spark/           ← single organization
-├── spark                   ← public, MIT — the OSS monorepo (per §2.1)
+github.com/motly/           ← single organization
+├── motly                   ← public, MIT — the OSS monorepo (per §2.1)
 │                              contains: packages/core, gsap, motion, react, presets
 │                                        apps/docs, playground, demos
 ├── editor                  ← PRIVATE, proprietary (Phase 6+)
@@ -571,7 +571,7 @@ github.com/spark/           ← single organization
 └── .github                 ← public, org profile & shared templates
 ```
 
-- One org, all repos in one place. **The OSS libraries live in a single monorepo (`spark/spark`)** — this matches §2.1, not one repo per package. Supabase and PostHog do this too.
+- One org, all repos in one place. **The OSS libraries live in a single monorepo (`motly/motly`)** — this matches §2.1, not one repo per package. Supabase and PostHog do this too.
 - OSS monorepo: MIT-licensed, public.
 - SaaS app: private repo(s) in the same org, proprietary license or source-available (see §2.6.4).
 - Company entity (BV in NL, LLC in US, etc.) legally owns everything.
@@ -584,11 +584,11 @@ This is the default for modern OSS+SaaS startups. Almost everyone starts here.
 Real examples: **Prisma** (`prisma/` + `prisma-labs/`), **GitLab** (`gitlab-com/` + `gitlab-org/`), historically **Sentry**.
 
 ```
-github.com/spark/           ← community org (OSS only)
-├── spark                   ← OSS monorepo
+github.com/motly/           ← community org (OSS only)
+├── motly                   ← OSS monorepo
 └── editor-runtime          ← MIT (kept community-side since it's a library)
 
-github.com/spark-cloud/     ← commercial org (SaaS + enterprise)
+github.com/motly-cloud/     ← commercial org (SaaS + enterprise)
 ├── editor                  ← private, proprietary
 ├── billing
 ├── api
@@ -608,7 +608,7 @@ Real examples: **Node.js** (OpenJS Foundation), **Kubernetes** (CNCF), **Vue** (
 - OSS owned by a neutral foundation.
 - Commercial services built by companies *other than* the one owning the OSS. Note how rare this genuinely is: Next.js looks like this from outside but is owned by Vercel, i.e. Pattern A wearing a costume.
 - Requires massive traction, multiple corporate contributors, and years of runway.
-- **Not applicable to you.** Listed for completeness. If `spark` ever hits Vue-scale adoption, revisit.
+- **Not applicable to you.** Listed for completeness. If `motly` ever hits Vue-scale adoption, revisit.
 
 #### 2.6.3 Your recommendation, concretely
 
@@ -617,10 +617,10 @@ Real examples: **Node.js** (OpenJS Foundation), **Kubernetes** (CNCF), **Vue** (
 Concrete Phase 0 setup:
 
 ```
-github.com/spark/                        ← create in Phase 0, Day 2
+github.com/motly/                        ← create in Phase 0, Day 2
 ├── .github                              ← org profile + shared templates
 │   └── profile/README.md                ← org landing page
-├── spark                                ← main monorepo (public, MIT) — the only repo you need at launch
+├── motly                                ← main monorepo (public, MIT) — the only repo you need at launch
 │   ├── packages/core, gsap, motion, react, presets
 │   └── apps/docs, playground, demos
 │
@@ -629,7 +629,7 @@ github.com/spark/                        ← create in Phase 0, Day 2
     └── editor-runtime                   ← public, MIT (the JS runtime users embed on their sites)
 ```
 
-You don't need `spark-cloud` or `spark-inc` on day 1. But **reserve those org names on GitHub** so nobody else grabs them. Free, 5 minutes, blocks squatters.
+You don't need `motly-cloud` or `motly-inc` on day 1. But **reserve those org names on GitHub** so nobody else grabs them. Free, 5 minutes, blocks squatters.
 
 #### 2.6.4 License choices for the SaaS piece
 
@@ -646,9 +646,9 @@ If Phase 6+ SaaS happens, you have four realistic license options. Pick with int
 
 - **v1 of the editor SaaS: fully proprietary, closed source, private repo.** Simplest legal story, no license-fork risk, no obligation to explain your terms to users. You can always open-source later; you can't easily close-source once opened.
 - **If it takes off and users ask "can we self-host?": switch to BSL or FSL.** Both let you keep the commercial moat while showing source. Do this reactively, not preemptively.
-- **Do NOT AGPL your library packages.** MIT for `@spark/*` libraries is a hard rule — AGPL kills library adoption (many enterprises won't touch AGPL code, including your target audience of agency devs at Nationale-Nederlanden-like companies).
+- **Do NOT AGPL your library packages.** MIT for `@motly/*` libraries is a hard rule — AGPL kills library adoption (many enterprises won't touch AGPL code, including your target audience of agency devs at Nationale-Nederlanden-like companies).
 
-The `@spark/editor-runtime` package (the JS your SaaS embeds in customer sites) **stays MIT** even when the SaaS itself is proprietary. Runtime = library = MIT. Editor = product = proprietary.
+The `@motly/editor-runtime` package (the JS your SaaS embeds in customer sites) **stays MIT** even when the SaaS itself is proprietary. Runtime = library = MIT. Editor = product = proprietary.
 
 #### 2.6.5 Legal entity — when to incorporate
 
@@ -718,10 +718,10 @@ Realistic solo, part-time (2–3 evenings + one weekend day per week). **The App
 | Phase | Scope | Duration | Total hours |
 |---|---|---|---|
 | Phase 0 | Setup: name, org, monorepo, CI | 1 week | ~15 |
-| Phase 1 | Core engine (`@spark/core`) | 8 weeks | ~120 |
+| Phase 1 | Core engine (`@motly/core`) | 8 weeks | ~120 |
 | Phase 2 | GSAP adapter + first 5 demos + first public release | 4 weeks | ~60 |
 | Phase 3 | Motion adapter + 2 new demos | 2 weeks | ~30 |
-| Phase 4 | React components + `@spark/presets` + effects gallery | 4 weeks | ~60 |
+| Phase 4 | React components + `@motly/presets` + effects gallery | 4 weeks | ~60 |
 | Phase 5 | Standalone framing, v1.0 launch, migration guide | 6 weeks | ~90 |
 | **Total to full public v1** | | **25 weeks @ 15 hrs/wk · ~29 weeks @ 13** | **~375 hrs** |
 
@@ -832,7 +832,7 @@ Six phases. Ship at the end of each — don't batch releases.
 
 ### Phase 1 — Core engine (Weeks 1–8, ~8 weeks)
 
-**Goal:** `@spark/core` is a real thing that works standalone, no adapters yet.
+**Goal:** `@motly/core` is a real thing that works standalone, no adapters yet.
 
 - [ ] Domain model: `Shape`, `Burst`, `Swirl`, `Stagger`, `Timeline` — TypeScript interfaces first (spec-driven, as you already work).
 - [ ] Property tween engine (numbers, colors, unit-aware strings, arrays).
@@ -857,12 +857,12 @@ Six phases. Ship at the end of each — don't batch releases.
 
 **Goal:** land the plugin in the GSAP community. This is the wedge.
 
-- [ ] `@spark/gsap` — registers via `gsap.registerEffect()`, exposing `gsap.effects.burst()` / `gsap.effects.swirl()` that return tweens composable into `gsap.timeline()`.
+- [ ] `@motly/gsap` — registers via `gsap.registerEffect()`, exposing `gsap.effects.burst()` / `gsap.effects.swirl()` that return tweens composable into `gsap.timeline()`.
   **Correction to earlier drafts:** `gsap.registerPlugin()` registers *property* plugins (keys consumed inside a tween's vars object); it cannot add top-level `gsap.burst()` methods. Named top-level effects come from `registerEffect()`. Confirm which of the two — or both — you need against the plugin guide **before writing code**; the whole Phase 2 wedge rests on this.
 - [ ] Read GreenSock's plugin dev guide cover to cover before writing this.
 - [ ] 5 killer CodePen demos, each ~50 lines, each visually striking.
 - [ ] Docs site: getting-started, primitives reference, GSAP integration guide, 5 embedded demos.
-- [ ] READMEs for `@spark/core` and `@spark/gsap` with copy-paste install snippets.
+- [ ] READMEs for `@motly/core` and `@motly/gsap` with copy-paste install snippets.
 - [ ] Publish v0.1.0 to npm (both packages).
 - [ ] Post launch thread on GSAP forum (respectful, "here's a plugin I made" — not "here's a competitor").
 - [ ] Launch thread on Twitter/X and Bluesky.
@@ -879,7 +879,7 @@ Six phases. Ship at the end of each — don't batch releases.
 
 **Goal:** cover the other half of the modern animation market cheaply.
 
-- [ ] `@spark/motion` — thin adapter, most work already done in core.
+- [ ] `@motly/motion` — thin adapter, most work already done in core.
 - [ ] 2 new demos specifically for Motion users (React-flavored).
 - [ ] Docs page: Motion integration guide.
 - [ ] Publish v0.2.0.
@@ -896,8 +896,8 @@ Six phases. Ship at the end of each — don't batch releases.
 
 **Goal:** ride the shadcn / aceternity / magicui wave. Get on people's screens.
 
-- [ ] `@spark/react` — components: `<Burst />`, `<Sparkle />`, `<HeartBurst />`, `<Confetti />`, `<Firework />`, `<RippleClick />`, ~10 total.
-- [ ] `@spark/presets` — same effects as pure JS presets for non-React users.
+- [ ] `@motly/react` — components: `<Burst />`, `<Sparkle />`, `<HeartBurst />`, `<Confetti />`, `<Firework />`, `<RippleClick />`, ~10 total.
+- [ ] `@motly/presets` — same effects as pure JS presets for non-React users.
 - [ ] shadcn-compatible registry (`registry.json`) so people can install via `npx shadcn add burst`.
 - [ ] Docs: `<Preview>` component that shows the effect + code side-by-side.
 - [ ] "Effects gallery" landing page — this becomes your homepage hero.
@@ -934,7 +934,7 @@ Not in v1. Do based on what actually resonates:
 
 - WebGL renderer (if perf ceiling is the top issue people report).
 - Vue / Svelte adapters (if demand is real, not just polite requests).
-- The visual editor SaaS (only if `@spark/core` clears 10k weekly downloads).
+- The visual editor SaaS (only if `@motly/core` clears 10k weekly downloads).
 - Sponsor/consulting/paid-plugin tier (only if there's demand and time).
 
 ---
@@ -996,7 +996,7 @@ That's ~4–6 hours per release cycle. Batch it into a single "release day."
 - Pitch CSS-Tricks yet — same reason.
 - DM influencers cold. Let the work speak. If someone with reach picks it up, thank them publicly.
 
-**Success signal at 4 weeks:** 100+ GitHub stars, 500+ weekly npm downloads on `@spark/gsap`, 3+ non-Mo issues opened.
+**Success signal at 4 weeks:** 100+ GitHub stars, 500+ weekly npm downloads on `@motly/gsap`, 3+ non-Mo issues opened.
 
 #### Phase 3 launch (Motion adapter)
 
@@ -1006,7 +1006,7 @@ That's ~4–6 hours per release cycle. Batch it into a single "release day."
 - **Blog post:** "Adapting a motion graphics engine to two ecosystems: what stayed, what changed." Architecture-focused. This is résumé content.
 - **CodePen:** 2 new pens showing Motion-specific integration (gesture-triggered bursts).
 
-**Success signal at 2 weeks:** measurable install spike on `@spark/motion`; someone in the Motion community reposts.
+**Success signal at 2 weeks:** measurable install spike on `@motly/motion`; someone in the Motion community reposts.
 
 #### Phase 4 launch (React components) — the potentially viral one
 
@@ -1020,7 +1020,7 @@ That's ~4–6 hours per release cycle. Batch it into a single "release day."
 - **Submit to `awesome-react-components`** and similar registries.
 - **DM friendly creators** who share shadcn-style content (only after you have some baseline traction — don't cold-DM if you're at 20 stars).
 
-**Success signal at 4 weeks:** at least one component GIF hits 10k+ impressions; 1k+ weekly downloads across `@spark/react` and `@spark/presets`.
+**Success signal at 4 weeks:** at least one component GIF hits 10k+ impressions; 1k+ weekly downloads across `@motly/react` and `@motly/presets`.
 
 #### Phase 5 launch (v1.0 — the big one)
 
@@ -1117,7 +1117,7 @@ This is spec-driven-development discipline applied to product decisions. Future-
 Set the exit conditions now, when you're clear-headed.
 
 **Pause the project if, after Phase 4 (~4 months in):**
-- `@spark/gsap` has under 500 weekly downloads — i.e. it never cleared the Phase 2 four-week bar (§5.3). This threshold was 200, which sat *below* an earlier success bar and so only fired on active decline, never on a flat failure to launch.
+- `@motly/gsap` has under 500 weekly downloads — i.e. it never cleared the Phase 2 four-week bar (§5.3). This threshold was 200, which sat *below* an earlier success bar and so only fired on active decline, never on a flat failure to launch.
 - No non-Mo humans have opened issues.
 - No component GIF has crossed 5k impressions.
 
@@ -1200,7 +1200,7 @@ All the links you'll actually need while building this, grouped by why you'd ope
 ### D.5 The copy-paste-components ecosystem you're joining in Phase 4
 
 - **shadcn/ui** (the pattern-setter — study the registry format): https://ui.shadcn.com/
-- **shadcn registry docs** (the JSON schema your `@spark/react` needs to match): https://ui.shadcn.com/docs/registry
+- **shadcn registry docs** (the JSON schema your `@motly/react` needs to match): https://ui.shadcn.com/docs/registry
 - **Aceternity UI** (animation-heavy competitor): https://ui.aceternity.com/
 - **Magic UI** (animation-heavy competitor): https://magicui.design/
 - **React Bits** (free, OSS animated components): https://reactbits.dev/
@@ -1246,7 +1246,7 @@ All the links you'll actually need while building this, grouped by why you'd ope
 - **Reactiflux Discord** (React community): https://www.reactiflux.com/
 - **r/webdev**: https://www.reddit.com/r/webdev/
 - **r/reactjs**: https://www.reddit.com/r/reactjs/
-- **CodePen Spark newsletter** (get featured here and traffic spikes): https://codepen.io/spark/
+- **CodePen Spark newsletter** (get featured here and traffic spikes): https://codepen.io/motly/
 
 ### D.10 Legal / OSS-hygiene templates
 
@@ -1330,7 +1330,7 @@ Keep this minimal — don't fight `gsap.timeline()`. Just enough to sequence you
 
 ### E.2 By adapter/package — reference implementations
 
-#### `@spark/gsap` — GSAP plugin
+#### `@motly/gsap` — GSAP plugin
 Study these plugin sources in the GSAP repo before writing yours.
 
 - **ScrollTrigger** — https://github.com/greensock/GSAP/blob/master/src/ScrollTrigger.js
@@ -1344,7 +1344,7 @@ Study these plugin sources in the GSAP repo before writing yours.
 - **GSAP React hook (`useGSAP`)** — https://gsap.com/resources/React/
   *Study:* how the React integration works. Your React components should compose with `useGSAP` cleanly when GSAP is present.
 
-#### `@spark/motion` — Motion adapter
+#### `@motly/motion` — Motion adapter
 - **Motion source** — https://github.com/motiondivision/motion
   *Study:* the `packages/framer-motion/src/animation/animate/` folder — the low-level `animate()` implementation. Your adapter wraps this. (**Path may be stale** after the Motion repo restructure — re-check before Phase 3.)
 - **Motion One (predecessor)** — https://github.com/motiondivision/motionone
@@ -1352,7 +1352,7 @@ Study these plugin sources in the GSAP repo before writing yours.
 - **`motionValue` API** — https://motion.dev/docs/motion-value
   *Study:* how Motion's reactive value system works. Your adapter probably wants to output `motionValue`s that Motion timelines can subscribe to.
 
-#### `@spark/react` — React components
+#### `@motly/react` — React components
 - **shadcn/ui** — https://ui.shadcn.com/ · GitHub: https://github.com/shadcn-ui/ui
   *Study:* the pattern-setter for copy-paste registries. Registry schema, install CLI, component conventions. Match this exactly.
 - **Registry docs** — https://ui.shadcn.com/docs/registry
@@ -1366,7 +1366,7 @@ Study these plugin sources in the GSAP repo before writing yours.
 - **Tremor** — https://tremor.so/ · GitHub: https://github.com/tremorlabs/tremor
   *Study:* not animation-focused, but the gold standard for how a shadcn-adjacent component library is documented and marketed. Their docs site is the target quality bar.
 
-#### `@spark/presets` — the effect collection
+#### `@motly/presets` — the effect collection
 - **canvas-confetti presets** — https://www.kirilv.com/canvas-confetti/
   *Study:* the effect gallery — every preset has a runnable "run it" button. This is the interaction model for your effects gallery.
 - **party.js effects** — https://party.js.org/samples
@@ -1416,7 +1416,7 @@ Your day-job pattern; here's what it looks like in OSS.
 
 #### Copy-paste-component distribution
 - **shadcn CLI** — https://github.com/shadcn-ui/ui/tree/main/packages/cli
-  *Study:* the actual code behind `npx shadcn add <component>`. If you want to ship your own `@spark/cli` for adding presets, this is the reference implementation.
+  *Study:* the actual code behind `npx shadcn add <component>`. If you want to ship your own `@motly/cli` for adding presets, this is the reference implementation.
 - **Registry schema spec** — https://ui.shadcn.com/schema/registry.json
   *Study:* the exact JSON your `registry.json` needs to output.
 
