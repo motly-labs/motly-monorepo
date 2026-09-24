@@ -11,9 +11,9 @@ gap between a canned-animation player (Lottie) and a creative-coding framework
 (Pixi, Three). GSAP, Motion and anime.js animate *existing* DOM; `motly` *generates*
 the thing being animated.
 
-One engine, four distribution surfaces: `@motly/core` (standalone),
-`@motly/gsap` (plugin), `@motly/motion` (adapter), `@motly/react` (components),
-plus `@motly/presets`.
+One engine, several distribution surfaces. v1 ships two: `@motly/core`
+(standalone) and `@motly/gsap` (plugin). `@motly/motion`, `@motly/react` and
+`@motly/presets` are post-v1 placeholders — see ADR-0007.
 
 ## Documents of record — read before proposing scope
 
