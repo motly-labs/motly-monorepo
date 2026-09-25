@@ -28,7 +28,7 @@
     <button id="play-burst" type="button">Play</button>
 
     <script type="module">
-      import { Burst, Shape } from '@motly/core';
+      import { Burst, each, rand, Shape } from '@motly/core';
       import { SVGRenderer } from '@motly/core/svg';
 
       const renderer = new SVGRenderer(document.getElementById('stage'));
@@ -72,7 +72,12 @@
               kind: 'burst',
               count: 3,
               radius: [0, 20],
-              children: { kind: 'circle', radius: [8, 0], fill: 'deeppink', duration: 0.8 },
+              children: {
+                kind: 'circle',
+                radius: [rand(4, 10), 0],
+                fill: each(['deeppink', 'cyan', 'gold']),
+                duration: rand(0.6, 1),
+              },
             },
           },
           { renderer: burstRenderer, origin: { x: 200, y: 150 } },

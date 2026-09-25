@@ -1,8 +1,8 @@
 import type { CircleRecord, DrawList } from './draw-list.js';
 import { createRafDriver, type Driver, type DriverTarget, type Playback } from './driver.js';
 import type { Renderer } from './renderer.js';
-import { type Resolved, resolve } from './resolve.js';
-import type { BurstSpec, ChildSpec, NumericProperty, ShapeKind, ShapeSpec } from './spec.js';
+import { type ResolvedNumeric, type ResolvedTree, resolve } from './resolve.js';
+import type { BurstSpec, ChildSpec, ShapeKind, ShapeSpec } from './spec.js';
 import { clamp, lerp } from './utils/index.js';
 
 /** A point in a Renderer's coordinate space. */
@@ -15,6 +15,11 @@ export interface Origin {
 export interface InstanceBinding {
   renderer: Renderer;
   origin: Origin;
+  /**
+   * The integer every `rand()` in the Spec resolves from, taken modulo 2^32. Pass one to
+   * reproduce a burst exactly on every run; leave it out for a fresh random one per Instance.
+   */
+  seed?: number;
 }
 
 /** A Spec bound to a Renderer and an Origin: the thing that plays and is destroyed. */
@@ -29,11 +34,12 @@ export interface Instance {
   destroy(): void;
 }
 
-const DEFAULT_RADIUS = 50;
-const DEFAULT_FILL = 'deeppink';
-const DEFAULT_STROKE = 'none';
+/** A Seed for an Instance created without one. The only use of `Math.random` in core. */
+function freshSeed(): number {
+  return Math.floor(Math.random() * 2 ** 32);
+}
 
-function valueAt(property: NumericProperty, progress: number): number {
+function valueAt(property: ResolvedNumeric, progress: number): number {
   return typeof property === 'number' ? property : lerp(property[0], property[1], progress);
 }
 
@@ -50,8 +56,8 @@ function createRecord(): CircleRecord {
     y: 0,
     angle: 0,
     scale: 1,
-    fill: DEFAULT_FILL,
-    stroke: DEFAULT_STROKE,
+    fill: '',
+    stroke: '',
     strokeWidth: 0,
     opacity: 1,
   };
@@ -60,7 +66,7 @@ function createRecord(): CircleRecord {
 /** Any Spec bound to a Renderer, an Origin and a Driver. Shape and Burst are this, typed. */
 export class SpecInstance implements Instance {
   readonly duration: number;
-  readonly #resolved: Resolved;
+  readonly #resolved: ResolvedTree;
   readonly #origin: Origin;
   readonly #renderer: Renderer;
   readonly #driver: Driver;
@@ -73,7 +79,7 @@ export class SpecInstance implements Instance {
   readonly #records: CircleRecord[];
 
   constructor(spec: ChildSpec, binding: InstanceBinding, driver: Driver, onDestroy?: () => void) {
-    this.#resolved = resolve(spec);
+    this.#resolved = resolve(spec, binding.seed ?? freshSeed());
     this.#records = this.#resolved.elements.map(createRecord);
     this.#onDestroy = onDestroy;
     this.#origin = binding.origin;
@@ -127,17 +133,16 @@ export class SpecInstance implements Instance {
         x += dx * distance;
         y += dy * distance;
       }
-      const spec = element.spec;
       const progress = progressAt(t, element.duration);
-      record.radius = valueAt(spec.radius ?? DEFAULT_RADIUS, progress);
+      record.radius = valueAt(element.radius, progress);
       record.x = x;
       record.y = y;
-      record.angle = valueAt(spec.angle ?? 0, progress);
-      record.scale = valueAt(spec.scale ?? 1, progress);
-      record.fill = spec.fill ?? DEFAULT_FILL;
-      record.stroke = spec.stroke ?? DEFAULT_STROKE;
-      record.strokeWidth = valueAt(spec.strokeWidth ?? 0, progress);
-      record.opacity = valueAt(spec.opacity ?? 1, progress);
+      record.angle = valueAt(element.angle, progress);
+      record.scale = valueAt(element.scale, progress);
+      record.fill = element.fill;
+      record.stroke = element.stroke;
+      record.strokeWidth = valueAt(element.strokeWidth, progress);
+      record.opacity = valueAt(element.opacity, progress);
     }
     return records;
   }

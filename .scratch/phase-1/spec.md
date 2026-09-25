@@ -94,6 +94,8 @@ The phase is done when `createScope().burst({ … }).play()` in a plain HTML fil
 
 - Every Spec carries its `kind`, including at the top level: `createScope().burst({ kind: 'burst', … })`. Redundant there, but a stored Spec is then self-describing, and the same object is valid as a Child. Decided in ticket 02.
 
+- The RNG algorithm and the Seed derivation scheme are a compatibility contract from the first release: changing either changes every seeded burst anyone has saved. `descriptors.test.ts` pins two values under Seed 42 to catch it. Decided in ticket 03; write an ADR if it ever has to change.
+
 ### Modules and their boundaries
 
 - **Spec types** — the serializable description. Discriminated on `kind`, generic per Element kind (Invariant 9). No functions, no elements, no live objects.

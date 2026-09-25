@@ -1,8 +1,19 @@
+import type { Distributable, RandDescriptor } from './descriptors.js';
+
 /**
- * A numeric property: a constant, or two Keyframes animated from the first value to the second
- * over the Element's duration.
+ * One number in a Spec: a constant, or a `rand()` resolved per Instance and per Child. Name it
+ * when typing a helper that builds Specs and takes a number that may be random.
  */
-export type NumericProperty = number | readonly [from: number, to: number];
+export type NumericValue = number | RandDescriptor;
+
+/** Two numbers animated from the first to the second over the Element's duration (ADR-0008). */
+export type Keyframes = readonly [from: NumericValue, to: NumericValue];
+
+/**
+ * A numeric property: a value or Keyframes, either of which may be distributed across Children
+ * with `each()`. Name it when typing a helper that builds Specs.
+ */
+export type NumericProperty = Distributable<NumericValue | Keyframes>;
 
 /** The parameters each Element kind adds to the Spec. Adding a kind adds one entry here. */
 interface ShapeParams {
@@ -14,13 +25,13 @@ export type ShapeKind = keyof ShapeParams;
 
 interface ShapeCommon {
   /** Seconds from the first frame to the last. */
-  duration?: number;
+  duration?: Distributable<NumericValue>;
   /** Degrees, clockwise. */
   angle?: NumericProperty;
   scale?: NumericProperty;
   opacity?: NumericProperty;
-  fill?: string;
-  stroke?: string;
+  fill?: Distributable<string>;
+  stroke?: Distributable<string>;
   strokeWidth?: NumericProperty;
 }
 

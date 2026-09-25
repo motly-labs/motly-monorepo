@@ -9,7 +9,7 @@ The browser clock was settled while ticketing: the default rAF Driver ships in t
 
 - [x] `createScope()` returns a Scope; the Scope creates a Shape Instance. A bare `new Shape(…)` gets its own private Scope (ADR-0011).
 - [x] `createScope({ driver })` accepts any Driver; with none given, the Scope creates one rAF Driver shared by all its Instances.
-- [ ] The Renderer, Origin and Seed are bound at Instance creation and never appear in the Spec (ADR-0014).
+- [x] The Renderer, Origin and Seed are bound at Instance creation and never appear in the Spec (ADR-0014). Seed landed in ticket 03.
 - [x] The Spec type is discriminated on `kind`, with `'circle'` its only member, shaped so later kinds add members without restructuring (Invariant 9).
 - [x] A numeric property written as a two-value array animates linearly from the first value to the second over the Child's duration (the two-value case of ADR-0008 Keyframes).
 - [x] `sample(t)` is pure: the same Instance and `t` give the same Draw list whatever was sampled before, and no clock is read.
