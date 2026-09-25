@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>motly demos</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "@motly/core": "../../packages/core/dist/index.mjs",
+          "@motly/core/svg": "../../packages/core/dist/svg/index.mjs"
+        }
+      }
+    </script>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 2rem; }
+      svg { border: 1px solid #ddd; display: block; margin-bottom: 1rem; }
+    </style>
+  </head>
+  <body>
+    <h1>motly demos</h1>
+    <svg id="stage" width="400" height="300" role="img" aria-label="Animated circle demo"></svg>
+    <button id="play" type="button">Play</button>
+    <p id="status"></p>
+
+    <script type="module">
+      import { Shape } from '@motly/core';
+      import { SVGRenderer } from '@motly/core/svg';
+
+      const renderer = new SVGRenderer(document.getElementById('stage'));
+      const status = document.getElementById('status');
+      let shape;
+
+      async function play() {
+        shape?.destroy();
+        const current = new Shape(
+          {
+            kind: 'circle',
+            radius: [0, 120],
+            opacity: [1, 0],
+            strokeWidth: [20, 0],
+            fill: 'none',
+            stroke: 'deeppink',
+            duration: 1,
+          },
+          { renderer, origin: { x: 200, y: 150 } },
+        );
+        shape = current;
+        status.textContent = 'playing';
+        await current.play();
+        if (shape === current) status.textContent = 'finished';
+      }
+
+      document.getElementById('play').addEventListener('click', play);
+      play();
+    </script>
+  </body>
+</html>

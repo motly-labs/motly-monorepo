@@ -1,13 +1,15 @@
 /**
  * `@motly/core` — the renderer-agnostic engine.
  *
- * Phase 1 lands the domain model here: Shape, Burst, Swirl, Stagger, Timeline,
- * emitting a draw list that renderer adapters consume. See `product.md` §1.8
- * for the API synthesis this package has to implement, and §2.2 for the port
- * boundaries it must not cross.
- *
- * Invariant: this package has zero runtime dependencies and never touches the
- * DOM directly.
+ * Invariant: this entry has zero runtime dependencies and never touches the DOM. Renderers live
+ * in their own subpath entries.
  */
+
+export type { CircleRecord, DrawList, DrawRecord, Style, Transform } from './draw-list.js';
+export type { Driver, DriverTarget, Playback } from './driver.js';
+export { type Instance, type InstanceBinding, type Origin, Shape } from './instance.js';
+export type { Renderer } from './renderer.js';
+export { createScope, type Scope, type ScopeOptions } from './scope.js';
+export type { NumericProperty, ShapeKind, ShapeSpec } from './spec.js';
 
 export const VERSION = '0.0.0';
