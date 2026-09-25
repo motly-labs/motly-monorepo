@@ -9,3 +9,10 @@ Blocked by: 05
 - [ ] Output matches reference values for a set of known curves, within a stated tolerance.
 - [ ] A malformed path, or one that is not monotonic in x, fails with a clear error when the Instance is created.
 - [ ] No mojs source is copied without a `NOTICE` entry.
+
+## Comments
+
+**Notes from ticket 05.**
+
+- `Curve` is `CssEasing | CubicBezier`, converted to a function by `toEase()` in `easing.ts`: the path parser plugs in there. Type the path as a template literal (`` `M${string}` ``), not `string`, or a typo like `'quad.out'` stops being a type error. The error message in `toEase` lists the accepted forms and needs a path added.
+- Open question for the user, not a checkbox: ship elastic and bounce, which no cubic-bezier can express, as exported path-string constants here, to complete ticket 05's named set.

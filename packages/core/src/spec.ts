@@ -1,4 +1,5 @@
 import type { Distributable, RandDescriptor } from './descriptors.js';
+import type { Curve } from './easing.js';
 import type { ANGLE, LENGTH, TIME } from './units.js';
 
 /** Units a length accepts; a plain number is px. Name it to type a helper's length parameter. */
@@ -36,6 +37,13 @@ export type NumericProperty<U extends string = never> = Distributable<
  */
 export type ColorProperty = Distributable<string | Keyframes<string>>;
 
+/**
+ * How a Spec's animated properties move between their Keyframes: one Curve for all of them, or a
+ * Curve per property name `P`, with `default` for the rest. Linear when left out. Either may be
+ * distributed across Children with `each()`. Name it when typing a helper that builds Specs.
+ */
+export type Easing<P extends string> = Distributable<Curve | { [N in P | 'default']?: Curve }>;
+
 /** The parameters each Element kind adds to the Spec. Adding a kind adds one entry here. */
 interface ShapeParams {
   circle: { radius?: NumericProperty<LengthUnit> };
@@ -61,8 +69,15 @@ interface ShapeCommon {
  * only its own parameters.
  */
 export type ShapeSpec<K extends ShapeKind = ShapeKind> = {
-  [P in K]: { kind: P } & ShapeParams[P] & ShapeCommon;
+  [P in K]: { kind: P } & ShapeParams[P] & ShapeCommon & { easing?: Easing<ShapeProperty<P>> };
 }[K];
+
+/** The animated properties of a Shape of kind `K`: what its `easing` map is keyed by. */
+type ShapeProperty<K extends ShapeKind> = Exclude<
+  keyof (ShapeParams[K] & ShapeCommon),
+  'duration'
+> &
+  string;
 
 /**
  * The JSON-serializable description of a Burst: `count` copies of one Child thrown outward around
@@ -74,6 +89,8 @@ export interface BurstSpec {
   count?: number;
   /** Distance from the Origin to each Child. Animates over the Burst's duration. */
   radius?: NumericProperty<LengthUnit>;
+  /** How the Burst's own `radius` moves. Its Children take their own `easing`. */
+  easing?: Easing<'radius'>;
   /** The Child spawned `count` times: an Element, or another Emitter. */
   children: ChildSpec;
 }

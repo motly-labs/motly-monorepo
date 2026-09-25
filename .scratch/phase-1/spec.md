@@ -98,6 +98,8 @@ The phase is done when `createScope().burst({ … }).play()` in a plain HTML fil
 
 - In a Draw record, `fill` and `stroke` are CSS color strings: a constant exactly as the Spec wrote it, or `rgba(r, g, b, a)` while animating. Documented on `Style`; ticket 11's CanvasRenderer consumes it. Decided in ticket 04.
 
+- A curve in a Spec is data: one of the five CSS easing keywords, or a cubic-bezier as four numbers. Named curves (`quadOut`, `backOut`, …) are exported constants holding their cubic-bezier, so an unused one tree-shakes out and a stored Spec serializes to numbers. There is no string name table. `easing` on a Shape or Burst takes one curve or a map by property name with `default`. Decided with the user in ticket 05.
+
 - The RNG algorithm and the Seed derivation scheme are a compatibility contract from the first release: changing either changes every seeded burst anyone has saved. `descriptors.test.ts` pins two values under Seed 42 to catch it. Decided in ticket 03; write an ADR if it ever has to change.
 
 ### Modules and their boundaries

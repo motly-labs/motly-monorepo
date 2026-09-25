@@ -1,4 +1,3 @@
-import type { ResolvedNumeric } from './resolve.js';
 import { derive, unit } from './rng.js';
 import type { Keyframes, NumericProperty, NumericValue } from './spec.js';
 import { toNumber, type Units } from './units.js';
@@ -110,7 +109,7 @@ export function resolveNumeric(
   index: number,
   units: Units,
   name: string,
-): ResolvedNumeric {
+): number | readonly number[] {
   const value = resolveValue(property, index);
   if (!isKeyframes(value)) return resolveNumber(value, derive(seed, 0), units, name);
   const frames = resolveKeyframes(value, name, (frame, slot) =>

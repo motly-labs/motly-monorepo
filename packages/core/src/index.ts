@@ -6,6 +6,32 @@
  */
 
 export {
+  backIn,
+  backInOut,
+  backOut,
+  circIn,
+  circInOut,
+  circOut,
+  cubicIn,
+  cubicInOut,
+  cubicOut,
+  expoIn,
+  expoInOut,
+  expoOut,
+  quadIn,
+  quadInOut,
+  quadOut,
+  quartIn,
+  quartInOut,
+  quartOut,
+  quintIn,
+  quintInOut,
+  quintOut,
+  sineIn,
+  sineInOut,
+  sineOut,
+} from './curves.js';
+export {
   type Distributable,
   type EachDescriptor,
   each,
@@ -14,6 +40,7 @@ export {
 } from './descriptors.js';
 export type { CircleRecord, DrawList, DrawRecord, Style, Transform } from './draw-list.js';
 export type { Driver, DriverTarget, Playback } from './driver.js';
+export type { CssEasing, CubicBezier, Curve } from './easing.js';
 export { Burst, type Instance, type InstanceBinding, type Origin, Shape } from './instance.js';
 export type { Renderer } from './renderer.js';
 export { createScope, type Scope, type ScopeOptions } from './scope.js';
@@ -22,6 +49,7 @@ export type {
   BurstSpec,
   ChildSpec,
   ColorProperty,
+  Easing,
   Keyframes,
   LengthUnit,
   NumericProperty,

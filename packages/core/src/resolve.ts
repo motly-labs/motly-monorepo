@@ -6,6 +6,7 @@ import {
   resolveNumeric,
   resolveValue,
 } from './descriptors.js';
+import { type Curve, type Ease, linear, toEase } from './easing.js';
 import { derive, keyOf } from './rng.js';
 import type { ChildSpec, ColorProperty, LengthUnit, NumericProperty } from './spec.js';
 import { ANGLE, LENGTH, TIME, UNITLESS, type Units } from './units.js';
@@ -17,17 +18,23 @@ const DEFAULT_RADIUS = 50;
 const DEFAULT_FILL = 'deeppink';
 const DEFAULT_STROKE = 'none';
 
+/** Two or more Keyframes and the Ease that moves between them. */
+export interface Tween<T> {
+  readonly frames: readonly T[];
+  readonly ease: Ease;
+}
+
 /**
- * A numeric property with every Descriptor resolved and every unit converted: a constant, or two or
- * more Keyframes.
+ * A numeric property with every Descriptor resolved and every unit converted: a constant, or a
+ * Tween.
  */
-export type ResolvedNumeric = number | readonly number[];
+export type ResolvedNumeric = number | Tween<number>;
 
 /**
  * A color property with every Descriptor resolved: a constant CSS color exactly as the Spec wrote
- * it, or two or more parsed Keyframes.
+ * it, or a Tween of parsed colors.
  */
-export type ResolvedColor = string | readonly Rgba[];
+export type ResolvedColor = string | Tween<Rgba>;
 
 /** One Emitter in the resolved tree. `duration` is derived from its Children. */
 export interface ResolvedEmitter {
@@ -83,11 +90,16 @@ function walk(
 ): number {
   // Each property draws from its own Seed, derived from its name, so adding a property to a Spec
   // leaves the values of the others unchanged.
-  const numeric = (name: string, property: NumericProperty<string>, units: Units) =>
+  const numbers = (name: string, property: NumericProperty<string>, units: Units) =>
     resolveNumeric(property, derive(seed, keyOf(name)), index, units, name);
+  const ease = easings(resolveValue(spec.easing ?? 'linear', index));
+  const numeric = (name: string, property: NumericProperty<string>, units: Units) =>
+    withEase(numbers(name, property, units), ease(name));
+  const color = (name: string, property: ColorProperty) =>
+    withEase(colors(name, property, index), ease(name));
   if (spec.kind !== 'burst') {
     // A Distributable<NumericValue> holds no Keyframes, so duration resolves to a number.
-    const duration = numeric('duration', spec.duration ?? DEFAULT_DURATION, TIME) as number;
+    const duration = numbers('duration', spec.duration ?? DEFAULT_DURATION, TIME) as number;
     out.push({
       kind: spec.kind,
       duration,
@@ -96,8 +108,8 @@ function walk(
       scale: numeric('scale', spec.scale ?? 1, UNITLESS),
       opacity: numeric('opacity', spec.opacity ?? 1, UNITLESS),
       strokeWidth: numeric('strokeWidth', spec.strokeWidth ?? 0, LENGTH),
-      fill: color('fill', spec.fill ?? DEFAULT_FILL, index),
-      stroke: color('stroke', spec.stroke ?? DEFAULT_STROKE, index),
+      fill: color('fill', spec.fill ?? DEFAULT_FILL),
+      stroke: color('stroke', spec.stroke ?? DEFAULT_STROKE),
       placements,
     });
     return duration;
@@ -123,10 +135,34 @@ function walk(
  * Color property `name` for the Child at `index`. A constant passes through as written, so `none`
  * and `currentColor` still work; Keyframes are parsed now, so a bad one throws at creation.
  */
-function color(name: string, property: ColorProperty, index: number): ResolvedColor {
+function colors(name: string, property: ColorProperty, index: number): string | readonly Rgba[] {
   const value = resolveValue(property, index);
   if (typeof value === 'string') return value;
   if (!isKeyframes(value)) throw notAValue(name, value);
   const frames = resolveKeyframes(value, name, (frame) => parseColor(frame, name));
   return frames.length === 1 ? value[0] : frames;
+}
+
+/** `value` as a constant, or, if it is Keyframes, as a Tween moving along `ease`. */
+function withEase<C, F>(value: C | readonly F[], ease: Ease): C | Tween<F> {
+  return Array.isArray(value) ? { frames: value as readonly F[], ease } : (value as C);
+}
+
+/**
+ * A Child's `easing`, already picked by `each()`, as the Ease of each property by name. Every
+ * Curve in it is converted now, so a bad one throws at creation even on a constant property.
+ */
+function easings(
+  easing: Curve | { readonly [name: string]: Curve | undefined },
+): (name: string) => Ease {
+  if (typeof easing !== 'object' || Array.isArray(easing)) {
+    const ease = toEase(easing as Curve, 'easing');
+    return () => ease;
+  }
+  const eases = new Map<string, Ease>();
+  for (const [name, curve] of Object.entries(easing)) {
+    if (curve !== undefined) eases.set(name, toEase(curve, `easing.${name}`));
+  }
+  const fallback = eases.get('default') ?? linear;
+  return (name) => eases.get(name) ?? fallback;
 }
