@@ -1,9 +1,10 @@
 import type { CircleRecord, DrawList } from './draw-list.js';
 import { createRafDriver, type Driver, type DriverTarget, type Playback } from './driver.js';
 import type { Renderer } from './renderer.js';
-import { type ResolvedNumeric, type ResolvedTree, resolve } from './resolve.js';
+import { type ResolvedTree, resolve } from './resolve.js';
 import type { BurstSpec, ChildSpec, ShapeKind, ShapeSpec } from './spec.js';
-import { clamp, lerp } from './utils/index.js';
+import { colorAt, numberAt } from './tween.js';
+import { clamp } from './utils/index.js';
 
 /** A point in a Renderer's coordinate space. */
 export interface Origin {
@@ -37,10 +38,6 @@ export interface Instance {
 /** A Seed for an Instance created without one. The only use of `Math.random` in core. */
 function freshSeed(): number {
   return Math.floor(Math.random() * 2 ** 32);
-}
-
-function valueAt(property: ResolvedNumeric, progress: number): number {
-  return typeof property === 'number' ? property : lerp(property[0], property[1], progress);
 }
 
 /** How far through `duration` seconds the Playhead `t` is, held at 0 before and 1 after. */
@@ -129,20 +126,20 @@ export class SpecInstance implements Instance {
       let x = this.#origin.x;
       let y = this.#origin.y;
       for (const { emitter, dx, dy } of element.placements) {
-        const distance = valueAt(emitter.radius, progressAt(t, emitter.duration));
+        const distance = numberAt(emitter.radius, progressAt(t, emitter.duration));
         x += dx * distance;
         y += dy * distance;
       }
       const progress = progressAt(t, element.duration);
-      record.radius = valueAt(element.radius, progress);
+      record.radius = numberAt(element.radius, progress);
       record.x = x;
       record.y = y;
-      record.angle = valueAt(element.angle, progress);
-      record.scale = valueAt(element.scale, progress);
-      record.fill = element.fill;
-      record.stroke = element.stroke;
-      record.strokeWidth = valueAt(element.strokeWidth, progress);
-      record.opacity = valueAt(element.opacity, progress);
+      record.angle = numberAt(element.angle, progress);
+      record.scale = numberAt(element.scale, progress);
+      record.fill = colorAt(element.fill, progress);
+      record.stroke = colorAt(element.stroke, progress);
+      record.strokeWidth = numberAt(element.strokeWidth, progress);
+      record.opacity = numberAt(element.opacity, progress);
     }
     return records;
   }

@@ -194,12 +194,13 @@ describe('the Descriptor types', () => {
       { kind: 'circle', radius: each([rand(1, 2), [3, rand(4, 5)]]), fill: each(['red']) },
       at(1),
     );
-    // @ts-expect-error — fill is a string, not a number
-    const randFill = createScope().shape({ kind: 'circle', fill: rand(0, 1) }, at(1));
+    // @ts-expect-error — fill is a color, not a number
+    const randFill = () => createScope().shape({ kind: 'circle', fill: rand(0, 1) }, at(1));
     // @ts-expect-error — each() needs at least one value
     const empty = each([]);
 
-    expect([ok, randFill, empty]).toHaveLength(3);
+    expect(randFill).toThrow(/fill/);
+    expect([ok, empty]).toHaveLength(2);
   });
 });
 

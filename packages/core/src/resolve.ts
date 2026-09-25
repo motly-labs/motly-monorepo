@@ -1,16 +1,33 @@
-import { resolveNumeric, resolveValue } from './descriptors.js';
+import { parseColor, type Rgba } from './color.js';
+import {
+  isKeyframes,
+  notAValue,
+  resolveKeyframes,
+  resolveNumeric,
+  resolveValue,
+} from './descriptors.js';
 import { derive, keyOf } from './rng.js';
-import type { ChildSpec, NumericProperty } from './spec.js';
+import type { ChildSpec, ColorProperty, LengthUnit, NumericProperty } from './spec.js';
+import { ANGLE, LENGTH, TIME, UNITLESS, type Units } from './units.js';
 
 const DEFAULT_DURATION = 1;
 const DEFAULT_COUNT = 5;
-const DEFAULT_BURST_RADIUS: NumericProperty = [0, 50];
+const DEFAULT_BURST_RADIUS: NumericProperty<LengthUnit> = [0, 50];
 const DEFAULT_RADIUS = 50;
 const DEFAULT_FILL = 'deeppink';
 const DEFAULT_STROKE = 'none';
 
-/** A numeric property with every Descriptor resolved: a constant, or two Keyframes. */
-export type ResolvedNumeric = number | readonly [from: number, to: number];
+/**
+ * A numeric property with every Descriptor resolved and every unit converted: a constant, or two or
+ * more Keyframes.
+ */
+export type ResolvedNumeric = number | readonly number[];
+
+/**
+ * A color property with every Descriptor resolved: a constant CSS color exactly as the Spec wrote
+ * it, or two or more parsed Keyframes.
+ */
+export type ResolvedColor = string | readonly Rgba[];
 
 /** One Emitter in the resolved tree. `duration` is derived from its Children. */
 export interface ResolvedEmitter {
@@ -37,8 +54,8 @@ export interface ResolvedElement {
   readonly scale: ResolvedNumeric;
   readonly opacity: ResolvedNumeric;
   readonly strokeWidth: ResolvedNumeric;
-  readonly fill: string;
-  readonly stroke: string;
+  readonly fill: ResolvedColor;
+  readonly stroke: ResolvedColor;
   readonly placements: readonly Placement[];
 }
 
@@ -66,27 +83,27 @@ function walk(
 ): number {
   // Each property draws from its own Seed, derived from its name, so adding a property to a Spec
   // leaves the values of the others unchanged.
-  const numeric = (name: string, property: NumericProperty) =>
-    resolveNumeric(property, derive(seed, keyOf(name)), index);
+  const numeric = (name: string, property: NumericProperty<string>, units: Units) =>
+    resolveNumeric(property, derive(seed, keyOf(name)), index, units, name);
   if (spec.kind !== 'burst') {
     // A Distributable<NumericValue> holds no Keyframes, so duration resolves to a number.
-    const duration = numeric('duration', spec.duration ?? DEFAULT_DURATION) as number;
+    const duration = numeric('duration', spec.duration ?? DEFAULT_DURATION, TIME) as number;
     out.push({
       kind: spec.kind,
       duration,
-      radius: numeric('radius', spec.radius ?? DEFAULT_RADIUS),
-      angle: numeric('angle', spec.angle ?? 0),
-      scale: numeric('scale', spec.scale ?? 1),
-      opacity: numeric('opacity', spec.opacity ?? 1),
-      strokeWidth: numeric('strokeWidth', spec.strokeWidth ?? 0),
-      fill: resolveValue(spec.fill ?? DEFAULT_FILL, index),
-      stroke: resolveValue(spec.stroke ?? DEFAULT_STROKE, index),
+      radius: numeric('radius', spec.radius ?? DEFAULT_RADIUS, LENGTH),
+      angle: numeric('angle', spec.angle ?? 0, ANGLE),
+      scale: numeric('scale', spec.scale ?? 1, UNITLESS),
+      opacity: numeric('opacity', spec.opacity ?? 1, UNITLESS),
+      strokeWidth: numeric('strokeWidth', spec.strokeWidth ?? 0, LENGTH),
+      fill: color('fill', spec.fill ?? DEFAULT_FILL, index),
+      stroke: color('stroke', spec.stroke ?? DEFAULT_STROKE, index),
       placements,
     });
     return duration;
   }
   const emitter: ResolvedEmitter = {
-    radius: numeric('radius', spec.radius ?? DEFAULT_BURST_RADIUS),
+    radius: numeric('radius', spec.radius ?? DEFAULT_BURST_RADIUS, LENGTH),
     duration: 0,
   };
   const count = spec.count ?? DEFAULT_COUNT;
@@ -100,4 +117,16 @@ function walk(
     emitter.duration = Math.max(emitter.duration, end);
   }
   return emitter.duration;
+}
+
+/**
+ * Color property `name` for the Child at `index`. A constant passes through as written, so `none`
+ * and `currentColor` still work; Keyframes are parsed now, so a bad one throws at creation.
+ */
+function color(name: string, property: ColorProperty, index: number): ResolvedColor {
+  const value = resolveValue(property, index);
+  if (typeof value === 'string') return value;
+  if (!isKeyframes(value)) throw notAValue(name, value);
+  const frames = resolveKeyframes(value, name, (frame) => parseColor(frame, name));
+  return frames.length === 1 ? value[0] : frames;
 }

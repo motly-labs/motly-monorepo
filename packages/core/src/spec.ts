@@ -1,38 +1,59 @@
 import type { Distributable, RandDescriptor } from './descriptors.js';
+import type { ANGLE, LENGTH, TIME } from './units.js';
+
+/** Units a length accepts; a plain number is px. Name it to type a helper's length parameter. */
+export type LengthUnit = keyof typeof LENGTH;
+/** Units an angle accepts; a plain number is degrees. Name it to type a helper's angle parameter. */
+export type AngleUnit = keyof typeof ANGLE;
+/** Units a duration accepts; a plain number is seconds. Name it to type a helper's duration. */
+export type TimeUnit = keyof typeof TIME;
 
 /**
- * One number in a Spec: a constant, or a `rand()` resolved per Instance and per Child. Name it
- * when typing a helper that builds Specs and takes a number that may be random.
+ * One number in a Spec: a constant, a string with one of the units `U` (`'90deg'`), or a `rand()`
+ * resolved per Instance and per Child. Name it when typing a helper that builds Specs and takes a
+ * number that may be random.
  */
-export type NumericValue = number | RandDescriptor;
-
-/** Two numbers animated from the first to the second over the Element's duration (ADR-0008). */
-export type Keyframes = readonly [from: NumericValue, to: NumericValue];
+export type NumericValue<U extends string = never> = number | `${number}${U}` | RandDescriptor;
 
 /**
- * A numeric property: a value or Keyframes, either of which may be distributed across Children
- * with `each()`. Name it when typing a helper that builds Specs.
+ * Successive values spread evenly over the Element's duration (ADR-0008). Name it when typing a
+ * helper that builds Specs. There is no `{ from: to }` delta syntax (ADR-0017).
  */
-export type NumericProperty = Distributable<NumericValue | Keyframes>;
+export type Keyframes<V> = readonly [V, ...V[]];
+
+/**
+ * A numeric property taking units `U`: a value or Keyframes, either of which may be distributed
+ * across Children with `each()`. Name it when typing a helper that builds Specs.
+ */
+export type NumericProperty<U extends string = never> = Distributable<
+  NumericValue<U> | Keyframes<NumericValue<U>>
+>;
+
+/**
+ * A color property: any CSS color, or Keyframes of named, hex, `rgb()` or `rgba()` colors, either
+ * of which may be distributed across Children with `each()`. Name it when typing a helper that
+ * builds Specs.
+ */
+export type ColorProperty = Distributable<string | Keyframes<string>>;
 
 /** The parameters each Element kind adds to the Spec. Adding a kind adds one entry here. */
 interface ShapeParams {
-  circle: { radius?: NumericProperty };
+  circle: { radius?: NumericProperty<LengthUnit> };
 }
 
 /** Every Element kind a `Shape` can draw. */
 export type ShapeKind = keyof ShapeParams;
 
 interface ShapeCommon {
-  /** Seconds from the first frame to the last. */
-  duration?: Distributable<NumericValue>;
-  /** Degrees, clockwise. */
-  angle?: NumericProperty;
+  /** Time from the first frame to the last. */
+  duration?: Distributable<NumericValue<TimeUnit>>;
+  /** Clockwise. */
+  angle?: NumericProperty<AngleUnit>;
   scale?: NumericProperty;
   opacity?: NumericProperty;
-  fill?: Distributable<string>;
-  stroke?: Distributable<string>;
-  strokeWidth?: NumericProperty;
+  fill?: ColorProperty;
+  stroke?: ColorProperty;
+  strokeWidth?: NumericProperty<LengthUnit>;
 }
 
 /**
@@ -52,7 +73,7 @@ export interface BurstSpec {
   /** How many Children to spawn. */
   count?: number;
   /** Distance from the Origin to each Child. Animates over the Burst's duration. */
-  radius?: NumericProperty;
+  radius?: NumericProperty<LengthUnit>;
   /** The Child spawned `count` times: an Element, or another Emitter. */
   children: ChildSpec;
 }

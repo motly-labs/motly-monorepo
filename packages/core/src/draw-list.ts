@@ -6,7 +6,12 @@ export interface Transform {
   scale: number;
 }
 
-/** How an Element is painted. */
+/**
+ * How an Element is painted. `fill` and `stroke` are CSS color strings a Renderer can hand straight
+ * to an SVG attribute or a Canvas `fillStyle`/`strokeStyle`: a constant color exactly as the Spec
+ * wrote it (so possibly `none` or `currentColor`), or, while animating, `rgba(r, g, b, a)` with
+ * whole-number channels in 0–255 and alpha in 0–1 to three decimals.
+ */
 export interface Style {
   fill: string;
   stroke: string;

@@ -94,6 +94,10 @@ The phase is done when `createScope().burst({ … }).play()` in a plain HTML fil
 
 - Every Spec carries its `kind`, including at the top level: `createScope().burst({ kind: 'burst', … })`. Redundant there, but a stored Spec is then self-describing, and the same object is valid as a Child. Decided in ticket 02.
 
+- A unit-bearing string converts to a number when the Instance is created: lengths take `px`, angles `deg`, `rad` or `turn`, durations `s` or `ms`. Draw records stay numbers. Units that need layout (`em`, `%`, `vw`) are refused, since core reads no layout. Decided with the user in ticket 04.
+
+- In a Draw record, `fill` and `stroke` are CSS color strings: a constant exactly as the Spec wrote it, or `rgba(r, g, b, a)` while animating. Documented on `Style`; ticket 11's CanvasRenderer consumes it. Decided in ticket 04.
+
 - The RNG algorithm and the Seed derivation scheme are a compatibility contract from the first release: changing either changes every seeded burst anyone has saved. `descriptors.test.ts` pins two values under Seed 42 to catch it. Decided in ticket 03; write an ADR if it ever has to change.
 
 ### Modules and their boundaries
@@ -101,7 +105,7 @@ The phase is done when `createScope().burst({ … }).play()` in a plain HTML fil
 - **Spec types** — the serializable description. Discriminated on `kind`, generic per Element kind (Invariant 9). No functions, no elements, no live objects.
 - **Descriptors** — `rand` and `each`, each a tagged object (`{ __motly: 'rand' | 'each', … }`) with a resolver that takes a Seed and a Child index. New Descriptor kinds are added here and nowhere else.
 - **Resolver** — walks a Spec and a Seed into a flattened, resolved tree of Children with concrete values, absolute start times and durations. Runs once per Instance, not per frame.
-- **Tween** — interpolates one resolved property at a local progress. Numbers, colors, unit-bearing strings, Keyframes. Pure.
+- **Tween** — interpolates one resolved property at a local progress. Numbers, colors, Keyframes. Pure. Unit-bearing strings and Keyframe colors are parsed by the Resolver at creation, not here, so a bad one fails before the first frame (ticket 04).
 - **Easing** — curve to progress. Named curves, cubic-bezier, and an SVG path parser for the curve-as-data story. Pure, no state.
 - **RNG** — a seeded, self-contained generator. Deterministic across platforms; must not use `Math.random` internally.
 - **Instance** — binds a Spec to a Seed, a Renderer, an Origin and a Driver. Exposes `sample(t)`, playback delegation, `destroy()`. Holds no clock (ADR-0009).

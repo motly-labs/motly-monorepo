@@ -1,6 +1,7 @@
 import type { ResolvedNumeric } from './resolve.js';
 import { derive, unit } from './rng.js';
 import type { Keyframes, NumericProperty, NumericValue } from './spec.js';
+import { toNumber, type Units } from './units.js';
 
 /**
  * A number drawn uniformly from [`min`, `max`), resolved per Instance and per Child. What `rand()`
@@ -61,26 +62,59 @@ export function resolveValue<T>(value: Distributable<T>, index: number): T {
   return value.values[index % value.values.length] as T;
 }
 
-/** `value` as a number, drawing it from `seed` if it is a `rand()`. */
-function resolveNumber(value: NumericValue, seed: number): number {
-  return typeof value === 'number' ? value : value.min + (value.max - value.min) * unit(seed);
+/** The error for a Spec value, such as mojs's `{ from: to }`, that is no kind of value `name` takes. */
+export function notAValue(name: string, value: unknown): Error {
+  return new Error(`motly: ${name} cannot be ${JSON.stringify(value)}. Keyframes are an array.`);
 }
 
-function isKeyframes(value: NumericValue | Keyframes): value is Keyframes {
+/** `value` as a number in `units`' base unit, drawing it from `seed` if it is a `rand()`. */
+function resolveNumber(
+  value: NumericValue<string>,
+  seed: number,
+  units: Units,
+  name: string,
+): number {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') return toNumber(value, units, name);
+  if (value.__motly === 'rand') return value.min + (value.max - value.min) * unit(seed);
+  throw notAValue(name, value);
+}
+
+/** Whether `value` is Keyframes rather than a single value. */
+export function isKeyframes<V>(value: V | Keyframes<V>): value is Keyframes<V> {
   return Array.isArray(value);
 }
 
 /**
- * `property` resolved for the Child at `index`, with `seed` the Seed of that Child's property:
- * `each()` picks the value first, then every `rand()` in it draws, one Keyframe slot each. A
- * constant `rand` and the first Keyframe share a slot, so `rand` → `[rand, 0]` keeps its value.
+ * Keyframes `frames` of property `name`, each resolved by `resolveFrame` with its slot. Throws for
+ * an empty array, which a JSON Spec can hold though the type cannot.
+ */
+export function resolveKeyframes<V, R>(
+  frames: Keyframes<V>,
+  name: string,
+  resolveFrame: (frame: V, slot: number) => R,
+): readonly R[] {
+  if (frames.length === 0) throw new Error(`motly: ${name} has no Keyframes.`);
+  return frames.map(resolveFrame);
+}
+
+/**
+ * Numeric property `name` resolved for the Child at `index`, with `seed` the Seed of that Child's
+ * property and `units` the units it accepts: `each()` picks the value first, then every `rand()` in
+ * it draws, one Keyframe slot each. A constant `rand` and the first Keyframe share a slot, so
+ * `rand` → `[rand, 0]` keeps its value.
  */
 export function resolveNumeric(
-  property: NumericProperty,
+  property: NumericProperty<string>,
   seed: number,
   index: number,
+  units: Units,
+  name: string,
 ): ResolvedNumeric {
   const value = resolveValue(property, index);
-  if (!isKeyframes(value)) return resolveNumber(value, derive(seed, 0));
-  return [resolveNumber(value[0], derive(seed, 0)), resolveNumber(value[1], derive(seed, 1))];
+  if (!isKeyframes(value)) return resolveNumber(value, derive(seed, 0), units, name);
+  const frames = resolveKeyframes(value, name, (frame, slot) =>
+    resolveNumber(frame, derive(seed, slot), units, name),
+  );
+  return frames.length === 1 ? (frames[0] as number) : frames;
 }

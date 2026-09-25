@@ -18,12 +18,17 @@ export { Burst, type Instance, type InstanceBinding, type Origin, Shape } from '
 export type { Renderer } from './renderer.js';
 export { createScope, type Scope, type ScopeOptions } from './scope.js';
 export type {
+  AngleUnit,
   BurstSpec,
   ChildSpec,
+  ColorProperty,
+  Keyframes,
+  LengthUnit,
   NumericProperty,
   NumericValue,
   ShapeKind,
   ShapeSpec,
+  TimeUnit,
 } from './spec.js';
 
 export const VERSION = '0.0.0';
