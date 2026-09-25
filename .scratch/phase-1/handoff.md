@@ -10,13 +10,12 @@ The `/mattpocock-skills:ask-matt` main flow, between step 3's two halves:
 ```
 /grill-with-docs  ✅ done, frontier empty      → CONTEXT.md + ADR-0007..0016
 /to-spec          ✅ done                      → .scratch/phase-1/spec.md
-/to-tickets       ⬅️ NEXT
-/implement        per ticket, /clear between
+/to-tickets       ✅ done                      → .scratch/phase-1/issues/01..17
+/implement        ⬅️ NEXT, per ticket, /clear between
 ```
 
-`/to-tickets` splits the spec into tracer-bullet tickets under
-`.scratch/phase-1/issues/NN-<slug>.md`, each with a `Blocked by:` line.
-Conventions: `docs/agents/issue-tracker.md` and `docs/agents/triage-labels.md`.
+Work the frontier: any ticket whose `Blocked by:` tickets are all done. Day one
+that is 01 alone. Conventions: `docs/agents/issue-tracker.md`.
 
 ## Read these, in this order
 
