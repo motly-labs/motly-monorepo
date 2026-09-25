@@ -1,11 +1,13 @@
 import { createRafDriver, type Driver } from './driver.js';
-import { type Instance, type InstanceBinding, ShapeInstance } from './instance.js';
-import type { ShapeKind, ShapeSpec } from './spec.js';
+import { type Instance, type InstanceBinding, SpecInstance } from './instance.js';
+import type { BurstSpec, ChildSpec, ShapeKind, ShapeSpec } from './spec.js';
 
 /** An explicitly created owner of a set of Instances. */
 export interface Scope {
   /** Create a Shape Instance owned by this Scope. */
   shape<K extends ShapeKind>(spec: ShapeSpec<K>, binding: InstanceBinding): Instance;
+  /** Create a Burst Instance owned by this Scope. */
+  burst(spec: BurstSpec, binding: InstanceBinding): Instance;
   /** Destroy every Instance this Scope created and is still holding. */
   destroy(): void;
 }
@@ -20,14 +22,16 @@ export interface ScopeOptions {
 export function createScope(options: ScopeOptions = {}): Scope {
   const driver = options.driver ?? createRafDriver();
   const instances = new Set<Instance>();
+  function create(spec: ChildSpec, binding: InstanceBinding): Instance {
+    const instance: Instance = new SpecInstance(spec, binding, driver, () =>
+      instances.delete(instance),
+    );
+    instances.add(instance);
+    return instance;
+  }
   return {
-    shape(spec, binding) {
-      const instance: Instance = new ShapeInstance(spec, binding, driver, () =>
-        instances.delete(instance),
-      );
-      instances.add(instance);
-      return instance;
-    },
+    shape: create,
+    burst: create,
     destroy() {
       for (const instance of [...instances]) instance.destroy();
     },

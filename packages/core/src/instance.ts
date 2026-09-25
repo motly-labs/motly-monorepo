@@ -1,7 +1,8 @@
 import type { CircleRecord, DrawList } from './draw-list.js';
 import { createRafDriver, type Driver, type DriverTarget, type Playback } from './driver.js';
 import type { Renderer } from './renderer.js';
-import type { NumericProperty, ShapeKind, ShapeSpec } from './spec.js';
+import { type Resolved, resolve } from './resolve.js';
+import type { BurstSpec, ChildSpec, NumericProperty, ShapeKind, ShapeSpec } from './spec.js';
 import { clamp, lerp } from './utils/index.js';
 
 /** A point in a Renderer's coordinate space. */
@@ -28,7 +29,6 @@ export interface Instance {
   destroy(): void;
 }
 
-const DEFAULT_DURATION = 1;
 const DEFAULT_RADIUS = 50;
 const DEFAULT_FILL = 'deeppink';
 const DEFAULT_STROKE = 'none';
@@ -37,18 +37,13 @@ function valueAt(property: NumericProperty, progress: number): number {
   return typeof property === 'number' ? property : lerp(property[0], property[1], progress);
 }
 
-export class ShapeInstance implements Instance {
-  readonly duration: number;
-  readonly #spec: ShapeSpec;
-  readonly #origin: Origin;
-  readonly #renderer: Renderer;
-  readonly #driver: Driver;
-  readonly #target: DriverTarget;
-  readonly #onDestroy: (() => void) | undefined;
-  #playback: Playback | undefined;
-  #waiters: (() => void)[] = [];
-  #destroyed = false;
-  readonly #record: CircleRecord = {
+/** How far through `duration` seconds the Playhead `t` is, held at 0 before and 1 after. */
+function progressAt(t: number, duration: number): number {
+  return duration > 0 ? clamp(t / duration, 0, 1) : 1;
+}
+
+function createRecord(): CircleRecord {
+  return {
     kind: 'circle',
     radius: 0,
     x: 0,
@@ -60,15 +55,31 @@ export class ShapeInstance implements Instance {
     strokeWidth: 0,
     opacity: 1,
   };
-  readonly #list: DrawList = [this.#record];
+}
 
-  constructor(spec: ShapeSpec, binding: InstanceBinding, driver: Driver, onDestroy?: () => void) {
-    this.#spec = spec;
+/** Any Spec bound to a Renderer, an Origin and a Driver. Shape and Burst are this, typed. */
+export class SpecInstance implements Instance {
+  readonly duration: number;
+  readonly #resolved: Resolved;
+  readonly #origin: Origin;
+  readonly #renderer: Renderer;
+  readonly #driver: Driver;
+  readonly #target: DriverTarget;
+  readonly #onDestroy: (() => void) | undefined;
+  #playback: Playback | undefined;
+  #waiters: (() => void)[] = [];
+  #destroyed = false;
+  // The pool: one record per Element, allocated here and reused by every sample.
+  readonly #records: CircleRecord[];
+
+  constructor(spec: ChildSpec, binding: InstanceBinding, driver: Driver, onDestroy?: () => void) {
+    this.#resolved = resolve(spec);
+    this.#records = this.#resolved.elements.map(createRecord);
     this.#onDestroy = onDestroy;
     this.#origin = binding.origin;
     this.#renderer = binding.renderer;
     this.#driver = driver;
-    this.duration = spec.duration ?? DEFAULT_DURATION;
+    this.duration = this.#resolved.duration;
     this.#target = {
       duration: this.duration,
       render: (t) => this.#render(t),
@@ -106,19 +117,29 @@ export class ShapeInstance implements Instance {
   }
 
   sample(t: number): DrawList {
-    const progress = this.duration > 0 ? clamp(t / this.duration, 0, 1) : 1;
-    const spec = this.#spec;
-    const record = this.#record;
-    record.radius = valueAt(spec.radius ?? DEFAULT_RADIUS, progress);
-    record.x = this.#origin.x;
-    record.y = this.#origin.y;
-    record.angle = valueAt(spec.angle ?? 0, progress);
-    record.scale = valueAt(spec.scale ?? 1, progress);
-    record.fill = spec.fill ?? DEFAULT_FILL;
-    record.stroke = spec.stroke ?? DEFAULT_STROKE;
-    record.strokeWidth = valueAt(spec.strokeWidth ?? 0, progress);
-    record.opacity = valueAt(spec.opacity ?? 1, progress);
-    return this.#list;
+    const records = this.#records;
+    for (const [index, element] of this.#resolved.elements.entries()) {
+      const record = records[index] as CircleRecord;
+      let x = this.#origin.x;
+      let y = this.#origin.y;
+      for (const { emitter, dx, dy } of element.placements) {
+        const distance = valueAt(emitter.radius, progressAt(t, emitter.duration));
+        x += dx * distance;
+        y += dy * distance;
+      }
+      const spec = element.spec;
+      const progress = progressAt(t, element.duration);
+      record.radius = valueAt(spec.radius ?? DEFAULT_RADIUS, progress);
+      record.x = x;
+      record.y = y;
+      record.angle = valueAt(spec.angle ?? 0, progress);
+      record.scale = valueAt(spec.scale ?? 1, progress);
+      record.fill = spec.fill ?? DEFAULT_FILL;
+      record.stroke = spec.stroke ?? DEFAULT_STROKE;
+      record.strokeWidth = valueAt(spec.strokeWidth ?? 0, progress);
+      record.opacity = valueAt(spec.opacity ?? 1, progress);
+    }
+    return records;
   }
 }
 
@@ -126,8 +147,19 @@ export class ShapeInstance implements Instance {
  * One Element, played on its own. Reach for it for a single effect; use a Scope's `shape()` when
  * several Instances should share a frame loop and be released together.
  */
-export class Shape<K extends ShapeKind = ShapeKind> extends ShapeInstance {
+export class Shape<K extends ShapeKind = ShapeKind> extends SpecInstance {
   constructor(spec: ShapeSpec<K>, binding: InstanceBinding) {
+    super(spec, binding, createRafDriver());
+  }
+}
+
+/**
+ * `count` Children thrown outward around the Origin, played on its own. Reach for it for the
+ * classic burst; nest another Burst as its `children` for bursts of bursts. Use a Scope's `burst()`
+ * when several Instances should share a frame loop and be released together.
+ */
+export class Burst extends SpecInstance {
+  constructor(spec: BurstSpec, binding: InstanceBinding) {
     super(spec, binding, createRafDriver());
   }
 }

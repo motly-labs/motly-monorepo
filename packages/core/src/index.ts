@@ -7,9 +7,9 @@
 
 export type { CircleRecord, DrawList, DrawRecord, Style, Transform } from './draw-list.js';
 export type { Driver, DriverTarget, Playback } from './driver.js';
-export { type Instance, type InstanceBinding, type Origin, Shape } from './instance.js';
+export { Burst, type Instance, type InstanceBinding, type Origin, Shape } from './instance.js';
 export type { Renderer } from './renderer.js';
 export { createScope, type Scope, type ScopeOptions } from './scope.js';
-export type { NumericProperty, ShapeKind, ShapeSpec } from './spec.js';
+export type { BurstSpec, ChildSpec, NumericProperty, ShapeKind, ShapeSpec } from './spec.js';
 
 export const VERSION = '0.0.0';

@@ -18,12 +18,17 @@
   </head>
   <body>
     <h1>motly demos</h1>
+    <h2>Shape</h2>
     <svg id="stage" width="400" height="300" role="img" aria-label="Animated circle demo"></svg>
     <button id="play" type="button">Play</button>
     <p id="status"></p>
 
+    <h2>Burst</h2>
+    <svg id="burst-stage" width="400" height="300" role="img" aria-label="Burst demo"></svg>
+    <button id="play-burst" type="button">Play</button>
+
     <script type="module">
-      import { Shape } from '@motly/core';
+      import { Burst, Shape } from '@motly/core';
       import { SVGRenderer } from '@motly/core/svg';
 
       const renderer = new SVGRenderer(document.getElementById('stage'));
@@ -52,6 +57,31 @@
 
       document.getElementById('play').addEventListener('click', play);
       play();
+
+      const burstRenderer = new SVGRenderer(document.getElementById('burst-stage'));
+      let burst;
+
+      function playBurst() {
+        burst?.destroy();
+        burst = new Burst(
+          {
+            kind: 'burst',
+            count: 8,
+            radius: [0, 110],
+            children: {
+              kind: 'burst',
+              count: 3,
+              radius: [0, 20],
+              children: { kind: 'circle', radius: [8, 0], fill: 'deeppink', duration: 0.8 },
+            },
+          },
+          { renderer: burstRenderer, origin: { x: 200, y: 150 } },
+        );
+        burst.play();
+      }
+
+      document.getElementById('play-burst').addEventListener('click', playBurst);
+      playBurst();
     </script>
   </body>
 </html>

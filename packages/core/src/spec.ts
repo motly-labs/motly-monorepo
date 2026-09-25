@@ -31,3 +31,20 @@ interface ShapeCommon {
 export type ShapeSpec<K extends ShapeKind = ShapeKind> = {
   [P in K]: { kind: P } & ShapeParams[P] & ShapeCommon;
 }[K];
+
+/**
+ * The JSON-serializable description of a Burst: `count` copies of one Child thrown outward around
+ * the Origin. There is no duration: a Burst lasts as long as its longest-running Child.
+ */
+export interface BurstSpec {
+  kind: 'burst';
+  /** How many Children to spawn. */
+  count?: number;
+  /** Distance from the Origin to each Child. Animates over the Burst's duration. */
+  radius?: NumericProperty;
+  /** The Child spawned `count` times: an Element, or another Emitter. */
+  children: ChildSpec;
+}
+
+/** Anything an Emitter can spawn. Discriminated on `kind`. */
+export type ChildSpec = ShapeSpec | BurstSpec;

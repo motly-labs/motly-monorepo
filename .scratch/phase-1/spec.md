@@ -92,6 +92,8 @@ The phase is done when `createScope().burst({ … }).play()` in a plain HTML fil
 - `product.md` §2.2 says "new renderer = new package". v1 does not follow it. Recorded here rather than as an ADR: revisit and write one if a third renderer or an external renderer author makes the packaging hard to change.
 - Easings are individually importable. The bundle budget assumes only the ones used are paid for.
 
+- Every Spec carries its `kind`, including at the top level: `createScope().burst({ kind: 'burst', … })`. Redundant there, but a stored Spec is then self-describing, and the same object is valid as a Child. Decided in ticket 02.
+
 ### Modules and their boundaries
 
 - **Spec types** — the serializable description. Discriminated on `kind`, generic per Element kind (Invariant 9). No functions, no elements, no live objects.
