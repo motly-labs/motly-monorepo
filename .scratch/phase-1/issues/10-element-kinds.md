@@ -10,3 +10,7 @@ Blocked by: 01, 03
 - [ ] `SVGRenderer` draws every kind, updating attributes on a live element rather than rebuilding it each frame.
 - [ ] One Burst can mix kinds: `children` accepts `each([...Child Specs])`, handing successive Child Specs to successive Children, each still typed by its own `kind`. `kind: each([...])` alone is not the way in: it would let a circle Child carry `points`.
 - [ ] `apps/demos` shows every kind, and one Burst mixing several.
+
+## Comments
+
+**Note from the post-ticket-05 audit.** A new kind now touches three places that must agree: its parameters in `ShapeParams` (`spec.ts`), its fields in `FIELDS` (`validate.ts`, which also lists the property names its `easing` map may use), and the Resolver, whose `ResolvedElement` is still circle-only. Consider deriving the first two from one table here.
