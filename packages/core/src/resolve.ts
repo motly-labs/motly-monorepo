@@ -1,5 +1,6 @@
 import { parseColor, type Rgba } from './color.js';
 import {
+  type Drawn,
   isKeyframes,
   notAValue,
   resolveKeyframes,
@@ -9,7 +10,7 @@ import {
 import { type Curve, type Ease, linear, toEase } from './easing.js';
 import { derive, keyOf } from './rng.js';
 import type { ChildSpec, ColorProperty, LengthUnit, NumericProperty } from './spec.js';
-import { ANGLE, LENGTH, TIME, UNITLESS, type Units } from './units.js';
+import { ANGLE, LENGTH, TIME, toNumber, UNITLESS, type Units } from './units.js';
 
 const DEFAULT_DURATION = 1;
 const DEFAULT_COUNT = 5;
@@ -94,8 +95,12 @@ function walk(
 ): number {
   // Each property draws from its own Seed, derived from its name, so adding a property to a Spec
   // leaves the values of the others unchanged.
-  const numbers = (name: string, property: NumericProperty<string>, units: Units) =>
-    resolveNumeric(property, derive(seed, keyOf(name)), index, units, name);
+  const numbers = (name: string, property: NumericProperty<string>, units: Units) => {
+    const drawn = resolveNumeric(property, derive(seed, keyOf(name)), index, name);
+    const convert = (value: Drawn) =>
+      typeof value === 'number' ? value : toNumber(value, units, name);
+    return typeof drawn === 'object' ? drawn.map(convert) : convert(drawn);
+  };
   const ease = easings(resolveValue(spec.easing ?? 'linear', index));
   const numeric = (name: string, property: NumericProperty<string>, units: Units) =>
     withEase(numbers(name, property, units), ease(name));
