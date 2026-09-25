@@ -30,7 +30,10 @@ an ADR in `docs/adr/` with the reason.
 
 ## Status
 
-Phase 0 scaffold. No engine code exists yet. `packages/*/src` holds placeholders.
+Phase 1 in progress. `@motly/core` has a working engine: Shape and Burst, `rand`/`each`
+Descriptors, colors, units, Keyframes, easing, Spec validation and `SVGRenderer`. The Status line
+of each ticket in `.scratch/phase-1/issues/` says what is done and what is next. The other
+packages hold placeholders.
 
 ## Commands
 

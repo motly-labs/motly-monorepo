@@ -75,6 +75,10 @@ _Avoid_: Ticker (that is one kind of Driver), clock, scheduler
 The offset of each Child's start time within an Emitter, shaped by an easing curve. An option of an Emitter, not a primitive.
 _Avoid_: Delay (that is a single Child's offset)
 
+**Curve**:
+A mapping from linear progress to eased progress, held in a Spec as data: a CSS easing keyword or a cubic-bezier's four numbers. A Spec's `easing` gives each animated property its Curve.
+_Avoid_: Ease function, timing function
+
 **Timeline**:
 A Driver that maps its own Playhead onto several Instances' Playheads.
 _Avoid_: Sequence

@@ -24,4 +24,4 @@ One decision to make here, not guess: `product.md` §1.8.6 says to keep mojs's d
 - **The parser accepts a little more than the ticket lists**: `transparent`, `#rgba`/`#rrggbbaa`, space-separated `rgb(1 2 3 / 50%)`, percentages, any letter case. All standard CSS a designer pastes; cheap. Constant colors are not validated, since they pass straight to the Renderer.
 - **Keyframes of length N:** `position = progress·(N−1)`; one value is a constant; an empty array throws at creation. Each Keyframe's `rand()` draws from slot `derive(propSeed, slot)`, unchanged from ticket 03, so the pinned Seed-42 values hold.
 - **Named colors cost ~1.5 kB gzipped** in the barrel. Watch it against the 15 kB budget in ticket 15; it could move behind a subpath if needed.
-- **Not fixed here:** a JSON Spec with `duration: [1, 2]` resolves to an array cast as a number (`Instance.duration` becomes `"1,2"`). Predates this ticket; ticket 07 touches duration next.
+- **Fixed after ticket 05:** a JSON Spec with `duration: [1, 2]` used to resolve to a wrong duration. Full Spec validation now rejects it at creation.

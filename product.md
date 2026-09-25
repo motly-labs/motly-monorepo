@@ -299,6 +299,8 @@ Keeping randomness inside the property definition means the whole animation *can
 easing: 'M0,100 C21.3,72.5 51.4,50.5 100,0'   // an SVG path string is a valid easing
 ```
 A designer draws a curve in Illustrator/Figma, pastes the `d` attribute in. GSAP eventually added `CustomEase.create('M0,0 C0.4,0 0.6,1 1,1')` but it took years and it's still a plugin, not core. Motion has springs but no arbitrary-curve system. **This is directly the DNA of your visual editor.** Every curve in the library is a nameable, serializable, reusable artifact.
+
+> **Changed in Phase 1 (ticket 05):** names are an import-time convenience, not part of the data. Named curves (`quadOut`, `backOut`, …) ship as exported cubic-bezier constants, so an unused one tree-shakes out, and a stored Spec holds the four numbers, not the name. The only curve strings are the CSS easing keywords, plus SVG path strings from ticket 06. An editor that wants to show a name must match the numbers back to it. Recorded in `.scratch/phase-1/spec.md`, Implementation Decisions.
 *Reference:* https://mojs.github.io/api/easing/ · GSAP CustomEase: https://gsap.com/docs/v3/Eases/CustomEase/
 
 **6. `.setProgress(0..1)` as a first-class primitive.**
