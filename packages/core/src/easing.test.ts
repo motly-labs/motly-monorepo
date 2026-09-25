@@ -108,6 +108,19 @@ describe('a curve', () => {
     }
   });
 
+  it('keeps sample() pure when every property shares it', () => {
+    const shape = circle({ radius: [0, 1], opacity: [0, 1], easing: backOut });
+    const at = (t: number) => {
+      const record = shape.sample(t)[0];
+      return [record?.radius, record?.opacity];
+    };
+    const first = at(0.5);
+    at(0.1);
+
+    expect(at(0.5)).toEqual(first);
+    expect(first[0]).toBe(first[1]);
+  });
+
   it('holds its ends exactly', () => {
     expect(eased(backInOut, [0, 1])).toEqual([0, 1]);
   });

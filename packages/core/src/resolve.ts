@@ -42,9 +42,12 @@ export interface ResolvedEmitter {
   duration: number;
 }
 
-/** Where one Emitter puts one Child: a unit direction from the Emitter's Origin. */
+/**
+ * Where one Emitter puts one Child: a unit direction from the Emitter's Origin. `emitter` indexes
+ * the tree's `emitters`, so `sample()` evaluates each Emitter once per frame, not once per Element.
+ */
 export interface Placement {
-  readonly emitter: ResolvedEmitter;
+  readonly emitter: number;
   readonly dx: number;
   readonly dy: number;
 }
@@ -71,22 +74,23 @@ export interface ResolvedTree {
   /** The latest end across every Child, recursively (ADR-0016). */
   readonly duration: number;
   readonly elements: readonly ResolvedElement[];
+  readonly emitters: readonly ResolvedEmitter[];
 }
 
 /** Resolve `spec` under `seed`, the Instance's Seed. */
 export function resolve(spec: ChildSpec, seed: number): ResolvedTree {
-  const elements: ResolvedElement[] = [];
-  const duration = walk(spec, seed >>> 0, 0, [], elements);
-  return { duration, elements };
+  const tree = { elements: [], emitters: [] };
+  const duration = walk(spec, seed >>> 0, 0, [], tree);
+  return { duration, ...tree };
 }
 
-/** Append `spec`'s Elements to `out` and return the latest end among them. */
+/** Append `spec`'s Elements and Emitters to `out` and return the latest end among them. */
 function walk(
   spec: ChildSpec,
   seed: number,
   index: number,
   placements: readonly Placement[],
-  out: ResolvedElement[],
+  out: { elements: ResolvedElement[]; emitters: ResolvedEmitter[] },
 ): number {
   // Each property draws from its own Seed, derived from its name, so adding a property to a Spec
   // leaves the values of the others unchanged.
@@ -100,7 +104,7 @@ function walk(
   if (spec.kind !== 'burst') {
     // A Distributable<NumericValue> holds no Keyframes, so duration resolves to a number.
     const duration = numbers('duration', spec.duration ?? DEFAULT_DURATION, TIME) as number;
-    out.push({
+    out.elements.push({
       kind: spec.kind,
       duration,
       radius: numeric('radius', spec.radius ?? DEFAULT_RADIUS, LENGTH),
@@ -118,11 +122,16 @@ function walk(
     radius: numeric('radius', spec.radius ?? DEFAULT_BURST_RADIUS, LENGTH),
     duration: 0,
   };
+  const emitterIndex = out.emitters.push(emitter) - 1;
   const count = spec.count ?? DEFAULT_COUNT;
   for (let index = 0; index < count; index++) {
     // Clockwise from 12 o'clock in a y-down space.
     const angle = (2 * Math.PI * index) / count;
-    const placement: Placement = { emitter, dx: Math.sin(angle), dy: -Math.cos(angle) };
+    const placement: Placement = {
+      emitter: emitterIndex,
+      dx: Math.sin(angle),
+      dy: -Math.cos(angle),
+    };
     // Each Child's Seed comes from this one and its index, so raising `count` leaves the Seeds of
     // the existing Children unchanged.
     const end = walk(spec.children, derive(seed, index), index, [...placements, placement], out);

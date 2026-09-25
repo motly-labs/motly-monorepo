@@ -69,7 +69,16 @@ function cubicBezier([x1, y1, x2, y2]: CubicBezier): Ease {
     return (low + high) / 2;
   }
 
-  return (progress) => (progress <= 0 ? 0 : progress >= 1 ? 1 : yAt(solve(progress)));
+  // Every property of a Child shares one Ease and is sampled at one progress, so remember the
+  // last answer: one solve per Child per frame instead of one per property.
+  let lastProgress = Number.NaN;
+  let lastEased = Number.NaN;
+  return (progress) => {
+    if (progress === lastProgress) return lastEased;
+    lastProgress = progress;
+    lastEased = progress <= 0 ? 0 : progress >= 1 ? 1 : yAt(solve(progress));
+    return lastEased;
+  };
 }
 
 function isCubicBezier(curve: unknown): curve is CubicBezier {

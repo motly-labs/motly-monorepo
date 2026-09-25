@@ -1,7 +1,13 @@
 import type { CircleRecord, DrawList } from './draw-list.js';
 import { createRafDriver, type Driver, type DriverTarget, type Playback } from './driver.js';
 import type { Renderer } from './renderer.js';
-import { type ResolvedTree, resolve } from './resolve.js';
+import {
+  type Placement,
+  type ResolvedElement,
+  type ResolvedEmitter,
+  type ResolvedTree,
+  resolve,
+} from './resolve.js';
 import type { BurstSpec, ChildSpec, ShapeKind, ShapeSpec } from './spec.js';
 import { colorAt, numberAt } from './tween.js';
 import { clamp } from './utils/index.js';
@@ -74,10 +80,13 @@ export class SpecInstance implements Instance {
   #destroyed = false;
   // The pool: one record per Element, allocated here and reused by every sample.
   readonly #records: CircleRecord[];
+  // Each Emitter's radius at the Playhead being sampled, reused by every sample.
+  readonly #distances: Float64Array;
 
   constructor(spec: ChildSpec, binding: InstanceBinding, driver: Driver, onDestroy?: () => void) {
     this.#resolved = resolve(spec, binding.seed ?? freshSeed());
     this.#records = this.#resolved.elements.map(createRecord);
+    this.#distances = new Float64Array(this.#resolved.emitters.length);
     this.#onDestroy = onDestroy;
     this.#origin = binding.origin;
     this.#renderer = binding.renderer;
@@ -120,13 +129,22 @@ export class SpecInstance implements Instance {
   }
 
   sample(t: number): DrawList {
+    const { elements, emitters } = this.#resolved;
     const records = this.#records;
-    for (const [index, element] of this.#resolved.elements.entries()) {
-      const record = records[index] as CircleRecord;
+    const distances = this.#distances;
+    // Indexed loops: this runs every frame for every Element, and must not allocate.
+    for (let i = 0; i < emitters.length; i++) {
+      const emitter = emitters[i] as ResolvedEmitter;
+      distances[i] = numberAt(emitter.radius, progressAt(t, emitter.duration));
+    }
+    for (let i = 0; i < elements.length; i++) {
+      const element = elements[i] as ResolvedElement;
+      const record = records[i] as CircleRecord;
       let x = this.#origin.x;
       let y = this.#origin.y;
-      for (const { emitter, dx, dy } of element.placements) {
-        const distance = numberAt(emitter.radius, progressAt(t, emitter.duration));
+      for (let p = 0; p < element.placements.length; p++) {
+        const { emitter, dx, dy } = element.placements[p] as Placement;
+        const distance = distances[emitter] as number;
         x += dx * distance;
         y += dy * distance;
       }
