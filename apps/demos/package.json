@@ -1,5 +1,8 @@
 {
   "name": "demos",
   "version": "0.0.0",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "@motly/core": "workspace:*"
+  }
 }
