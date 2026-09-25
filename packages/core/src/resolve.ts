@@ -1,16 +1,10 @@
 import { parseColor, type Rgba } from './color.js';
-import {
-  type Drawn,
-  isKeyframes,
-  notAValue,
-  resolveKeyframes,
-  resolveNumeric,
-  resolveValue,
-} from './descriptors.js';
+import { type Drawn, resolveNumeric, resolveValue } from './descriptors.js';
 import { type Curve, type Ease, linear, toEase } from './easing.js';
 import { derive, keyOf } from './rng.js';
 import type { ChildSpec, ColorProperty, LengthUnit, NumericProperty } from './spec.js';
 import { ANGLE, LENGTH, TIME, toNumber, UNITLESS, type Units } from './units.js';
+import { validate } from './validate.js';
 
 const DEFAULT_DURATION = 1;
 const DEFAULT_COUNT = 5;
@@ -78,8 +72,9 @@ export interface ResolvedTree {
   readonly emitters: readonly ResolvedEmitter[];
 }
 
-/** Resolve `spec` under `seed`, the Instance's Seed. */
+/** Resolve `spec` under `seed`, the Instance's Seed, after validating all of it. */
 export function resolve(spec: ChildSpec, seed: number): ResolvedTree {
+  validate(spec);
   const tree = { elements: [], emitters: [] };
   const duration = walk(spec, seed >>> 0, 0, [], tree);
   return { duration, ...tree };
@@ -96,16 +91,17 @@ function walk(
   // Each property draws from its own Seed, derived from its name, so adding a property to a Spec
   // leaves the values of the others unchanged.
   const numbers = (name: string, property: NumericProperty<string>, units: Units) => {
-    const drawn = resolveNumeric(property, derive(seed, keyOf(name)), index, name);
+    const drawn = resolveNumeric(property, derive(seed, keyOf(name)), index);
     const convert = (value: Drawn) =>
-      typeof value === 'number' ? value : toNumber(value, units, name);
+      // Validated: every unit here fits.
+      typeof value === 'number' ? value : (toNumber(value, units) as number);
     return typeof drawn === 'object' ? drawn.map(convert) : convert(drawn);
   };
   const ease = easings(resolveValue(spec.easing ?? 'linear', index));
   const numeric = (name: string, property: NumericProperty<string>, units: Units) =>
     withEase(numbers(name, property, units), ease(name));
   const color = (name: string, property: ColorProperty) =>
-    withEase(colors(name, property, index), ease(name));
+    withEase(colors(property, index), ease(name));
   if (spec.kind !== 'burst') {
     // A Distributable<NumericValue> holds no Keyframes, so duration resolves to a number.
     const duration = numbers('duration', spec.duration ?? DEFAULT_DURATION, TIME) as number;
@@ -146,14 +142,14 @@ function walk(
 }
 
 /**
- * Color property `name` for the Child at `index`. A constant passes through as written, so `none`
- * and `currentColor` still work; Keyframes are parsed now, so a bad one throws at creation.
+ * A color property for the Child at `index`. A constant passes through as written, so `none`
+ * and `currentColor` still work; Keyframes are parsed into channels.
  */
-function colors(name: string, property: ColorProperty, index: number): string | readonly Rgba[] {
+function colors(property: ColorProperty, index: number): string | readonly Rgba[] {
   const value = resolveValue(property, index);
   if (typeof value === 'string') return value;
-  if (!isKeyframes(value)) throw notAValue(name, value);
-  const frames = resolveKeyframes(value, name, (frame) => parseColor(frame, name));
+  // Validated: every Keyframe color parses.
+  const frames = value.map((frame) => parseColor(frame) as Rgba);
   return frames.length === 1 ? value[0] : frames;
 }
 
@@ -162,20 +158,18 @@ function withEase<C, F>(value: C | readonly F[], ease: Ease): C | Tween<F> {
   return Array.isArray(value) ? { frames: value as readonly F[], ease } : (value as C);
 }
 
-/**
- * A Child's `easing`, already picked by `each()`, as the Ease of each property by name. Every
- * Curve in it is converted now, so a bad one throws at creation even on a constant property.
- */
+/** A Child's `easing`, already picked by `each()`, as the Ease of each property by name. */
 function easings(
   easing: Curve | { readonly [name: string]: Curve | undefined },
 ): (name: string) => Ease {
   if (typeof easing !== 'object' || Array.isArray(easing)) {
-    const ease = toEase(easing as Curve, 'easing');
+    // Validated: every Curve converts.
+    const ease = toEase(easing) as Ease;
     return () => ease;
   }
   const eases = new Map<string, Ease>();
   for (const [name, curve] of Object.entries(easing)) {
-    if (curve !== undefined) eases.set(name, toEase(curve, `easing.${name}`));
+    if (curve !== undefined) eases.set(name, toEase(curve) as Ease);
   }
   const fallback = eases.get('default') ?? linear;
   return (name) => eases.get(name) ?? fallback;

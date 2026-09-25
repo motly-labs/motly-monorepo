@@ -12,17 +12,12 @@ export const UNITLESS = {} as const satisfies Units;
 const NUMBER_WITH_UNIT = /^([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)([a-z]*)$/i;
 
 /**
- * `value`, a number followed by a unit, in the unit the Draw record of property `name` uses.
- * Throws, naming `name`, if the unit is not one of `units`.
+ * `value`, a number followed by a unit, in the unit a Draw record uses, or `undefined` if the unit
+ * is not one of `units`.
  */
-export function toNumber(value: string, units: Units, name: string): number {
+export function toNumber(value: string, units: Units): number | undefined {
   const match = NUMBER_WITH_UNIT.exec(value);
   const unit = match?.[2]?.toLowerCase();
-  if (match?.[1] === undefined || unit === undefined || !Object.hasOwn(units, unit)) {
-    const allowed = Object.keys(units);
-    const hint =
-      allowed.length === 0 ? 'a number' : `a number, or a string in ${allowed.join(', ')}`;
-    throw new Error(`motly: ${name} cannot be '${value}'. Use ${hint}.`);
-  }
+  if (match?.[1] === undefined || unit === undefined || !Object.hasOwn(units, unit)) return;
   return Number(match[1]) * (units[unit] as number);
 }

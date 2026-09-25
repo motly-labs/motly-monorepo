@@ -186,24 +186,15 @@ function fromName(name: string): Rgba | undefined {
 }
 
 /**
- * `value`, a named, hex, `rgb()` or `rgba()` color, as channels. Throws, naming property `name`,
- * for anything else, including `none`, which has no color to interpolate.
+ * `value`, a named, hex, `rgb()` or `rgba()` color, as channels, or `undefined` for anything else,
+ * including `none`, which has no color to interpolate.
  */
-export function parseColor(value: string, name: string): Rgba {
+export function parseColor(value: string): Rgba | undefined {
   const hex = HEX.exec(value)?.[1];
+  if (hex !== undefined) return fromHex(hex);
   const rgb = RGB.exec(value)?.[1];
-  const parsed =
-    hex !== undefined
-      ? fromHex(hex)
-      : rgb !== undefined
-        ? fromRgb(rgb)
-        : fromName(value.toLowerCase());
-  if (parsed === undefined) {
-    throw new Error(
-      `motly: ${name} cannot animate '${value}'. Use a named, hex, rgb() or rgba() color.`,
-    );
-  }
-  return parsed;
+  if (rgb !== undefined) return fromRgb(rgb);
+  return fromName(value.toLowerCase());
 }
 
 /**

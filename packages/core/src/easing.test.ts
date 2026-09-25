@@ -237,6 +237,6 @@ describe('a curve in a Spec', () => {
     // @ts-expect-error — only the CSS keywords are strings; import named curves
     expect(() => circle({ easing: 'quad.out' })).toThrow();
     // @ts-expect-error — the map is keyed by this Element's properties
-    expect(circle({ easing: { points: 'ease' } }).duration).toBe(1);
+    expect(() => circle({ easing: { points: 'ease' } })).toThrow(/easing\.points/);
   });
 });

@@ -100,12 +100,15 @@ The phase is done when `createScope().burst({ … }).play()` in a plain HTML fil
 
 - A curve in a Spec is data: one of the five CSS easing keywords, or a cubic-bezier as four numbers. Named curves (`quadOut`, `backOut`, …) are exported constants holding their cubic-bezier, so an unused one tree-shakes out and a stored Spec serializes to numbers. There is no string name table. `easing` on a Shape or Burst takes one curve or a map by property name with `default`. Decided with the user in ticket 05.
 
+- A Spec from JSON is validated in full when the Instance is created, so it gets the same guarantees as one the compiler checked. Validation is strict: an unknown field (`raduis`) is an error, not ignored. The cost is forward compatibility: a Spec saved with a field from a newer version fails on an older one. Decided with the user after ticket 05.
+
 - The RNG algorithm and the Seed derivation scheme are a compatibility contract from the first release: changing either changes every seeded burst anyone has saved. `descriptors.test.ts` pins two values under Seed 42 to catch it. Decided in ticket 03; write an ADR if it ever has to change.
 
 ### Modules and their boundaries
 
 - **Spec types** — the serializable description. Discriminated on `kind`, generic per Element kind (Invariant 9). No functions, no elements, no live objects.
 - **Descriptors** — `rand` and `each`, each a tagged object (`{ __motly: 'rand' | 'each', … }`) with a resolver that takes a Seed and a Child index. New Descriptor kinds are added here and nowhere else.
+- **Validation** — checks a whole Spec before it is resolved: every field of every Spec in the tree, every `each()` value whether or not a Child picks it, and the Child of a Burst with no Children. Every error message a bad Spec can produce lives here, naming the place (`children.fill[0]`). The parsers it shares with the Resolver (units, colors, curves) return `undefined` rather than throw.
 - **Resolver** — walks a Spec and a Seed into a flattened, resolved tree of Children with concrete values, absolute start times and durations. Runs once per Instance, not per frame.
 - **Tween** — interpolates one resolved property at a local progress. Numbers, colors, Keyframes. Pure. Unit-bearing strings and Keyframe colors are parsed by the Resolver at creation, not here, so a bad one fails before the first frame (ticket 04).
 - **Easing** — curve to progress. Named curves, cubic-bezier, and an SVG path parser for the curve-as-data story. Pure, no state.

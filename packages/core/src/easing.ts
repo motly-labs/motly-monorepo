@@ -93,16 +93,12 @@ function isCubicBezier(curve: unknown): curve is CubicBezier {
   );
 }
 
-/** `curve` as a function. Throws, naming property `name`, for anything that is not a Curve. */
-export function toEase(curve: Curve, name: string): Ease {
+/** `curve` as a function, or `undefined` if it is not a Curve. */
+export function toEase(curve: unknown): Ease | undefined {
   if (curve === 'linear') return linear;
   if (typeof curve === 'string' && Object.hasOwn(KEYWORDS, curve)) {
     return cubicBezier(KEYWORDS[curve as keyof typeof KEYWORDS]);
   }
   if (isCubicBezier(curve)) return cubicBezier(curve);
-  const shown = typeof curve === 'string' ? `'${curve}'` : JSON.stringify(curve);
-  throw new Error(
-    `motly: ${name} cannot be ${shown}. Use a CSS easing keyword, four cubic-bezier numbers ` +
-      'with both x in 0–1, or an imported named curve.',
-  );
+  return undefined;
 }
