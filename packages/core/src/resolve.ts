@@ -2,7 +2,7 @@ import { parseColor, type Rgba } from './color.js';
 import { type Drawn, resolveNumeric, resolveValue } from './descriptors.js';
 import { type Curve, type Ease, linear, toEase } from './easing.js';
 import { derive, keyOf } from './rng.js';
-import type { ChildSpec, ColorProperty, LengthUnit, NumericProperty } from './spec.js';
+import type { BurstSpec, ChildSpec, ColorProperty, LengthUnit, NumericProperty } from './spec.js';
 import { ANGLE, LENGTH, TIME, toNumber, UNITLESS, type Units } from './units.js';
 import { validate } from './validate.js';
 
@@ -31,7 +31,10 @@ export type ResolvedNumeric = number | Tween<number>;
  */
 export type ResolvedColor = string | Tween<Rgba>;
 
-/** One Emitter in the resolved tree. `duration` is derived from its Children. */
+/**
+ * One Emitter in the resolved tree. Its radius runs on each Child's clock from that Child's start,
+ * over `duration`: the longest time any Child runs, derived from its Children.
+ */
 export interface ResolvedEmitter {
   readonly radius: ResolvedNumeric;
   duration: number;
@@ -43,6 +46,11 @@ export interface ResolvedEmitter {
  */
 export interface Placement {
   readonly emitter: number;
+  /**
+   * When the Child starts, in seconds from the Instance's start: the Emitter's radius runs from
+   * then, for this Child.
+   */
+  readonly start: number;
   readonly dx: number;
   readonly dy: number;
 }
@@ -53,6 +61,8 @@ export interface Placement {
  */
 export interface ResolvedElement {
   readonly kind: 'circle';
+  /** Seconds from the Instance's start to this Element's first frame. */
+  readonly start: number;
   readonly duration: number;
   readonly radius: ResolvedNumeric;
   readonly angle: ResolvedNumeric;
@@ -76,27 +86,50 @@ export interface ResolvedTree {
 export function resolve(spec: ChildSpec, seed: number): ResolvedTree {
   validate(spec);
   const tree = { elements: [], emitters: [] };
-  const duration = walk(spec, seed >>> 0, 0, [], tree);
+  const root = seed >>> 0;
+  const duration = walk(spec, root, 0, delayOf(spec, root, 0), [], tree);
   return { duration, ...tree };
 }
 
-/** Append `spec`'s Elements and Emitters to `out` and return the latest end among them. */
+/**
+ * The numeric property `name` of the Child at `index` whose Seed is `seed`, in `units`. Each
+ * property draws from its own Seed, derived from its name, so adding a property to a Spec leaves
+ * the values of the others unchanged.
+ */
+function resolveNumbers(
+  name: string,
+  property: NumericProperty<string>,
+  seed: number,
+  index: number,
+  units: Units,
+): number | number[] {
+  const drawn = resolveNumeric(property, derive(seed, keyOf(name)), index);
+  const convert = (value: Drawn) =>
+    // Validated: every unit here fits.
+    typeof value === 'number' ? value : (toNumber(value, units) as number);
+  return typeof drawn === 'object' ? drawn.map(convert) : convert(drawn);
+}
+
+/** The `delay` of `spec`, the Child at `index` with Seed `seed`, in seconds. */
+function delayOf(spec: ChildSpec, seed: number, index: number): number {
+  // A Distributable<NumericValue> holds no Keyframes, so it resolves to a number.
+  return resolveNumbers('delay', spec.delay ?? 0, seed, index, TIME) as number;
+}
+
+/**
+ * Append `spec`'s Elements and Emitters to `out` and return the latest end among them. `start` is
+ * when `spec` starts, in seconds from the Instance's start, its own delay included.
+ */
 function walk(
   spec: ChildSpec,
   seed: number,
   index: number,
+  start: number,
   placements: readonly Placement[],
   out: { elements: ResolvedElement[]; emitters: ResolvedEmitter[] },
 ): number {
-  // Each property draws from its own Seed, derived from its name, so adding a property to a Spec
-  // leaves the values of the others unchanged.
-  const numbers = (name: string, property: NumericProperty<string>, units: Units) => {
-    const drawn = resolveNumeric(property, derive(seed, keyOf(name)), index);
-    const convert = (value: Drawn) =>
-      // Validated: every unit here fits.
-      typeof value === 'number' ? value : (toNumber(value, units) as number);
-    return typeof drawn === 'object' ? drawn.map(convert) : convert(drawn);
-  };
+  const numbers = (name: string, property: NumericProperty<string>, units: Units) =>
+    resolveNumbers(name, property, seed, index, units);
   const ease = easings(resolveValue(spec.easing ?? 'linear', index));
   const numeric = (name: string, property: NumericProperty<string>, units: Units) =>
     withEase(numbers(name, property, units), ease(name));
@@ -107,6 +140,7 @@ function walk(
     const duration = numbers('duration', spec.duration ?? DEFAULT_DURATION, TIME) as number;
     out.elements.push({
       kind: spec.kind,
+      start,
       duration,
       radius: numeric('radius', spec.radius ?? DEFAULT_RADIUS, LENGTH),
       angle: numeric('angle', spec.angle ?? 0, ANGLE),
@@ -117,7 +151,7 @@ function walk(
       stroke: color('stroke', spec.stroke ?? DEFAULT_STROKE),
       placements,
     });
-    return duration;
+    return start + duration;
   }
   const emitter: ResolvedEmitter = {
     radius: numeric('radius', spec.radius ?? DEFAULT_BURST_RADIUS, LENGTH),
@@ -125,20 +159,55 @@ function walk(
   };
   const emitterIndex = out.emitters.push(emitter) - 1;
   const count = spec.count ?? DEFAULT_COUNT;
+  const offset = staggerOffsets(spec, seed, index, count);
+  let end = start;
   for (let index = 0; index < count; index++) {
+    // Each Child's Seed comes from this one and its index, so raising `count` leaves the Seeds of
+    // the existing Children unchanged.
+    const childSeed = derive(seed, index);
+    const childStart = start + offset(index) + delayOf(spec.children, childSeed, index);
     // Clockwise from 12 o'clock in a y-down space.
     const angle = (2 * Math.PI * index) / count;
     const placement: Placement = {
       emitter: emitterIndex,
+      start: childStart,
       dx: Math.sin(angle),
       dy: -Math.cos(angle),
     };
-    // Each Child's Seed comes from this one and its index, so raising `count` leaves the Seeds of
-    // the existing Children unchanged.
-    const end = walk(spec.children, derive(seed, index), index, [...placements, placement], out);
-    emitter.duration = Math.max(emitter.duration, end);
+    const childEnd = walk(
+      spec.children,
+      childSeed,
+      index,
+      childStart,
+      [...placements, placement],
+      out,
+    );
+    emitter.duration = Math.max(emitter.duration, childEnd - childStart);
+    end = Math.max(end, childEnd);
   }
-  return emitter.duration;
+  return end;
+}
+
+/**
+ * When each of the `count` Children of `spec`, the Burst at `index` with Seed `seed`, starts after
+ * that Burst, by Child index, in seconds.
+ */
+function staggerOffsets(
+  spec: BurstSpec,
+  seed: number,
+  index: number,
+  count: number,
+): (child: number) => number {
+  const stagger = spec.stagger ?? 0;
+  const eased = typeof stagger === 'object' && 'each' in stagger;
+  const time = eased ? stagger.each : stagger;
+  // A NumericValue holds no Keyframes, so it resolves to a number.
+  const each = resolveNumbers('stagger', time, seed, index, TIME) as number;
+  if (!eased || stagger.easing === undefined || count < 2) return (child) => each * child;
+  // Validated: the Curve converts.
+  const ease = toEase(stagger.easing) as Ease;
+  const span = each * (count - 1);
+  return (child) => span * Math.max(0, ease(child / (count - 1)));
 }
 
 /**

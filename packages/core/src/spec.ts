@@ -55,6 +55,11 @@ export type ShapeKind = keyof ShapeParams;
 interface ShapeCommon {
   /** Time from the first frame to the last. */
   duration?: Distributable<NumericValue<TimeUnit>>;
+  /**
+   * Time to wait before the first frame, held until then. Reach for it to offset one Child, or a
+   * few with `each()`; use a Burst's `stagger` to offset all of them in turn.
+   */
+  delay?: Distributable<NumericValue<TimeUnit>>;
   /** Clockwise. */
   angle?: NumericProperty<AngleUnit>;
   scale?: NumericProperty;
@@ -75,7 +80,7 @@ export type ShapeSpec<K extends ShapeKind = ShapeKind> = {
 /** The animated properties of a Shape of kind `K`: what its `easing` map is keyed by. */
 type ShapeProperty<K extends ShapeKind> = Exclude<
   keyof (ShapeParams[K] & ShapeCommon),
-  'duration'
+  'duration' | 'delay'
 > &
   string;
 
@@ -87,6 +92,15 @@ export interface BurstSpec {
   kind: 'burst';
   /** How many Children to spawn. */
   count?: number;
+  /**
+   * Time between one Child's start and the next, in order clockwise from 12 o'clock. Each Child is
+   * thrown from the Origin when it starts. Reach for it to make a burst ripple out instead of pop.
+   * With an `easing`, the starts keep the same span, `each` × (`count` − 1), but spread along the
+   * curve, so a burst can land unevenly on purpose. A start the curve puts before 0 is held at 0.
+   */
+  stagger?: NumericValue<TimeUnit> | { each: NumericValue<TimeUnit>; easing?: Curve };
+  /** Time to wait before the Burst starts: before any Child starts, and before it throws them. */
+  delay?: Distributable<NumericValue<TimeUnit>>;
   /** Distance from the Origin to each Child. Animates over the Burst's duration. */
   radius?: NumericProperty<LengthUnit>;
   /** How the Burst's own `radius` moves. Its Children take their own `easing`. */

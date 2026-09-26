@@ -70,17 +70,23 @@ function numberIn(units: Units): Check {
 
 const numeric = (units: Units) => distributable(keyframes(numberIn(units)));
 
-const duration = distributable((value, path) => {
-  if (Array.isArray(value)) fail(path, value, 'A duration is one value, not Keyframes.');
-  numberIn(TIME)(value, path);
-  const lowest =
-    typeof value === 'number'
-      ? value
-      : typeof value === 'string'
-        ? (toNumber(value, TIME) as number)
-        : Math.min((value as { min: number }).min, (value as { max: number }).max);
-  if (lowest < 0) fail(path, value, 'A duration cannot be negative.');
-});
+/** A length of time, 0 or more, called `what` in error messages. */
+function time(what: string): Check {
+  return (value, path) => {
+    if (Array.isArray(value)) fail(path, value, `A ${what} is one value, not Keyframes.`);
+    numberIn(TIME)(value, path);
+    const lowest =
+      typeof value === 'number'
+        ? value
+        : typeof value === 'string'
+          ? (toNumber(value, TIME) as number)
+          : Math.min((value as { min: number }).min, (value as { max: number }).max);
+    if (lowest < 0) fail(path, value, `A ${what} cannot be negative.`);
+  };
+}
+
+const duration = distributable(time('duration'));
+const delay = distributable(time('delay'));
 
 // Colors a Renderer can paint but core cannot interpolate: fine as a constant, not as a Keyframe.
 const PAINT_ONLY = /^(none|currentcolor|[a-z-]+\(.*\))$/i;
@@ -133,6 +139,23 @@ function easing(properties: readonly string[]): Check {
   });
 }
 
+const staggerTime = time('stagger');
+
+/** A `stagger`: a time, or `each` as a time with an optional `easing` Curve. */
+const stagger: Check = (value, path) => {
+  if (!isPlainObject(value) || '__motly' in value) return staggerTime(value, path);
+  for (const name of Object.keys(value)) {
+    if (name !== 'each' && name !== 'easing') {
+      throw new Error(`motly: ${path}.${name} is not a field of a stagger. Use each and easing.`);
+    }
+  }
+  if (value.each === undefined) {
+    throw new Error(`motly: ${path}.each is missing. A stagger needs the time between starts.`);
+  }
+  staggerTime(value.each, `${path}.each`);
+  if (value.easing !== undefined) curve(value.easing, `${path}.easing`);
+};
+
 const count: Check = (value, path) => {
   if (!Number.isInteger(value) || (value as number) < 0) {
     fail(path, value, 'Use a whole number, 0 or more.');
@@ -143,6 +166,7 @@ const count: Check = (value, path) => {
 const FIELDS: Readonly<Record<string, Readonly<Record<string, Check>>>> = {
   circle: {
     duration,
+    delay,
     radius: numeric(LENGTH),
     angle: numeric(ANGLE),
     scale: numeric(UNITLESS),
@@ -154,6 +178,8 @@ const FIELDS: Readonly<Record<string, Readonly<Record<string, Check>>>> = {
   },
   burst: {
     count,
+    delay,
+    stagger,
     radius: numeric(LENGTH),
     easing: easing(['radius']),
     children: (value, path) => validate(value, path),

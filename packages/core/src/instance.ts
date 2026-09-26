@@ -48,7 +48,23 @@ function freshSeed(): number {
 
 /** How far through `duration` seconds the Playhead `t` is, held at 0 before and 1 after. */
 function progressAt(t: number, duration: number): number {
-  return duration > 0 ? clamp(t / duration, 0, 1) : 1;
+  if (duration > 0) return clamp(t / duration, 0, 1);
+  return t < 0 ? 0 : 1;
+}
+
+/**
+ * Write `element`'s own properties at `progress` into its pooled `record`. A function of its own
+ * on purpose: inlined in `sample()`'s loop, one more field read there cost 30% a frame on 5,000
+ * Elements, as the loop grew past what V8 would optimize.
+ */
+function paint(record: CircleRecord, element: ResolvedElement, progress: number): void {
+  record.radius = numberAt(element.radius, progress);
+  record.angle = numberAt(element.angle, progress);
+  record.scale = numberAt(element.scale, progress);
+  record.fill = colorAt(element.fill, progress);
+  record.stroke = colorAt(element.stroke, progress);
+  record.strokeWidth = numberAt(element.strokeWidth, progress);
+  record.opacity = numberAt(element.opacity, progress);
 }
 
 function createRecord(): CircleRecord {
@@ -80,13 +96,16 @@ export class SpecInstance implements Instance {
   #destroyed = false;
   // The pool: one record per Element, allocated here and reused by every sample.
   readonly #records: CircleRecord[];
-  // Each Emitter's radius at the Playhead being sampled, reused by every sample.
+  // Each Emitter's radius at the Playhead being sampled, for the Child start it was last worked out
+  // for. Children that start together share one evaluation. Reused by every sample.
   readonly #distances: Float64Array;
+  readonly #distanceStarts: Float64Array;
 
   constructor(spec: ChildSpec, binding: InstanceBinding, driver: Driver, onDestroy?: () => void) {
     this.#resolved = resolve(spec, binding.seed ?? freshSeed());
     this.#records = this.#resolved.elements.map(createRecord);
     this.#distances = new Float64Array(this.#resolved.emitters.length);
+    this.#distanceStarts = new Float64Array(this.#resolved.emitters.length);
     this.#onDestroy = onDestroy;
     this.#origin = binding.origin;
     this.#renderer = binding.renderer;
@@ -132,32 +151,28 @@ export class SpecInstance implements Instance {
     const { elements, emitters } = this.#resolved;
     const records = this.#records;
     const distances = this.#distances;
+    const distanceStarts = this.#distanceStarts.fill(Number.NaN);
     // Indexed loops: this runs every frame for every Element, and must not allocate.
-    for (let i = 0; i < emitters.length; i++) {
-      const emitter = emitters[i] as ResolvedEmitter;
-      distances[i] = numberAt(emitter.radius, progressAt(t, emitter.duration));
-    }
     for (let i = 0; i < elements.length; i++) {
       const element = elements[i] as ResolvedElement;
       const record = records[i] as CircleRecord;
       let x = this.#origin.x;
       let y = this.#origin.y;
       for (let p = 0; p < element.placements.length; p++) {
-        const { emitter, dx, dy } = element.placements[p] as Placement;
+        const { emitter, start, dx, dy } = element.placements[p] as Placement;
+        // Elements come in tree order, so the Children of one Child share this in a row.
+        if (distanceStarts[emitter] !== start) {
+          const { radius, duration } = emitters[emitter] as ResolvedEmitter;
+          distances[emitter] = numberAt(radius, progressAt(t - start, duration));
+          distanceStarts[emitter] = start;
+        }
         const distance = distances[emitter] as number;
         x += dx * distance;
         y += dy * distance;
       }
-      const progress = progressAt(t, element.duration);
-      record.radius = numberAt(element.radius, progress);
       record.x = x;
       record.y = y;
-      record.angle = numberAt(element.angle, progress);
-      record.scale = numberAt(element.scale, progress);
-      record.fill = colorAt(element.fill, progress);
-      record.stroke = colorAt(element.stroke, progress);
-      record.strokeWidth = numberAt(element.strokeWidth, progress);
-      record.opacity = numberAt(element.opacity, progress);
+      paint(record, element, progressAt(t - element.start, element.duration));
     }
     return records;
   }
