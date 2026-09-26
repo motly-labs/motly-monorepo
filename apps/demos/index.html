@@ -8,15 +8,16 @@
         "imports": {
           "@motly/core": "./node_modules/@motly/core/dist/index.mjs",
           "@motly/core/svg": "./node_modules/@motly/core/dist/svg/index.mjs",
-          "@motly/core/canvas": "./node_modules/@motly/core/dist/canvas/index.mjs"
+          "@motly/core/canvas": "./node_modules/@motly/core/dist/canvas/index.mjs",
+          "@motly/core/auto": "./node_modules/@motly/core/dist/auto/index.mjs"
         }
       }
     </script>
     <style>
       body { font-family: system-ui, sans-serif; margin: 2rem; }
-      svg, canvas { border: 1px solid #ddd; display: block; margin-bottom: 1rem; }
+      .stage > * { border: 1px solid #ddd; display: block; margin-bottom: 1rem; }
       .stage { margin-bottom: 0.5rem; }
-      #responsive-stage canvas, #responsive-stage svg { width: 100%; height: 200px; }
+      #responsive-stage > * { width: 100%; height: 200px; }
     </style>
   </head>
   <body>
@@ -25,6 +26,7 @@
       <legend>Renderer</legend>
       <label><input type="radio" name="renderer" value="svg" checked /> SVGRenderer</label>
       <label><input type="radio" name="renderer" value="canvas" /> CanvasRenderer</label>
+      <label><input type="radio" name="renderer" value="auto" /> AutoRenderer</label>
     </fieldset>
 
     <h2>Shape</h2>
@@ -44,6 +46,11 @@
     <div class="stage" id="mixed-stage" data-width="400" data-height="300" data-label="Burst mixing kinds"></div>
     <button type="button" data-play="mixed">Play</button>
 
+    <h2>Large Burst, 400 Elements</h2>
+    <p>Past AutoRenderer's threshold: it paints this one on a canvas.</p>
+    <div class="stage" id="large-stage" data-width="400" data-height="300" data-label="Large burst"></div>
+    <button type="button" data-play="large">Play</button>
+
     <h2>Responsive, sized in CSS</h2>
     <p>Resize the window: the canvas follows its width and stays sharp.</p>
     <div class="stage" id="responsive-stage" data-label="Responsive burst"></div>
@@ -51,6 +58,7 @@
 
     <script type="module">
       import { Burst, each, rand, Shape } from '@motly/core';
+      import { AutoRenderer } from '@motly/core/auto';
       import { CanvasRenderer } from '@motly/core/canvas';
       import { SVGRenderer } from '@motly/core/svg';
 
@@ -154,6 +162,27 @@
             return [burst];
           },
         },
+        large: {
+          stage: 'large-stage',
+          play(renderer) {
+            const burst = new Burst(
+              {
+                kind: 'burst',
+                count: 400,
+                radius: [0, 130],
+                children: {
+                  kind: 'circle',
+                  radius: [rand(2, 5), 0],
+                  fill: each(['deeppink', 'cyan', 'gold', 'mediumpurple']),
+                  duration: rand(0.8, 1.4),
+                },
+              },
+              { renderer, origin: { x: 200, y: 150 } },
+            );
+            burst.play();
+            return [burst];
+          },
+        },
         responsive: {
           stage: 'responsive-stage',
           play(renderer, element) {
@@ -192,9 +221,15 @@
           // The Renderer measures the canvas when it is built, so it must be sized first.
           return { element, build: () => new CanvasRenderer(element) };
         },
+        auto() {
+          // Instances of 50 Elements or more get a canvas, smaller ones SVG; the layers cover the div.
+          const element = document.createElement('div');
+          element.className = 'auto';
+          return { element, renderer: new AutoRenderer(element) };
+        },
       };
 
-      /** Put a fresh svg or canvas on every stage, with a Renderer for it. */
+      /** Put a fresh svg, canvas or AutoRenderer div on every stage, with a Renderer for it. */
       function mount(kind) {
         for (const [name, demo] of Object.entries(demos)) {
           stop(name);
@@ -202,9 +237,12 @@
           const { element, renderer, build } = mounts[kind]();
           element.setAttribute('role', 'img');
           element.setAttribute('aria-label', stage.dataset.label);
-          if (stage.dataset.width !== undefined) {
-            element.setAttribute('width', stage.dataset.width);
-            element.setAttribute('height', stage.dataset.height);
+          const { width, height } = stage.dataset;
+          if (width !== undefined && kind === 'auto') {
+            Object.assign(element.style, { width: `${width}px`, height: `${height}px` });
+          } else if (width !== undefined) {
+            element.setAttribute('width', width);
+            element.setAttribute('height', height);
           }
           stage.replaceChildren(element);
           renderers.set(name, renderer ?? build());

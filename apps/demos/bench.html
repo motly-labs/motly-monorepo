@@ -16,14 +16,17 @@
       body { font-family: system-ui, sans-serif; margin: 2rem; }
       #stage { width: 600px; height: 600px; border: 1px solid #ddd; }
       #stage > * { width: 600px; height: 600px; display: block; }
+      #run { font-size: 1.5rem; padding: 0.5rem 2rem; margin-bottom: 1rem; }
     </style>
   </head>
   <body>
     <h1>SVG / Canvas frame cost</h1>
     <p>
-      Keep this tab in front while it runs: a hidden tab gets no animation frames. Each row is the
-      median main-thread cost of one frame, from the start of the frame callback that samples and
-      draws a Burst, through the browser's style, layout and paint, to the first task after it.
+      Keep this tab in front while it runs: a hidden tab gets no animation frames. For each
+      Renderer, a row gives the median and 95th percentile main-thread cost of one frame, from the
+      start of the frame callback that samples and draws a Burst, through the browser's style,
+      layout and paint, to the first task after it; and how many frames missed 60 fps, counted
+      from the gaps between frame callbacks, which also catches raster work off the main thread.
     </p>
     <button id="run" type="button">Run</button>
     <div id="stage"></div>
@@ -60,7 +63,14 @@
         channel.port2.postMessage(null);
       });
 
-      /** Median cost of one frame drawing `count` Elements with `kind` of Renderer, in ms. */
+      /** A quantile of sorted `values`. */
+      const quantile = (values, q) => values[Math.min(values.length - 1, Math.floor(values.length * q))];
+
+      /**
+       * Frame cost drawing `count` Elements with `kind` of Renderer: median and 95th percentile in
+       * ms, and frames that missed 60 fps, where the gap between frame callbacks passed 25 ms, half
+       * a frame over the 16.7 ms budget. Whatever the display's own refresh rate.
+       */
       async function measure(kind, count) {
         const element =
           kind === 'svg'
@@ -71,9 +81,11 @@
         const scope = createScope();
         const burst = scope.burst(spec(count), { renderer, origin: { x: 300, y: 300 }, seed: 1 });
         const costs = [];
+        const stamps = [];
         for (let frame = 0; frame < WARMUP + FRAMES; frame++) {
           const cost = await new Promise((resolve) => {
-            requestAnimationFrame(() => {
+            requestAnimationFrame((stamp) => {
+              if (frame >= WARMUP) stamps.push(stamp);
               const start = performance.now();
               // Sweep back and forth through the middle, where every property is moving.
               burst.setProgress(0.2 + 0.6 * Math.abs(((frame / 60) % 2) - 1));
@@ -85,27 +97,41 @@
         }
         scope.destroy();
         costs.sort((a, b) => a - b);
-        return costs[Math.floor(costs.length / 2)];
+        const gaps = stamps.slice(1).map((stamp, index) => stamp - stamps[index]);
+        return {
+          median: quantile(costs, 0.5),
+          p95: quantile(costs, 0.95),
+          missed: gaps.filter((gap) => gap > 25).length,
+          refresh: quantile(gaps.sort((a, b) => a - b), 0.5),
+        };
       }
 
+      /** One Renderer's column of a row. */
+      const cell = (kind, result) =>
+        result === undefined
+          ? `${kind}      -                     `
+          : `${kind} ${result.median.toFixed(2).padStart(5)} / ${result.p95.toFixed(2).padStart(5)} ms` +
+            ` ${String(result.missed).padStart(3)} missed`;
+
       async function run() {
-        const counts = [25, 50, 100, 150, 200, 300, 400, 500, 750, 1000, 2000, 5000];
+        const counts = [5, 10, 15, 25, 50, 100, 150, 200, 300, 400, 500, 750, 1000, 2000, 5000];
         const rows = [];
         out.textContent = 'running…';
         for (const count of counts) {
           const svg = count <= 2000 ? await measure('svg', count) : undefined;
           const canvas = await measure('canvas', count);
           rows.push({ count, svg, canvas });
-          out.textContent = rows
-            .map(
-              (row) =>
-                `${String(row.count).padStart(5)}  svg ${row.svg?.toFixed(2).padStart(6) ?? '     -'} ms` +
-                `  canvas ${row.canvas.toFixed(2).padStart(6)} ms`,
-            )
-            .join('\n');
+          out.textContent =
+            `count  median / p95, of ${FRAMES} frames\n` +
+            rows
+              .map((row) => `${String(row.count).padStart(5)}  ${cell('svg', row.svg)}  ${cell('canvas', row.canvas)}`)
+              .join('\n');
         }
         window.benchmark = { userAgent: navigator.userAgent, devicePixelRatio, rows };
-        out.textContent += `\n\ndone · DPR ${devicePixelRatio} · ${navigator.userAgent}`;
+        const refresh = rows[0].canvas.refresh.toFixed(1);
+        out.textContent +=
+          `\n\ndone · refresh ${refresh} ms · DPR ${devicePixelRatio}` +
+          ` · isolated ${crossOriginIsolated} · ${navigator.userAgent}`;
       }
 
       document.getElementById('run').addEventListener('click', run);

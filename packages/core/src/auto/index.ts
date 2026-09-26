@@ -9,11 +9,11 @@ import type { DrawList, Renderer } from '../index.js';
 import { SVGRenderer } from '../svg/index.js';
 
 /**
- * The Element count from which an Instance is painted on a canvas rather than in SVG. Still
- * ADR-0015's 200-Element placeholder: `apps/demos/bench.html` measures the real crossover, which
- * replaces it, with the machine recorded in the ADR.
+ * The Element count from which an Instance is painted on a canvas rather than in SVG. Chosen from
+ * `apps/demos/bench.html`'s numbers: below it the two cost the same within noise, so SVG, which can
+ * be inspected, keeps the small effects. ADR-0015 records the machine, the numbers and the reasons.
  */
-export const CANVAS_FROM = 200;
+const CANVAS_FROM = 50;
 
 /**
  * Paints each Instance with SVGRenderer or CanvasRenderer, whichever suits its Element count, into
@@ -22,10 +22,12 @@ export const CANVAS_FROM = 200;
  * changes, so the choice made on its first draw holds for its whole life; nothing switches while
  * playing.
  *
- * The container must have a size of its own. The layers fill it, one `<svg>` over one `<canvas>`,
- * each created the first time an Instance needs it, and share its coordinate space: Origins are CSS
- * pixels from its top left corner. A container with `position: static` is made `relative`, so the
- * layers can sit on it.
+ * The container must have a size of its own and be in the document by the first draw. The layers
+ * cover it, one `<svg>` over one `<canvas>`, each created the first time an Instance needs it, and
+ * share its coordinate space: Origins are CSS pixels from its top left corner. Both clip at its
+ * edges and let pointer events through. A container with `position: static` is made `relative`, so
+ * the layers can sit on it. The layers stay when their Instances are released, empty, and go with
+ * the container.
  */
 export class AutoRenderer implements Renderer {
   readonly #container: HTMLElement;
@@ -35,10 +37,6 @@ export class AutoRenderer implements Renderer {
 
   constructor(container: HTMLElement) {
     this.#container = container;
-    const view = container.ownerDocument.defaultView;
-    if (view?.getComputedStyle(container).position === 'static') {
-      container.style.position = 'relative';
-    }
   }
 
   draw(owner: object, list: DrawList): void {
@@ -61,8 +59,8 @@ export class AutoRenderer implements Renderer {
         'http://www.w3.org/2000/svg',
         'svg',
       );
-      fill(svg);
-      svg.style.overflow = 'visible';
+      this.#position();
+      cover(svg);
       this.#container.append(svg);
       this.#svg = new SVGRenderer(svg);
     }
@@ -72,22 +70,35 @@ export class AutoRenderer implements Renderer {
   #canvasLayer(): CanvasRenderer {
     if (this.#canvas === undefined) {
       const canvas = this.#container.ownerDocument.createElement('canvas');
-      fill(canvas);
+      this.#position();
+      cover(canvas);
       // Under the SVG layer, whichever came first.
       this.#container.prepend(canvas);
       this.#canvas = new CanvasRenderer(canvas);
     }
     return this.#canvas;
   }
+
+  /**
+   * Make a `static` container `relative`, so the layers can sit on it. Read when the first layer
+   * is made, not when the Renderer is built: a container not yet in the document has no style.
+   */
+  #position(): void {
+    const view = this.#container.ownerDocument.defaultView;
+    if (view?.getComputedStyle(this.#container).position === 'static') {
+      this.#container.style.position = 'relative';
+    }
+  }
 }
 
-/** Make `layer` cover its container exactly. */
-function fill(layer: HTMLElement | SVGElement): void {
+/** Make `layer` cover its container exactly, and let pointer events through to what is under it. */
+function cover(layer: HTMLElement | SVGElement): void {
   Object.assign(layer.style, {
     position: 'absolute',
     top: '0',
     left: '0',
     width: '100%',
     height: '100%',
+    pointerEvents: 'none',
   });
 }
