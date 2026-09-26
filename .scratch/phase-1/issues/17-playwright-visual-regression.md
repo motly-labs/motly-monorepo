@@ -20,3 +20,4 @@ Blocked by: 16
   1. Fireworks paints a quarter of its circles white on the white stage, so moving them would pass. Change that color, then re-render the baselines.
   2. The geometry mutation check: grow every radius by 2%, grow a star's inner radius by 10%, lengthen a line by 10%, and add 0.25 px to a circle. Record the differing pixels for each; every one must fail the suite.
   3. Five consecutive green CI runs, once this is pushed.
+  4. `test:visual:docker` runs the image's own Node. Check that it is 24; CI already sets 24 with `setup-node`.
