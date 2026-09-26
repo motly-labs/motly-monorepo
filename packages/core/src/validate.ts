@@ -1,5 +1,5 @@
 import { parseColor } from './color.js';
-import { toEase } from './easing.js';
+import { pathProblem, toEase } from './easing.js';
 import { ANGLE, LENGTH, TIME, toNumber, UNITLESS, type Units } from './units.js';
 
 /** Throws if `value`, found at `path` in the Spec, is not what that place takes. */
@@ -106,12 +106,17 @@ const color = distributable(
 );
 
 const curve: Check = (value, path) => {
+  if (typeof value === 'string' && value.startsWith('M')) {
+    const problem = pathProblem(value);
+    if (problem !== undefined) fail(path, value, problem);
+    return;
+  }
   if (toEase(value) !== undefined) return;
   fail(
     path,
     value,
-    'Use a CSS easing keyword, four cubic-bezier numbers with both x in 0–1, or an imported ' +
-      'named curve.',
+    'Use a CSS easing keyword, four cubic-bezier numbers with both x in 0–1, an SVG path ' +
+      'starting with M, or an imported named curve.',
   );
 };
 

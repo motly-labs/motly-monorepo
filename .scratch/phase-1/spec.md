@@ -98,7 +98,9 @@ The phase is done when `createScope().burst({ … }).play()` in a plain HTML fil
 
 - In a Draw record, `fill` and `stroke` are CSS color strings: a constant exactly as the Spec wrote it, or `rgba(r, g, b, a)` while animating. Documented on `Style`; ticket 11's CanvasRenderer consumes it. Decided in ticket 04.
 
-- A curve in a Spec is data: one of the five CSS easing keywords, or a cubic-bezier as four numbers. Named curves (`quadOut`, `backOut`, …) are exported constants holding their cubic-bezier, so an unused one tree-shakes out and a stored Spec serializes to numbers. There is no string name table. `easing` on a Shape or Burst takes one curve or a map by property name with `default`. Decided with the user in ticket 05.
+- A curve in a Spec is data: one of the five CSS easing keywords, or a cubic-bezier as four numbers. Named curves (`quadOut`, `backOut`, …) are exported constants holding their cubic-bezier (or, since ticket 06, a path string for elastic and bounce), so an unused one tree-shakes out and a stored Spec serializes to numbers. There is no string name table. `easing` on a Shape or Burst takes one curve or a map by property name with `default`. Decided with the user in ticket 05.
+
+- A curve can also be an SVG path string in mojs's 100×100 box, y down (`'M0,100 C…100,0'`). It must start at x 0 and end at x 100, never turn back in x, and use only M, L, H, V, C, S, Q and T (absolute or relative): a curve drawn in the wrong box fails at creation rather than silently flattening. y is free, so a path can overshoot or end where it started. Elastic and bounce ship as path-string constants. Decided with the user in ticket 06.
 
 - A Spec from JSON is validated in full when the Instance is created, so it gets the same guarantees as one the compiler checked. Validation is strict: an unknown field (`raduis`) is an error, not ignored. The cost is forward compatibility: a Spec saved with a field from a newer version fails on an older one. Decided with the user after ticket 05.
 

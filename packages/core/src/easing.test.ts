@@ -2,9 +2,15 @@ import { describe, expect, it } from 'vitest';
 import {
   backInOut,
   backOut,
+  bounceIn,
+  bounceInOut,
+  bounceOut,
   type Curve,
   createScope,
   each,
+  elasticIn,
+  elasticInOut,
+  elasticOut,
   expoIn,
   expoInOut,
   type InstanceBinding,
@@ -144,6 +150,141 @@ describe('a curve', () => {
   });
 });
 
+describe('an SVG path curve', () => {
+  // A path in mojs's 100×100 box: x is progress, y runs down, so M0,100 is (0, 0).
+  const CHROME_EASE = CHROME.find(([curve]) => curve === 'ease')?.[1] ?? [];
+
+  it('matches CSS cubic-bezier() when it is one cubic segment', () => {
+    // ease is cubic-bezier(0.25, 0.1, 0.25, 1).
+    const actual = eased('M0,100 C25,90 25,0 100,0', XS);
+    for (const [i, value] of CHROME_EASE.entries()) expect(actual[i]).toBeCloseTo(value, 6);
+  });
+
+  it('takes quadratic segments: Q50,100 is x²', () => {
+    const actual = eased('M0,100 Q50,100 100,0', XS);
+    for (const [i, x] of XS.entries()) expect(actual[i]).toBeCloseTo(x ** 2, 9);
+  });
+
+  it('reflects the last control point for T: two parabolas make the exact quad in-out', () => {
+    const inOutQuad = (x: number) => (x < 0.5 ? 2 * x ** 2 : 1 - 2 * (1 - x) ** 2);
+    const actual = eased('M0,100 Q25,100 50,50 T100,0', XS);
+    for (const [i, x] of XS.entries()) expect(actual[i]).toBeCloseTo(inOutQuad(x), 9);
+  });
+
+  it('reflects the last control point for S, or uses the current point after a line', () => {
+    expect(eased('M0,100 C10,100 40,90 50,50 S90,0 100,0', XS)).toEqual(
+      eased('M0,100 C10,100 40,90 50,50 C60,10 90,0 100,0', XS),
+    );
+    expect(eased('M0,100 L50,50 S90,0 100,0', XS)).toEqual(
+      eased('M0,100 L50,50 C50,50 90,0 100,0', XS),
+    );
+    expect(eased('M0,100 L50,50 T100,0', XS)).toEqual(eased('M0,100 L50,50 Q50,50 100,0', XS));
+  });
+
+  it('reads relative commands from the current point', () => {
+    expect(eased('M0,100 q25,0 50,-50 t50,-50', XS)).toEqual(
+      eased('M0,100 Q25,100 50,50 T100,0', XS),
+    );
+    expect(eased('M0,100c25-10 25-100 100-100', XS)).toEqual(eased('M0,100 C25,90 25,0 100,0', XS));
+    // Summed in floating point, these end at x 99.99999999999999.
+    expect(eased('M0,100 l1.1,-10 l65.1,-10 l33.8,-80', [0, 1])).toEqual([0, 1]);
+  });
+
+  it('draws lines, and pairs after M are lines too', () => {
+    // Up to full travel at the middle and back again.
+    const there = [0.2, 0.5, 1, 0.5, 0.2];
+
+    expect(eased('M0,100 L50,0 L100,100', XS).map((y) => y.toFixed(12))).toEqual(
+      there.map((y) => y.toFixed(12)),
+    );
+    expect(eased('M0,100 50,0 100,100', XS)).toEqual(eased('M0,100 L50,0 L100,100', XS));
+    expect(eased('M 0 100 l 50 -100 l 50 100', XS)).toEqual(eased('M0,100 L50,0 L100,100', XS));
+  });
+
+  it('steps where the path is vertical, landing on the far side', () => {
+    expect(eased('M0,100 H50 V0 H100', [0.25, 0.4999, 0.5, 0.75])).toEqual([0, 0, 1, 1]);
+    expect(eased('M0,100 h50 v-100 h50', [0.25, 0.5])).toEqual([0, 1]);
+  });
+
+  it('goes anywhere a curve goes: a map entry, each(), a Burst, JSON', () => {
+    const square = 'M0,100 Q50,100 100,0';
+    const spec = {
+      kind: 'burst',
+      count: 2,
+      radius: [0, 100],
+      easing: square,
+      children: {
+        kind: 'circle',
+        radius: [0, 1],
+        opacity: [0, 1],
+        easing: each([{ default: 'linear', opacity: square }, square]),
+      },
+    } as const;
+    const records = createScope()
+      .burst(JSON.parse(JSON.stringify(spec)), binding)
+      .sample(0.5);
+
+    const [a, b] = records;
+    expect(a?.radius).toBe(0.5);
+    for (const value of [a?.opacity, b?.radius, b?.opacity]) expect(value).toBeCloseTo(0.25, 9);
+    expect(records[0]?.y).toBeCloseTo(-25, 9);
+  });
+});
+
+describe('elastic and bounce', () => {
+  // Robert Penner's equations, as easings.net writes them.
+  const bounce = (x: number) => {
+    const n = 7.5625;
+    const d = 2.75;
+    if (x < 1 / d) return n * x * x;
+    if (x < 2 / d) return n * (x - 1.5 / d) ** 2 + 0.75;
+    if (x < 2.5 / d) return n * (x - 2.25 / d) ** 2 + 0.9375;
+    return n * (x - 2.625 / d) ** 2 + 0.984375;
+  };
+  const c4 = (2 * Math.PI) / 3;
+  const c5 = (2 * Math.PI) / 4.5;
+  const PENNER = [
+    ['bounceOut', 1e-5, bounceOut, bounce],
+    ['bounceIn', 1e-5, bounceIn, (x: number) => 1 - bounce(1 - x)],
+    [
+      'bounceInOut',
+      1e-5,
+      bounceInOut,
+      (x: number) => (x < 0.5 ? (1 - bounce(1 - 2 * x)) / 2 : (1 + bounce(2 * x - 1)) / 2),
+    ],
+    [
+      'elasticOut',
+      1e-3,
+      elasticOut,
+      (x: number) => 2 ** (-10 * x) * Math.sin((10 * x - 0.75) * c4) + 1,
+    ],
+    [
+      'elasticIn',
+      1e-3,
+      elasticIn,
+      (x: number) => -(2 ** (10 * x - 10)) * Math.sin((10 * x - 10.75) * c4),
+    ],
+    [
+      'elasticInOut',
+      1e-3,
+      elasticInOut,
+      (x: number) =>
+        x < 0.5
+          ? -(2 ** (20 * x - 10) * Math.sin((20 * x - 11.125) * c5)) / 2
+          : (2 ** (-20 * x + 10) * Math.sin((20 * x - 11.125) * c5)) / 2 + 1,
+    ],
+  ] as const;
+  const GRID = Array.from({ length: 199 }, (_, i) => (i + 1) / 200);
+
+  it.each(PENNER)('%s matches Penner within %s', (_name, tolerance, curve, exact) => {
+    const actual = eased(curve, GRID);
+    for (const [i, x] of GRID.entries()) {
+      expect(Math.abs((actual[i] as number) - exact(x))).toBeLessThan(tolerance);
+    }
+    expect(eased(curve, [0, 1])).toEqual([0, 1]);
+  });
+});
+
 describe('easing per property', () => {
   it('applies one curve to every property', () => {
     const record = first({ radius: [0, 1], opacity: [0, 1], easing: 'ease-out' }, 0.5);
@@ -229,6 +370,26 @@ describe('a curve in a Spec', () => {
     expect(create({ easing: [0.1, 0.2, 0.3] })).toThrow(/easing/);
     expect(create({ easing: [1.5, 0, 0, 1] })).toThrow(/easing/);
     expect(create({ easing: { opacity: 'nope' } })).toThrow(/easing\.opacity.*'nope'/);
+  });
+
+  it.each([
+    ['C short of numbers', 'M0,100 C25,90 25', /'C' takes 6 numbers/],
+    ['an arc', 'M0,100 A50,50 0 0 1 100,0', /arcs \(A\)/],
+    ['closed', 'M0,100 L50,0 Z', /cannot close/],
+    ['broken by a second M', 'M0,100 L50,50 M50,50 L100,0', /cannot move/],
+    ['not a path', 'M0,100 L100,0 #', /'#'/],
+    ['with an unknown command', 'M0,100 X100,0', /'X' is not a path command/],
+    ['with an infinite number', 'M0,100 C1e999,0 0,0 100,0', /'1e999' is not a finite number/],
+    ['only a move', 'M0,100', /draws nothing/],
+    ['starting past x 0', 'M10,100 L100,0', /start at x 0.*10/],
+    ['ending short of x 100', 'M0,100 C25,90 25,0 90,0', /end at x 100.*90/],
+    ['turning back between segments', 'M0,100 L60,0 L40,50 L100,0', /back in x.*\(40, 50\)/],
+    ['turning back inside a segment', 'M0,100 C150,100 -50,0 100,0', /back in x.*\(100, 0\)/],
+  ])('that is a path %s fails when the Instance is created, saying why', (_label, d, error) => {
+    const create = () => createScope().shape({ kind: 'circle', easing: d as Curve }, binding);
+
+    expect(create).toThrow(/^motly: easing cannot be 'M/);
+    expect(create).toThrow(error);
   });
 
   it('is data to the compiler too', () => {

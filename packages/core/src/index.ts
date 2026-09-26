@@ -9,12 +9,18 @@ export {
   backIn,
   backInOut,
   backOut,
+  bounceIn,
+  bounceInOut,
+  bounceOut,
   circIn,
   circInOut,
   circOut,
   cubicIn,
   cubicInOut,
   cubicOut,
+  elasticIn,
+  elasticInOut,
+  elasticOut,
   expoIn,
   expoInOut,
   expoOut,
@@ -40,7 +46,7 @@ export {
 } from './descriptors.js';
 export type { CircleRecord, DrawList, DrawRecord, Style, Transform } from './draw-list.js';
 export type { Driver, DriverTarget, Playback } from './driver.js';
-export type { CssEasing, CubicBezier, Curve } from './easing.js';
+export type { CssEasing, CubicBezier, Curve, PathCurve } from './easing.js';
 export { Burst, type Instance, type InstanceBinding, type Origin, Shape } from './instance.js';
 export type { Renderer } from './renderer.js';
 export { createScope, type Scope, type ScopeOptions } from './scope.js';
