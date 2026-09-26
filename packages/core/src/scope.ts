@@ -30,7 +30,8 @@ export function createScope(options: ScopeOptions = {}): Scope {
     return instance;
   }
   return {
-    shape: create,
+    // A ShapeSpec<K> is one of ShapeSpec's members; the compiler cannot see it through K.
+    shape: (spec, binding) => create(spec as ShapeSpec, binding),
     burst: create,
     destroy() {
       for (const instance of [...instances]) instance.destroy();

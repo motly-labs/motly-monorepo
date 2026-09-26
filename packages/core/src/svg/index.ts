@@ -3,30 +3,64 @@
  * lives in Renderer entries like this one; the main entry never touches the DOM.
  */
 
+import { type Pen, trace } from '../geometry.js';
 import type { DrawList, DrawRecord, Renderer } from '../index.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
-function create(document: Document, record: DrawRecord): SVGElement {
-  switch (record.kind) {
-    case 'circle':
-      return document.createElementNS(SVG_NS, 'circle');
+/** The side of the box a custom path is drawn in. */
+const PATH_BOX = 100;
+
+/** A Pen writing SVG path data, rounded to a hundredth of a pixel. */
+class PathData implements Pen {
+  d = '';
+  moveTo(x: number, y: number): void {
+    this.d += `M${round(x)} ${round(y)}`;
+  }
+  lineTo(x: number, y: number): void {
+    this.d += `L${round(x)} ${round(y)}`;
+  }
+  closePath(): void {
+    this.d += 'Z';
   }
 }
 
+function round(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+function create(document: Document, record: DrawRecord): SVGElement {
+  if (record.kind === 'circle') return document.createElementNS(SVG_NS, 'circle');
+  const path = document.createElementNS(SVG_NS, 'path');
+  // A custom path's data never changes, so it is set once, here.
+  if (record.kind === 'path') path.setAttribute('d', record.d);
+  return path;
+}
+
 function paint(element: SVGElement, record: DrawRecord): void {
+  let transform = `translate(${record.x} ${record.y}) rotate(${record.angle}) scale(${record.scale})`;
+  let strokeWidth = record.strokeWidth;
   switch (record.kind) {
     case 'circle':
       element.setAttribute('r', String(record.radius));
       break;
+    case 'path': {
+      // Scale the box to 2 × radius, centred, and undo that scale on the stroke.
+      const boxScale = (2 * record.radius) / PATH_BOX;
+      transform += ` scale(${boxScale}) translate(${-PATH_BOX / 2} ${-PATH_BOX / 2})`;
+      strokeWidth = boxScale === 0 ? 0 : strokeWidth / boxScale;
+      break;
+    }
+    default: {
+      const data = new PathData();
+      trace(record, data);
+      element.setAttribute('d', data.d);
+    }
   }
-  element.setAttribute(
-    'transform',
-    `translate(${record.x} ${record.y}) rotate(${record.angle}) scale(${record.scale})`,
-  );
+  element.setAttribute('transform', transform);
   element.setAttribute('fill', record.fill);
   element.setAttribute('stroke', record.stroke);
-  element.setAttribute('stroke-width', String(record.strokeWidth));
+  element.setAttribute('stroke-width', String(strokeWidth));
   element.setAttribute('opacity', String(record.opacity));
 }
 

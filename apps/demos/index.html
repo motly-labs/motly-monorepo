@@ -27,6 +27,14 @@
     <svg id="burst-stage" width="400" height="300" role="img" aria-label="Burst demo"></svg>
     <button id="play-burst" type="button">Play</button>
 
+    <h2>Every Element kind</h2>
+    <svg id="kinds-stage" width="700" height="120" role="img" aria-label="Every Element kind"></svg>
+    <button id="play-kinds" type="button">Play</button>
+
+    <h2>One Burst, mixed kinds</h2>
+    <svg id="mixed-stage" width="400" height="300" role="img" aria-label="Burst mixing kinds"></svg>
+    <button id="play-mixed" type="button">Play</button>
+
     <script type="module">
       import { Burst, each, rand, Shape } from '@motly/core';
       import { SVGRenderer } from '@motly/core/svg';
@@ -87,6 +95,60 @@
 
       document.getElementById('play-burst').addEventListener('click', playBurst);
       playBurst();
+
+      const heart = 'M50,88 C10,60 0,35 20,18 C35,5 50,18 50,28 C50,18 65,5 80,18 C100,35 90,60 50,88 Z';
+      const kinds = [
+        { kind: 'circle' },
+        { kind: 'polygon', points: 6 },
+        { kind: 'star', points: 5, innerRadius: [0.2, 0.5] },
+        { kind: 'cross' },
+        { kind: 'line', strokeWidth: 4 },
+        { kind: 'zigzag', points: 7, amplitude: [0, 10] },
+        { kind: 'path', d: heart, fill: 'crimson' },
+      ];
+      const kindsRenderer = new SVGRenderer(document.getElementById('kinds-stage'));
+      let shapes = [];
+
+      function playKinds() {
+        for (const shape of shapes) shape.destroy();
+        shapes = kinds.map(
+          (spec, index) =>
+            new Shape(
+              { radius: [0, 35], angle: [-90, 0], duration: 0.8, easing: 'ease-out', ...spec },
+              { renderer: kindsRenderer, origin: { x: 50 + index * 100, y: 60 } },
+            ),
+        );
+        for (const shape of shapes) shape.play();
+      }
+
+      document.getElementById('play-kinds').addEventListener('click', playKinds);
+      playKinds();
+
+      const mixedRenderer = new SVGRenderer(document.getElementById('mixed-stage'));
+      let mixed;
+
+      function playMixed() {
+        mixed?.destroy();
+        mixed = new Burst(
+          {
+            kind: 'burst',
+            count: 12,
+            radius: [0, 120],
+            easing: 'ease-out',
+            children: each([
+              { kind: 'star', points: 5, radius: [12, 0], fill: 'gold', angle: [0, 180] },
+              { kind: 'circle', radius: [8, 0], fill: 'cyan' },
+              { kind: 'zigzag', points: 5, radius: [14, 0], stroke: 'deeppink', angle: [0, 90] },
+              { kind: 'polygon', points: 3, radius: [10, 0], fill: 'mediumpurple', angle: [0, -120] },
+            ]),
+          },
+          { renderer: mixedRenderer, origin: { x: 200, y: 150 } },
+        );
+        mixed.play();
+      }
+
+      document.getElementById('play-mixed').addEventListener('click', playMixed);
+      playMixed();
     </script>
   </body>
 </html>

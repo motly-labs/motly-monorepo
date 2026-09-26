@@ -2,7 +2,16 @@ import { parseColor, type Rgba } from './color.js';
 import { type Drawn, resolveNumeric, resolveValue } from './descriptors.js';
 import { type Curve, type Ease, linear, toEase } from './easing.js';
 import { derive, keyOf } from './rng.js';
-import type { BurstSpec, ChildSpec, ColorProperty, LengthUnit, NumericProperty } from './spec.js';
+import type {
+  BurstSpec,
+  ChildSpec,
+  ColorProperty,
+  HeldParameter,
+  LengthUnit,
+  NumericProperty,
+  ShapeKind,
+  ShapeSpec,
+} from './spec.js';
 import { ANGLE, LENGTH, TIME, toNumber, UNITLESS, type Units } from './units.js';
 import { validate } from './validate.js';
 
@@ -10,8 +19,11 @@ const DEFAULT_DURATION = 1;
 const DEFAULT_COUNT = 5;
 const DEFAULT_BURST_RADIUS: NumericProperty<LengthUnit> = [0, 50];
 const DEFAULT_RADIUS = 50;
-const DEFAULT_FILL = 'deeppink';
-const DEFAULT_STROKE = 'none';
+const DEFAULT_COLOR = 'deeppink';
+const DEFAULT_STROKE_WIDTH = 2;
+const DEFAULT_INNER_RADIUS = 0.5;
+// The kinds that enclose nothing, so are stroked rather than filled when the Spec says neither.
+const STROKED: ReadonlySet<ShapeKind> = new Set(['cross', 'line', 'zigzag']);
 const DEFAULT_SWIRL_SIZE = 10;
 const DEFAULT_SWIRL_FREQUENCY = 1;
 const STRAIGHT: readonly ResolvedSwirl[] = [];
@@ -74,7 +86,7 @@ export interface ResolvedSwirl {
  * Instance's Origin, outermost first.
  */
 export interface ResolvedElement {
-  readonly kind: 'circle';
+  readonly kind: ShapeKind;
   /** Seconds from the Instance's start to this Element's first frame. */
   readonly start: number;
   readonly duration: number;
@@ -86,6 +98,10 @@ export interface ResolvedElement {
   readonly fill: ResolvedColor;
   readonly stroke: ResolvedColor;
   readonly placements: readonly Placement[];
+  /** The kind's own parameters that hold still, by record field: set on its record once. */
+  readonly held: { readonly [P in HeldParameter]?: number | string };
+  /** The kind's own animated parameters other than `radius`, as record field and value. */
+  readonly animated: readonly (readonly [string, ResolvedNumeric])[];
 }
 
 /** A Spec flattened into its Elements. Built once per Instance, never per frame. */
@@ -180,18 +196,27 @@ function walk(
   if (spec.kind !== 'burst') {
     // A Distributable<NumericValue> holds no Keyframes, so duration resolves to a number.
     const duration = numbers('duration', spec.duration ?? DEFAULT_DURATION, TIME) as number;
+    const radius = numeric('radius', spec.radius ?? DEFAULT_RADIUS, LENGTH);
+    const stroked = STROKED.has(spec.kind);
+    const { held, animated } = kindParameters(spec, index, radius, numeric, ease);
     out.elements.push({
       kind: spec.kind,
       start,
       duration,
-      radius: numeric('radius', spec.radius ?? DEFAULT_RADIUS, LENGTH),
+      radius,
       angle: numeric('angle', spec.angle ?? 0, ANGLE),
       scale: numeric('scale', spec.scale ?? 1, UNITLESS),
       opacity: numeric('opacity', spec.opacity ?? 1, UNITLESS),
-      strokeWidth: numeric('strokeWidth', spec.strokeWidth ?? 0, LENGTH),
-      fill: color('fill', spec.fill ?? DEFAULT_FILL),
-      stroke: color('stroke', spec.stroke ?? DEFAULT_STROKE),
+      strokeWidth: numeric(
+        'strokeWidth',
+        spec.strokeWidth ?? (stroked ? DEFAULT_STROKE_WIDTH : 0),
+        LENGTH,
+      ),
+      fill: color('fill', spec.fill ?? (stroked ? 'none' : DEFAULT_COLOR)),
+      stroke: color('stroke', spec.stroke ?? (stroked ? DEFAULT_COLOR : 'none')),
       placements,
+      held,
+      animated,
     });
     return start + duration;
   }
@@ -207,7 +232,8 @@ function walk(
     // Each Child's Seed comes from this one and its index, so raising `count` leaves the Seeds of
     // the existing Children unchanged.
     const childSeed = derive(seed, index);
-    const childStart = start + offset(index) + delayOf(spec.children, childSeed, index);
+    const child = resolveValue(spec.children, index);
+    const childStart = start + offset(index) + delayOf(child, childSeed, index);
     // Clockwise from 12 o'clock in a y-down space.
     const angle = (2 * Math.PI * index) / count;
     const placement: Placement = {
@@ -217,18 +243,57 @@ function walk(
       dy: -Math.cos(angle),
       swirls: STRAIGHT,
     };
-    const childEnd = walk(
-      spec.children,
-      childSeed,
-      index,
-      childStart,
-      [...placements, placement],
-      out,
-    );
+    const childEnd = walk(child, childSeed, index, childStart, [...placements, placement], out);
     emitter.duration = Math.max(emitter.duration, childEnd - childStart);
     end = Math.max(end, childEnd);
   }
   return end;
+}
+
+/**
+ * The parameters `spec`'s kind adds beyond `radius`, already resolved as `radius`, for the Child
+ * at `index`. `numeric` resolves one animated parameter by name, and `ease` gives its Ease.
+ */
+function kindParameters(
+  spec: ShapeSpec,
+  index: number,
+  radius: ResolvedNumeric,
+  numeric: (name: string, property: NumericProperty<string>, units: Units) => ResolvedNumeric,
+  ease: (name: string) => Ease,
+): Pick<ResolvedElement, 'held' | 'animated'> {
+  switch (spec.kind) {
+    case 'circle':
+    case 'cross':
+    case 'line':
+      return { held: {}, animated: [] };
+    case 'polygon':
+      return { held: { points: resolveValue(spec.points, index) }, animated: [] };
+    case 'star': {
+      const innerRadius = spec.innerRadius ?? DEFAULT_INNER_RADIUS;
+      return {
+        held: { points: resolveValue(spec.points, index) },
+        animated: [['innerRadius', numeric('innerRadius', innerRadius, UNITLESS)]],
+      };
+    }
+    case 'zigzag': {
+      const amplitude =
+        spec.amplitude === undefined
+          ? scaled(radius, 1 / 4, ease('amplitude'))
+          : numeric('amplitude', spec.amplitude, LENGTH);
+      return {
+        held: { points: resolveValue(spec.points, index) },
+        animated: [['amplitude', amplitude]],
+      };
+    }
+    case 'path':
+      return { held: { d: resolveValue(spec.d, index) }, animated: [] };
+  }
+}
+
+/** `property` times `factor`, through the same Keyframes along `ease`. */
+function scaled(property: ResolvedNumeric, factor: number, ease: Ease): ResolvedNumeric {
+  if (typeof property === 'number') return property * factor;
+  return { frames: property.frames.map((frame) => frame * factor), ease };
 }
 
 /**

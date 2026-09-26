@@ -1,10 +1,11 @@
-import type { CircleRecord, DrawList } from './draw-list.js';
+import type { DrawList, DrawRecord } from './draw-list.js';
 import { createRafDriver, type Driver, type DriverTarget, type Playback } from './driver.js';
 import type { Renderer } from './renderer.js';
 import {
   type Placement,
   type ResolvedElement,
   type ResolvedEmitter,
+  type ResolvedNumeric,
   type ResolvedSwirl,
   type ResolvedTree,
   resolve,
@@ -99,7 +100,7 @@ function progressAt(t: number, duration: number): number {
  * on purpose: inlined in `sample()`'s loop, one more field read there cost 30% a frame on 5,000
  * Elements, as the loop grew past what V8 would optimize.
  */
-function paint(record: CircleRecord, element: ResolvedElement, progress: number): void {
+function paint(record: DrawRecord, element: ResolvedElement, progress: number): void {
   record.radius = numberAt(element.radius, progress);
   record.angle = numberAt(element.angle, progress);
   record.scale = numberAt(element.scale, progress);
@@ -107,6 +108,19 @@ function paint(record: CircleRecord, element: ResolvedElement, progress: number)
   record.stroke = colorAt(element.stroke, progress);
   record.strokeWidth = numberAt(element.strokeWidth, progress);
   record.opacity = numberAt(element.opacity, progress);
+  if (element.animated.length > 0) paintAnimated(record, element.animated, progress);
+}
+
+/** Write a kind's own animated parameters, beyond `radius`, at `progress` into `record`. */
+function paintAnimated(
+  record: DrawRecord,
+  animated: ResolvedElement['animated'],
+  progress: number,
+): void {
+  for (let i = 0; i < animated.length; i++) {
+    const [name, value] = animated[i] as readonly [string, ResolvedNumeric];
+    (record as unknown as Record<string, number>)[name] = numberAt(value, progress);
+  }
 }
 
 /** How far, in radians clockwise, `swirls` turn a throw `progress` of the way through it, 0–1. */
@@ -119,9 +133,10 @@ function turnAt(swirls: readonly ResolvedSwirl[], progress: number): number {
   return turn;
 }
 
-function createRecord(): CircleRecord {
-  return {
-    kind: 'circle',
+/** The pooled record for `element`, with its kind's held parameters already set. */
+function createRecord(element: ResolvedElement): DrawRecord {
+  const record = {
+    kind: element.kind,
     radius: 0,
     x: 0,
     y: 0,
@@ -132,6 +147,10 @@ function createRecord(): CircleRecord {
     strokeWidth: 0,
     opacity: 1,
   };
+  if (element.kind === 'circle') return record as DrawRecord;
+  const animated = Object.fromEntries(element.animated.map(([name]) => [name, 0]));
+  // The resolver gives each kind exactly the parameters its record type names.
+  return Object.assign(record, element.held, animated) as DrawRecord;
 }
 
 /** Any Spec bound to a Renderer, an Origin and a Driver. Shape and Burst are this, typed. */
@@ -151,7 +170,7 @@ export class SpecInstance implements Instance {
   #starting = false;
   #destroyed = false;
   // The pool: one record per Element, allocated here and reused by every sample.
-  readonly #records: CircleRecord[];
+  readonly #records: DrawRecord[];
   // Each Emitter's radius at the Playhead being sampled, for the Child start it was last worked out
   // for. Children that start together share one evaluation. Reused by every sample.
   readonly #distances: Float64Array;
@@ -256,7 +275,7 @@ export class SpecInstance implements Instance {
     // Indexed loops: this runs every frame for every Element, and must not allocate.
     for (let i = 0; i < elements.length; i++) {
       const element = elements[i] as ResolvedElement;
-      const record = records[i] as CircleRecord;
+      const record = records[i] as DrawRecord;
       let x = this.#origin.x;
       let y = this.#origin.y;
       for (let p = 0; p < element.placements.length; p++) {
@@ -296,7 +315,8 @@ export class SpecInstance implements Instance {
  */
 export class Shape<K extends ShapeKind = ShapeKind> extends SpecInstance {
   constructor(spec: ShapeSpec<K>, binding: InstanceBinding) {
-    super(spec, binding, createRafDriver());
+    // A ShapeSpec<K> is one of ShapeSpec's members; the compiler cannot see it through K.
+    super(spec as ShapeSpec, binding, createRafDriver());
   }
 }
 

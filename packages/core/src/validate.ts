@@ -1,5 +1,6 @@
 import { parseColor } from './color.js';
 import { pathProblem, toEase } from './easing.js';
+import type { ChildSpec, HeldParameter } from './spec.js';
 import { ANGLE, LENGTH, TIME, toNumber, UNITLESS, type Units } from './units.js';
 
 /** Throws if `value`, found at `path` in the Spec, is not what that place takes. */
@@ -156,38 +157,85 @@ const stagger: Check = (value, path) => {
   if (value.easing !== undefined) curve(value.easing, `${path}.easing`);
 };
 
-const count: Check = (value, path) => {
-  if (!Number.isInteger(value) || (value as number) < 0) {
-    fail(path, value, 'Use a whole number, 0 or more.');
-  }
-};
+/** A whole number, `min` or more. */
+function wholeFrom(min: number): Check {
+  return (value, path) => {
+    if (!Number.isInteger(value) || (value as number) < min) {
+      fail(path, value, `Use a whole number, ${min} or more.`);
+    }
+  };
+}
 
 const direction = distributable((value, path) => {
   if (value !== 1 && value !== -1)
     fail(path, value, 'Use 1 for clockwise or -1 for counterclockwise.');
 });
 
-/** The fields each kind of Spec takes, with what each one accepts. Adding a kind adds one entry. */
-const FIELDS: Readonly<Record<string, Readonly<Record<string, Check>>>> = {
-  circle: {
-    duration,
-    delay,
+// An SVG path's commands and numbers, starting with a move. Whether it draws well is the author's
+// to judge, as in an SVG file.
+const SVG_PATH = /^\s*M[\s\d.,eE+\-MZLHVCSQTA]*$/i;
+
+const svgPath = distributable((value, path) => {
+  if (typeof value !== 'string' || !SVG_PATH.test(value)) {
+    fail(path, value, 'Use an SVG path starting with M.');
+  }
+});
+
+/**
+ * The fields of a Shape: `radius`, which every kind has; its kind's own `animated` and `held`
+ * parameters; those every kind shares; and an `easing` keyed by every animated one.
+ */
+function shapeFields<
+  A extends Record<string, Check> & { [F in HeldParameter]?: never },
+  H extends { [F in HeldParameter]?: Check } = Record<never, Check>,
+>(animated: A, held = {} as H) {
+  const properties = {
     radius: numeric(LENGTH),
+    ...animated,
     angle: numeric(ANGLE),
     scale: numeric(UNITLESS),
     opacity: numeric(UNITLESS),
     fill: color,
     stroke: color,
     strokeWidth: numeric(LENGTH),
-    easing: easing(['radius', 'angle', 'scale', 'opacity', 'fill', 'stroke', 'strokeWidth']),
-  },
+  };
+  return { ...properties, ...held, duration, delay, easing: easing(Object.keys(properties)) };
+}
+
+type Kind = ChildSpec['kind'];
+type SpecOf<K extends Kind> = Extract<ChildSpec, { kind: K }>;
+/** The fields a Spec of kind `K` takes: not its `kind`, nor the other kinds' fields it marks absent. */
+type FieldOf<K extends Kind> = {
+  [F in keyof SpecOf<K>]-?: F extends 'kind'
+    ? never
+    : [Exclude<SpecOf<K>[F], undefined>] extends [never]
+      ? never
+      : F;
+}[keyof SpecOf<K>];
+type RequiredField<S> = Exclude<
+  { [F in keyof S]-?: object extends Pick<S, F> ? never : F }[keyof S],
+  'kind'
+>;
+
+/**
+ * The fields each kind of Spec takes, with what each one accepts. The compiler holds it to the
+ * Spec types: a field missing here, or here and not there, fails to build.
+ */
+const FIELDS = {
+  circle: shapeFields({}),
+  polygon: shapeFields({}, { points: distributable(wholeFrom(3)) }),
+  star: shapeFields({ innerRadius: numeric(UNITLESS) }, { points: distributable(wholeFrom(2)) }),
+  cross: shapeFields({}),
+  line: shapeFields({}),
+  zigzag: shapeFields({ amplitude: numeric(LENGTH) }, { points: distributable(wholeFrom(2)) }),
+  path: shapeFields({}, { d: svgPath }),
   burst: {
-    count,
+    count: wholeFrom(0),
     delay,
     stagger,
     radius: numeric(LENGTH),
     easing: easing(['radius']),
-    children: (value, path) => validate(value, path),
+    children: distributable((value, path) => validate(value, path)),
   },
   swirl: {
     size: distributable(numberIn(ANGLE)),
@@ -195,6 +243,24 @@ const FIELDS: Readonly<Record<string, Readonly<Record<string, Check>>>> = {
     direction,
     child: (value, path) => validate(value, path),
   },
+} satisfies { [K in Kind]: { [F in FieldOf<K>]: Check } };
+
+/** Every field FIELDS has and the Spec types do not, by kind: none, or the build fails below. */
+type UnknownField = { [K in Kind]: Exclude<keyof (typeof FIELDS)[K], FieldOf<K>> }[Kind];
+true satisfies [UnknownField] extends [never] ? true : UnknownField;
+
+/** Why each field a kind cannot do without is needed, by kind. */
+const REQUIRED: { readonly [K in Kind]?: Readonly<Record<string, string>> } = {
+  polygon: { points: 'A polygon needs its number of corners.' },
+  star: { points: 'A star needs its number of tips.' },
+  zigzag: { points: 'A zigzag needs its number of corners.' },
+  path: { d: 'A path needs the SVG path to draw.' },
+  burst: { children: 'A Burst needs a Child to spawn.' },
+  swirl: { child: 'A Swirl needs a Child to bend.' },
+} satisfies {
+  [K in Kind as RequiredField<SpecOf<K>> extends never ? never : K]: {
+    [F in RequiredField<SpecOf<K>>]: string;
+  };
 };
 
 const at = (path: string, name: string) => (path === '' ? name : `${path}.${name}`);
@@ -207,7 +273,10 @@ const at = (path: string, name: string) => (path === '' ? name : `${path}.${name
 export function validate(spec: unknown, path = ''): void {
   if (!isPlainObject(spec)) fail(path || 'the Spec', spec, 'A Spec is an object with a kind.');
   const kind = spec.kind;
-  const fields = typeof kind === 'string' && Object.hasOwn(FIELDS, kind) ? FIELDS[kind] : undefined;
+  const fields =
+    typeof kind === 'string' && Object.hasOwn(FIELDS, kind)
+      ? (FIELDS[kind as Kind] as Readonly<Record<string, Check>>)
+      : undefined;
   if (fields === undefined) {
     fail(at(path, 'kind'), kind, `Use one of ${Object.keys(FIELDS).join(', ')}.`);
   }
@@ -219,10 +288,7 @@ export function validate(spec: unknown, path = ''): void {
     }
     check(value, at(path, name));
   }
-  if (kind === 'burst' && spec.children === undefined) {
-    throw new Error(`motly: ${at(path, 'children')} is missing. A Burst needs a Child to spawn.`);
-  }
-  if (kind === 'swirl' && spec.child === undefined) {
-    throw new Error(`motly: ${at(path, 'child')} is missing. A Swirl needs a Child to bend.`);
+  for (const [name, why] of Object.entries(REQUIRED[kind as Kind] ?? {})) {
+    if (spec[name] === undefined) throw new Error(`motly: ${at(path, name)} is missing. ${why}`);
   }
 }

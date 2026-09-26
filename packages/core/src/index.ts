@@ -44,7 +44,19 @@ export {
   type RandDescriptor,
   rand,
 } from './descriptors.js';
-export type { CircleRecord, DrawList, DrawRecord, Style, Transform } from './draw-list.js';
+export type {
+  CircleRecord,
+  CrossRecord,
+  DrawList,
+  DrawRecord,
+  LineRecord,
+  PathRecord,
+  PolygonRecord,
+  StarRecord,
+  Style,
+  Transform,
+  ZigzagRecord,
+} from './draw-list.js';
 export type { Driver, DriverTarget, Playback } from './driver.js';
 export type { CssEasing, CubicBezier, Curve, PathCurve } from './easing.js';
 export { Burst, type Instance, type InstanceBinding, type Origin, Shape } from './instance.js';

@@ -44,9 +44,60 @@ export type ColorProperty = Distributable<string | Keyframes<string>>;
  */
 export type Easing<P extends string> = Distributable<Curve | { [N in P | 'default']?: Curve }>;
 
-/** The parameters each Element kind adds to the Spec. Adding a kind adds one entry here. */
+/**
+ * The parameters each Element kind adds to the Spec. Every kind is drawn centred on its position
+ * and, at `angle` 0, pointing at 12 o'clock. Adding a kind adds one entry here.
+ */
 interface ShapeParams {
-  circle: { radius?: NumericProperty<LengthUnit> };
+  /** Reach for it for dots, rings (with `fill: 'none'` and a stroke) and ripples. */
+  circle: {
+    radius?: NumericProperty<LengthUnit>;
+  };
+  /** Reach for it for triangles, squares and hexagons: any regular shape with straight sides. */
+  polygon: {
+    /** From the centre to each corner. */
+    radius?: NumericProperty<LengthUnit>;
+    /** How many corners, 3 or more. The first is at 12 o'clock. */
+    points: Distributable<number>;
+  };
+  /** Reach for it for sparkles and celebration bursts. */
+  star: {
+    /** From the centre to each tip. */
+    radius?: NumericProperty<LengthUnit>;
+    /** How many tips, 2 or more. The first is at 12 o'clock. */
+    points: Distributable<number>;
+    /**
+     * How far in the notches between tips sit, as a fraction of `radius`: 0 is spikes, 1 a polygon
+     * with twice the corners. As a fraction, a star keeps its shape while `radius` animates.
+     */
+    innerRadius?: NumericProperty;
+  };
+  /** Reach for it for a plus sign, or turned 45° for an x. Stroked, as it encloses nothing. */
+  cross: {
+    /** From the centre to the end of each arm. */
+    radius?: NumericProperty<LengthUnit>;
+  };
+  /** Reach for it for streaks and rays: turn it with `angle`. Stroked, as it encloses nothing. */
+  line: {
+    /** From the centre to each end. The line runs from 12 o'clock to 6. */
+    radius?: NumericProperty<LengthUnit>;
+  };
+  /** Reach for it for sparks and squiggles. Stroked, as it encloses nothing. */
+  zigzag: {
+    /** From the centre to each end. The zigzag runs from 12 o'clock to 6. */
+    radius?: NumericProperty<LengthUnit>;
+    /** How many corners, ends included, 2 or more, evenly spaced along the length. */
+    points: Distributable<number>;
+    /** How far each corner between the ends swings to either side. A quarter of `radius` if left out. */
+    amplitude?: NumericProperty<LengthUnit>;
+  };
+  /** Reach for it for any outline the other kinds do not draw, such as a heart. */
+  path: {
+    /** An SVG path, drawn in a 100×100 box centred on (50, 50), as copied out of a design tool. */
+    d: Distributable<string>;
+    /** Half the width of that box, once drawn: 50 draws the path at the size it was written. */
+    radius?: NumericProperty<LengthUnit>;
+  };
 }
 
 /** Every Element kind a `Shape` can draw. */
@@ -64,8 +115,14 @@ interface ShapeCommon {
   angle?: NumericProperty<AngleUnit>;
   scale?: NumericProperty;
   opacity?: NumericProperty;
+  /**
+   * Deeppink if left out, except on a cross, line or zigzag, which enclose nothing: none there.
+   * Each style field left out takes its kind's default, whatever the others say.
+   */
   fill?: ColorProperty;
+  /** None if left out, except on a cross, line or zigzag: deeppink there, so they show. */
   stroke?: ColorProperty;
+  /** 0 if left out, except on a cross, line or zigzag: 2 there. */
   strokeWidth?: NumericProperty<LengthUnit>;
 }
 
@@ -74,13 +131,32 @@ interface ShapeCommon {
  * only its own parameters.
  */
 export type ShapeSpec<K extends ShapeKind = ShapeKind> = {
-  [P in K]: { kind: P } & ShapeParams[P] & ShapeCommon & { easing?: Easing<ShapeProperty<P>> };
+  [P in K]: { kind: P } & ShapeParams[P] &
+    ForeignParams<P> &
+    ShapeCommon & { easing?: Easing<ShapeProperty<P>> };
 }[K];
+
+/**
+ * The other kinds' parameters, each marked absent on kind `K`. A circle then rejects `points` even
+ * where the compiler looks for no extra fields, as inside `each([...])`.
+ */
+type ForeignParams<K extends ShapeKind> = {
+  [F in Exclude<
+    { [P in ShapeKind]: keyof ShapeParams[P] }[ShapeKind],
+    keyof ShapeParams[K]
+  >]?: never;
+};
+
+/**
+ * The parameters that hold still for a Child's whole life: set once, never eased. Validation and
+ * the Resolver split each kind's parameters by this one list.
+ */
+export type HeldParameter = 'points' | 'd';
 
 /** The animated properties of a Shape of kind `K`: what its `easing` map is keyed by. */
 type ShapeProperty<K extends ShapeKind> = Exclude<
   keyof (ShapeParams[K] & ShapeCommon),
-  'duration' | 'delay'
+  'duration' | 'delay' | HeldParameter
 > &
   string;
 
@@ -105,8 +181,11 @@ export interface BurstSpec {
   radius?: NumericProperty<LengthUnit>;
   /** How the Burst's own `radius` moves. Its Children take their own `easing`. */
   easing?: Easing<'radius'>;
-  /** The Child spawned `count` times: an Element, another Emitter, or a Modifier around either. */
-  children: ChildSpec;
+  /**
+   * The Child spawned `count` times: an Element, another Emitter, or a Modifier around either. Hand
+   * different Children out in turn with `each([...])`, such as circles and stars in one Burst.
+   */
+  children: Distributable<ChildSpec>;
 }
 
 /**

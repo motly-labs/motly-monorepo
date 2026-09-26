@@ -13,7 +13,7 @@ const each = (...values: unknown[]) => ({ __motly: 'each', values });
 describe('a JSON Spec is validated in full when the Instance is created', () => {
   it.each([
     ['not an object', null, /Spec.*null/],
-    ['an unknown kind', { kind: 'square' }, /kind.*'square'.*circle, burst/],
+    ['an unknown kind', { kind: 'square' }, /kind.*'square'.*circle, polygon.*burst, swirl/],
     ['a misspelt field', { kind: 'circle', raduis: 5 }, /raduis.*circle/],
     ['a Burst with no Child', { kind: 'burst' }, /children.*missing/],
     [
