@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   check:
-    name: Lint, typecheck, build
+    name: Lint, typecheck, build, size
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,6 +24,7 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm build
+      - run: pnpm --filter @motly/core size
 
   test:
     name: Test (node ${{ matrix.node }})
@@ -41,3 +42,27 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
+
+  visual:
+    name: Visual regression
+    runs-on: ubuntu-latest
+    # The same image, pinned by tag, that rendered the committed baselines. Bump it together with
+    # @playwright/test and the test:visual:docker script in apps/demos/package.json.
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @motly/core build
+      - run: pnpm --filter demos test:visual
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: visual-diffs
+          path: apps/demos/test-results/

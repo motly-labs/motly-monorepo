@@ -4,5 +4,12 @@
   "private": true,
   "dependencies": {
     "@motly/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  },
+  "scripts": {
+    "test:visual": "playwright test",
+    "test:visual:docker": "docker run --rm --ipc=host -v \"$(git rev-parse --show-toplevel)\":/work -w /work/apps/demos mcr.microsoft.com/playwright:v1.63.0-noble npx playwright test"
   }
 }

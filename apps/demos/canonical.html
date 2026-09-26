@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>motly canonical bursts</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "@motly/core": "./node_modules/@motly/core/dist/index.mjs",
+          "@motly/core/svg": "./node_modules/@motly/core/dist/svg/index.mjs",
+          "@motly/core/canvas": "./node_modules/@motly/core/dist/canvas/index.mjs"
+        }
+      }
+    </script>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 2rem; }
+      .demos { display: flex; flex-wrap: wrap; gap: 1.5rem; }
+      .stage > * { border: 1px solid #ddd; display: block; margin-bottom: 0.5rem; }
+    </style>
+  </head>
+  <body>
+    <h1>motly canonical bursts</h1>
+    <p>
+      Five bursts with fixed Seeds: the Phase 1 exit criterion, and the fixtures the visual
+      regression suite snapshots. Add <code>?renderer=canvas&amp;progress=0.5</code> to pin every
+      one at half its duration.
+    </p>
+    <fieldset>
+      <legend>Renderer</legend>
+      <label><input type="radio" name="renderer" value="svg" /> SVGRenderer</label>
+      <label><input type="radio" name="renderer" value="canvas" /> CanvasRenderer</label>
+    </fieldset>
+
+    <div class="demos">
+      <section>
+        <h2>Confetti</h2>
+        <p>Distribution and randomness.</p>
+        <div class="stage" id="confetti"></div>
+        <button type="button" data-play="confetti">Play</button>
+      </section>
+      <section>
+        <h2>Bloom</h2>
+        <p>Keyframes and color.</p>
+        <div class="stage" id="bloom"></div>
+        <button type="button" data-play="bloom">Play</button>
+      </section>
+      <section>
+        <h2>Ripple</h2>
+        <p>Stagger.</p>
+        <div class="stage" id="ripple"></div>
+        <button type="button" data-play="ripple">Play</button>
+      </section>
+      <section>
+        <h2>Swirl</h2>
+        <p>The Swirl Modifier.</p>
+        <div class="stage" id="swirl"></div>
+        <button type="button" data-play="swirl">Play</button>
+      </section>
+      <section>
+        <h2>Fireworks</h2>
+        <p>480 Elements.</p>
+        <div class="stage" id="fireworks"></div>
+        <button type="button" data-play="fireworks">Play</button>
+      </section>
+    </div>
+
+    <script type="module">
+      import { createScope, each, rand } from '@motly/core';
+      import { CanvasRenderer } from '@motly/core/canvas';
+      import { SVGRenderer } from '@motly/core/svg';
+
+      const SIZE = 300;
+      const origin = { x: SIZE / 2, y: SIZE / 2 };
+
+      const palette = ['deeppink', 'gold', 'cyan', 'mediumpurple', 'limegreen'];
+
+      /** What every confetti piece shares, whatever its kind. */
+      const confetti = {
+        fill: each(palette),
+        stroke: each(palette),
+        duration: rand(0.8, 1.4),
+      };
+
+      /** Each demo: a Burst Spec and the Seed it always resolves from. */
+      const demos = {
+        confetti: {
+          seed: 1,
+          spec: {
+            kind: 'burst',
+            count: 28,
+            radius: [0, 120],
+            easing: 'ease-out',
+            children: each([
+              { kind: 'star', points: 5, radius: [rand(6, 12), 0], angle: [0, rand(-270, 270)], ...confetti },
+              { kind: 'polygon', points: 4, radius: [rand(4, 9), 0], angle: [0, rand(-180, 180)], ...confetti },
+              { kind: 'circle', radius: [rand(3, 7), 0], ...confetti },
+              { kind: 'line', radius: [rand(5, 10), 0], angle: [0, rand(-360, 360)], ...confetti },
+            ]),
+          },
+        },
+        bloom: {
+          seed: 2,
+          spec: {
+            kind: 'burst',
+            count: 10,
+            radius: [20, 110],
+            children: {
+              kind: 'polygon',
+              points: 6,
+              radius: [0, 13, 0],
+              scale: [0.6, 1.2, 1],
+              angle: [0, 60, 120],
+              fill: ['white', 'gold', 'orangered', 'purple'],
+              stroke: ['gold', 'deeppink'],
+              strokeWidth: [4, 1],
+              opacity: [1, 1, 0],
+              duration: 1.2,
+            },
+          },
+        },
+        ripple: {
+          seed: 3,
+          spec: {
+            kind: 'burst',
+            count: 16,
+            radius: [0, 115],
+            stagger: { each: 0.05, easing: 'ease-in' },
+            children: {
+              kind: 'star',
+              points: 4,
+              innerRadius: 0.35,
+              radius: [14, 0],
+              angle: [0, 90],
+              fill: each(['cyan', 'deeppink']),
+              duration: 0.7,
+            },
+          },
+        },
+        swirl: {
+          seed: 4,
+          spec: {
+            kind: 'burst',
+            count: 10,
+            radius: [0, 120],
+            children: {
+              kind: 'swirl',
+              size: 35,
+              frequency: rand(1, 2.5),
+              direction: each([1, -1]),
+              child: { kind: 'circle', radius: [9, 2], fill: each(['gold', 'deeppink']), duration: 1.1 },
+            },
+          },
+        },
+        fireworks: {
+          seed: 5,
+          spec: {
+            kind: 'burst',
+            count: 12,
+            radius: [0, 70],
+            children: {
+              kind: 'burst',
+              count: 40,
+              radius: [0, rand(35, 60)],
+              children: {
+                kind: 'circle',
+                radius: [rand(1.5, 3.5), 0],
+                fill: each(['gold', 'orangered', 'white', 'deeppink']),
+                duration: rand(0.9, 1.5),
+              },
+            },
+          },
+        },
+      };
+
+      /**
+       * A Driver that never moves by itself: a Playhead goes only where `seek()` puts it. The visual
+       * regression suite pins every demo with it, so nothing depends on when a frame fires. A
+       * smaller copy of core's test-only manual Driver, which the package does not export.
+       */
+      const manualDriver = {
+        attach(target) {
+          const noop = () => {};
+          return {
+            play: noop,
+            pause: noop,
+            resume: noop,
+            reverse: noop,
+            stop: noop,
+            seek(t) {
+              const to = Math.min(Math.max(t, 0), target.duration);
+              target.render(to);
+              if (to === target.duration) target.finish();
+            },
+          };
+        },
+      };
+
+      const query = new URLSearchParams(location.search);
+      const pinned = query.has('progress') ? Number(query.get('progress')) : undefined;
+      const scope = createScope(pinned === undefined ? {} : { driver: manualDriver });
+      const renderers = {};
+      const bursts = {};
+
+      /** A fresh svg or canvas on every stage, with a Renderer for it. */
+      function mount(kind) {
+        scope.destroy();
+        for (const name of Object.keys(demos)) {
+          const stage = document.getElementById(name);
+          const element =
+            kind === 'svg'
+              ? document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+              : document.createElement('canvas');
+          element.setAttribute('width', SIZE);
+          element.setAttribute('height', SIZE);
+          element.setAttribute('role', 'img');
+          element.setAttribute('aria-label', `${name} burst`);
+          // A CanvasRenderer measures its canvas when it is built, so the canvas is sized first.
+          stage.replaceChildren(element);
+          renderers[name] = kind === 'svg' ? new SVGRenderer(element) : new CanvasRenderer(element);
+        }
+      }
+
+      /** Create `name`'s Burst afresh, from its Seed, and play it or pin it. */
+      function start(name) {
+        bursts[name]?.destroy();
+        const { spec, seed } = demos[name];
+        const burst = scope.burst(spec, { renderer: renderers[name], origin, seed });
+        bursts[name] = burst;
+        if (pinned === undefined) burst.play();
+        else burst.setProgress(pinned);
+      }
+
+      /** Start every demo afresh. */
+      function startAll() {
+        for (const name of Object.keys(demos)) start(name);
+      }
+
+      const initial = query.get('renderer') === 'canvas' ? 'canvas' : 'svg';
+      document.querySelector(`input[name=renderer][value=${initial}]`).checked = true;
+      for (const radio of document.querySelectorAll('input[name=renderer]')) {
+        radio.addEventListener('change', () => {
+          mount(radio.value);
+          startAll();
+        });
+      }
+      for (const button of document.querySelectorAll('[data-play]')) {
+        button.addEventListener('click', () => start(button.dataset.play));
+      }
+      mount(initial);
+      startAll();
+      // The visual regression suite waits for this before it takes a snapshot.
+      document.body.dataset.ready = 'true';
+    </script>
+  </body>
+</html>

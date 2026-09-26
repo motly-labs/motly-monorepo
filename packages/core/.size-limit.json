@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Burst + Shape + SVGRenderer",
+    "path": ["dist/index.mjs", "dist/svg/index.mjs"],
+    "import": { "dist/index.mjs": "{ Burst, Shape }", "dist/svg/index.mjs": "{ SVGRenderer }" },
+    "gzip": true,
+    "limit": "15 kB"
+  },
+  {
+    "name": "Burst + Shape + CanvasRenderer",
+    "path": ["dist/index.mjs", "dist/canvas/index.mjs"],
+    "import": {
+      "dist/index.mjs": "{ Burst, Shape }",
+      "dist/canvas/index.mjs": "{ CanvasRenderer }"
+    },
+    "gzip": true,
+    "limit": "15 kB"
+  },
+  {
+    "name": "Burst + Shape + AutoRenderer",
+    "path": ["dist/index.mjs", "dist/auto/index.mjs"],
+    "import": { "dist/index.mjs": "{ Burst, Shape }", "dist/auto/index.mjs": "{ AutoRenderer }" },
+    "gzip": true,
+    "limit": "15 kB"
+  }
+]

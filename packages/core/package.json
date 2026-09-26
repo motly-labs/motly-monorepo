@@ -70,10 +70,14 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
-    "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "test": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "size": "size-limit"
   },
   "devDependencies": {
+    "@size-limit/preset-small-lib": "^14.0.1",
+    "@vitest/coverage-v8": "^5.0.1",
+    "size-limit": "^14.0.1",
     "tsdown": "^0.23.0",
     "typescript": "^7.0.2",
     "vitest": "^5.0.1"
