@@ -1,7 +1,7 @@
 import { defineConfig } from 'tsdown';
 
 export default defineConfig({
-  entry: ['src/index.ts', 'src/utils/index.ts', 'src/svg/index.ts'],
+  entry: ['src/index.ts', 'src/utils/index.ts', 'src/svg/index.ts', 'src/canvas/index.ts'],
   format: ['esm', 'cjs'],
   target: 'es2022',
   dts: true,

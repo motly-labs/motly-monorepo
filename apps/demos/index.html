@@ -7,148 +7,239 @@
       {
         "imports": {
           "@motly/core": "./node_modules/@motly/core/dist/index.mjs",
-          "@motly/core/svg": "./node_modules/@motly/core/dist/svg/index.mjs"
+          "@motly/core/svg": "./node_modules/@motly/core/dist/svg/index.mjs",
+          "@motly/core/canvas": "./node_modules/@motly/core/dist/canvas/index.mjs"
         }
       }
     </script>
     <style>
       body { font-family: system-ui, sans-serif; margin: 2rem; }
-      svg { border: 1px solid #ddd; display: block; margin-bottom: 1rem; }
+      svg, canvas { border: 1px solid #ddd; display: block; margin-bottom: 1rem; }
+      .stage { margin-bottom: 0.5rem; }
+      #responsive-stage canvas, #responsive-stage svg { width: 100%; height: 200px; }
     </style>
   </head>
   <body>
     <h1>motly demos</h1>
+    <fieldset>
+      <legend>Renderer</legend>
+      <label><input type="radio" name="renderer" value="svg" checked /> SVGRenderer</label>
+      <label><input type="radio" name="renderer" value="canvas" /> CanvasRenderer</label>
+    </fieldset>
+
     <h2>Shape</h2>
-    <svg id="stage" width="400" height="300" role="img" aria-label="Animated circle demo"></svg>
-    <button id="play" type="button">Play</button>
+    <div class="stage" id="shape-stage" data-width="400" data-height="300" data-label="Animated circle demo"></div>
+    <button type="button" data-play="shape">Play</button>
     <p id="status"></p>
 
     <h2>Burst</h2>
-    <svg id="burst-stage" width="400" height="300" role="img" aria-label="Burst demo"></svg>
-    <button id="play-burst" type="button">Play</button>
+    <div class="stage" id="burst-stage" data-width="400" data-height="300" data-label="Burst demo"></div>
+    <button type="button" data-play="burst">Play</button>
 
     <h2>Every Element kind</h2>
-    <svg id="kinds-stage" width="700" height="120" role="img" aria-label="Every Element kind"></svg>
-    <button id="play-kinds" type="button">Play</button>
+    <div class="stage" id="kinds-stage" data-width="700" data-height="120" data-label="Every Element kind"></div>
+    <button type="button" data-play="kinds">Play</button>
 
     <h2>One Burst, mixed kinds</h2>
-    <svg id="mixed-stage" width="400" height="300" role="img" aria-label="Burst mixing kinds"></svg>
-    <button id="play-mixed" type="button">Play</button>
+    <div class="stage" id="mixed-stage" data-width="400" data-height="300" data-label="Burst mixing kinds"></div>
+    <button type="button" data-play="mixed">Play</button>
+
+    <h2>Responsive, sized in CSS</h2>
+    <p>Resize the window: the canvas follows its width and stays sharp.</p>
+    <div class="stage" id="responsive-stage" data-label="Responsive burst"></div>
+    <button type="button" data-play="responsive">Play</button>
 
     <script type="module">
       import { Burst, each, rand, Shape } from '@motly/core';
+      import { CanvasRenderer } from '@motly/core/canvas';
       import { SVGRenderer } from '@motly/core/svg';
 
-      const renderer = new SVGRenderer(document.getElementById('stage'));
-      const status = document.getElementById('status');
-      let shape;
+      const heart =
+        'M50,88 C10,60 0,35 20,18 C35,5 50,18 50,28 C50,18 65,5 80,18 C100,35 90,60 50,88 Z';
 
-      async function play() {
-        shape?.destroy();
-        const current = new Shape(
-          {
-            kind: 'circle',
-            radius: [0, 120],
-            opacity: [1, 0],
-            strokeWidth: [20, 0],
-            fill: 'none',
-            stroke: 'deeppink',
-            duration: 1,
-          },
-          { renderer, origin: { x: 200, y: 150 } },
-        );
-        shape = current;
-        status.textContent = 'playing';
-        await current.play();
-        if (shape === current) status.textContent = 'finished';
-      }
-
-      document.getElementById('play').addEventListener('click', play);
-      play();
-
-      const burstRenderer = new SVGRenderer(document.getElementById('burst-stage'));
-      let burst;
-
-      function playBurst() {
-        burst?.destroy();
-        burst = new Burst(
-          {
-            kind: 'burst',
-            count: 8,
-            radius: [0, 110],
-            children: {
-              kind: 'burst',
-              count: 3,
-              radius: [0, 20],
-              children: {
+      /** Each demo: the stage it draws on, and how to play it there. Returns what to destroy. */
+      const demos = {
+        shape: {
+          stage: 'shape-stage',
+          play(renderer) {
+            const shape = new Shape(
+              {
                 kind: 'circle',
-                radius: [rand(4, 10), 0],
-                fill: each(['deeppink', 'cyan', 'gold']),
-                duration: rand(0.6, 1),
+                radius: [0, 120],
+                opacity: [1, 0],
+                strokeWidth: [20, 0],
+                fill: 'none',
+                stroke: 'deeppink',
+                duration: 1,
               },
-            },
+              { renderer, origin: { x: 200, y: 150 } },
+            );
+            const status = document.getElementById('status');
+            status.textContent = 'playing';
+            shape.play().then(() => {
+              if (!destroyed.has(shape)) status.textContent = 'finished';
+            });
+            return [shape];
           },
-          { renderer: burstRenderer, origin: { x: 200, y: 150 } },
-        );
-        burst.play();
-      }
-
-      document.getElementById('play-burst').addEventListener('click', playBurst);
-      playBurst();
-
-      const heart = 'M50,88 C10,60 0,35 20,18 C35,5 50,18 50,28 C50,18 65,5 80,18 C100,35 90,60 50,88 Z';
-      const kinds = [
-        { kind: 'circle' },
-        { kind: 'polygon', points: 6 },
-        { kind: 'star', points: 5, innerRadius: [0.2, 0.5] },
-        { kind: 'cross' },
-        { kind: 'line', strokeWidth: 4 },
-        { kind: 'zigzag', points: 7, amplitude: [0, 10] },
-        { kind: 'path', d: heart, fill: 'crimson' },
-      ];
-      const kindsRenderer = new SVGRenderer(document.getElementById('kinds-stage'));
-      let shapes = [];
-
-      function playKinds() {
-        for (const shape of shapes) shape.destroy();
-        shapes = kinds.map(
-          (spec, index) =>
-            new Shape(
-              { radius: [0, 35], angle: [-90, 0], duration: 0.8, easing: 'ease-out', ...spec },
-              { renderer: kindsRenderer, origin: { x: 50 + index * 100, y: 60 } },
-            ),
-        );
-        for (const shape of shapes) shape.play();
-      }
-
-      document.getElementById('play-kinds').addEventListener('click', playKinds);
-      playKinds();
-
-      const mixedRenderer = new SVGRenderer(document.getElementById('mixed-stage'));
-      let mixed;
-
-      function playMixed() {
-        mixed?.destroy();
-        mixed = new Burst(
-          {
-            kind: 'burst',
-            count: 12,
-            radius: [0, 120],
-            easing: 'ease-out',
-            children: each([
-              { kind: 'star', points: 5, radius: [12, 0], fill: 'gold', angle: [0, 180] },
-              { kind: 'circle', radius: [8, 0], fill: 'cyan' },
-              { kind: 'zigzag', points: 5, radius: [14, 0], stroke: 'deeppink', angle: [0, 90] },
-              { kind: 'polygon', points: 3, radius: [10, 0], fill: 'mediumpurple', angle: [0, -120] },
-            ]),
+        },
+        burst: {
+          stage: 'burst-stage',
+          play(renderer) {
+            const burst = new Burst(
+              {
+                kind: 'burst',
+                count: 8,
+                radius: [0, 110],
+                children: {
+                  kind: 'burst',
+                  count: 3,
+                  radius: [0, 20],
+                  children: {
+                    kind: 'circle',
+                    radius: [rand(4, 10), 0],
+                    fill: each(['deeppink', 'cyan', 'gold']),
+                    duration: rand(0.6, 1),
+                  },
+                },
+              },
+              { renderer, origin: { x: 200, y: 150 } },
+            );
+            burst.play();
+            return [burst];
           },
-          { renderer: mixedRenderer, origin: { x: 200, y: 150 } },
-        );
-        mixed.play();
+        },
+        kinds: {
+          stage: 'kinds-stage',
+          play(renderer) {
+            const kinds = [
+              { kind: 'circle' },
+              { kind: 'polygon', points: 6 },
+              { kind: 'star', points: 5, innerRadius: [0.2, 0.5] },
+              { kind: 'cross' },
+              { kind: 'line', strokeWidth: 4 },
+              { kind: 'zigzag', points: 7, amplitude: [0, 10] },
+              { kind: 'path', d: heart, fill: 'crimson' },
+            ];
+            // Several Instances on one Renderer: on a canvas, they share it.
+            const shapes = kinds.map(
+              (spec, index) =>
+                new Shape(
+                  { radius: [0, 35], angle: [-90, 0], duration: 0.8, easing: 'ease-out', ...spec },
+                  { renderer, origin: { x: 50 + index * 100, y: 60 } },
+                ),
+            );
+            for (const shape of shapes) shape.play();
+            return shapes;
+          },
+        },
+        mixed: {
+          stage: 'mixed-stage',
+          play(renderer) {
+            const burst = new Burst(
+              {
+                kind: 'burst',
+                count: 12,
+                radius: [0, 120],
+                easing: 'ease-out',
+                children: each([
+                  { kind: 'star', points: 5, radius: [12, 0], fill: 'gold', angle: [0, 180] },
+                  { kind: 'circle', radius: [8, 0], fill: 'cyan' },
+                  { kind: 'zigzag', points: 5, radius: [14, 0], stroke: 'deeppink', angle: [0, 90] },
+                  { kind: 'polygon', points: 3, radius: [10, 0], fill: 'mediumpurple', angle: [0, -120] },
+                ]),
+              },
+              { renderer, origin: { x: 200, y: 150 } },
+            );
+            burst.play();
+            return [burst];
+          },
+        },
+        responsive: {
+          stage: 'responsive-stage',
+          play(renderer, element) {
+            const burst = new Burst(
+              {
+                kind: 'burst',
+                count: 16,
+                radius: [0, 90],
+                children: {
+                  kind: 'swirl',
+                  size: 30,
+                  direction: each([1, -1]),
+                  child: { kind: 'star', points: 4, radius: [8, 0], fill: each(['gold', 'deeppink']) },
+                },
+              },
+              { renderer, origin: { x: element.clientWidth / 2, y: 100 } },
+            );
+            burst.play();
+            return [burst];
+          },
+        },
+      };
+
+      const destroyed = new WeakSet();
+      const playing = new Map();
+      const renderers = new Map();
+
+      /** A fresh element and its Renderer, for each Renderer the switch offers. */
+      const mounts = {
+        svg() {
+          const element = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          return { element, renderer: new SVGRenderer(element) };
+        },
+        canvas() {
+          const element = document.createElement('canvas');
+          // The Renderer measures the canvas when it is built, so it must be sized first.
+          return { element, build: () => new CanvasRenderer(element) };
+        },
+      };
+
+      /** Put a fresh svg or canvas on every stage, with a Renderer for it. */
+      function mount(kind) {
+        for (const [name, demo] of Object.entries(demos)) {
+          stop(name);
+          const stage = document.getElementById(demo.stage);
+          const { element, renderer, build } = mounts[kind]();
+          element.setAttribute('role', 'img');
+          element.setAttribute('aria-label', stage.dataset.label);
+          if (stage.dataset.width !== undefined) {
+            element.setAttribute('width', stage.dataset.width);
+            element.setAttribute('height', stage.dataset.height);
+          }
+          stage.replaceChildren(element);
+          renderers.set(name, renderer ?? build());
+        }
       }
 
-      document.getElementById('play-mixed').addEventListener('click', playMixed);
-      playMixed();
+      /** Destroy whatever `name` is playing. */
+      function stop(name) {
+        for (const instance of playing.get(name) ?? []) {
+          destroyed.add(instance);
+          instance.destroy();
+        }
+      }
+
+      function play(name) {
+        stop(name);
+        const element = document.getElementById(demos[name].stage).firstElementChild;
+        playing.set(name, demos[name].play(renderers.get(name), element));
+      }
+
+      function playAll() {
+        for (const name of Object.keys(demos)) play(name);
+      }
+
+      for (const button of document.querySelectorAll('[data-play]')) {
+        button.addEventListener('click', () => play(button.dataset.play));
+      }
+      for (const radio of document.querySelectorAll('input[name=renderer]')) {
+        radio.addEventListener('change', () => {
+          mount(radio.value);
+          playAll();
+        });
+      }
+      mount('svg');
+      playAll();
     </script>
   </body>
 </html>

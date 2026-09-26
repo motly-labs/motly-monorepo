@@ -3,13 +3,10 @@
  * lives in Renderer entries like this one; the main entry never touches the DOM.
  */
 
-import { type Pen, trace } from '../geometry.js';
+import { PATH_BOX, type Pen, pathBoxScale, trace } from '../geometry.js';
 import type { DrawList, DrawRecord, Renderer } from '../index.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-
-/** The side of the box a custom path is drawn in. */
-const PATH_BOX = 100;
 
 /** A Pen writing SVG path data, rounded to a hundredth of a pixel. */
 class PathData implements Pen {
@@ -45,8 +42,7 @@ function paint(element: SVGElement, record: DrawRecord): void {
       element.setAttribute('r', String(record.radius));
       break;
     case 'path': {
-      // Scale the box to 2 × radius, centred, and undo that scale on the stroke.
-      const boxScale = (2 * record.radius) / PATH_BOX;
+      const boxScale = pathBoxScale(record);
       transform += ` scale(${boxScale}) translate(${-PATH_BOX / 2} ${-PATH_BOX / 2})`;
       strokeWidth = boxScale === 0 ? 0 : strokeWidth / boxScale;
       break;

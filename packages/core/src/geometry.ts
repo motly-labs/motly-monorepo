@@ -51,6 +51,18 @@ export function trace(record: TracedRecord, pen: Pen): void {
   }
 }
 
+/** The side of the box a custom path is drawn in, centred on (50, 50). */
+export const PATH_BOX = 100;
+
+/**
+ * How much a custom path's box is scaled so it is 2 × `record.radius` wide. A Renderer scales by
+ * this, then moves the box's centre to the origin by −`PATH_BOX` / 2 each way, and divides the
+ * stroke width by it so the stroke is not scaled with the box. At 0 there is nothing to draw.
+ */
+export function pathBoxScale(record: PathRecord): number {
+  return (2 * record.radius) / PATH_BOX;
+}
+
 /**
  * A closed ring of `corners` corners, clockwise from 12 o'clock, alternating `outer` and `inner`
  * from the centre, starting with `outer`.
