@@ -15,10 +15,12 @@ export default defineConfig({
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'], deviceScaleFactor: 1 } }],
   expect: {
     toHaveScreenshot: {
-      // No pixel may differ beyond Playwright's default per-pixel color threshold of 0.2. The
-      // pinned container renders the pinned Playheads identically: five consecutive runs showed
-      // no differing pixel at all, so any tolerance would only hide small geometry changes.
+      // No pixel may differ at all, by any amount of color. The pinned container renders the
+      // pinned Playheads identically, run after run and runner after runner, so any allowance
+      // would only hide geometry changes. Playwright's default per-pixel threshold of 0.2 nearly
+      // hid them: every radius grown by 2% failed 2 snapshots at 1 pixel each, and 28 at 0.
       maxDiffPixels: 0,
+      threshold: 0,
     },
   },
   webServer: {
