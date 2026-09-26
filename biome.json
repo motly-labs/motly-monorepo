@@ -6,7 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!**/dist", "!**/.turbo", "!graft", "!**/*.md"]
+    "includes": ["**", "!**/dist", "!**/.turbo", "!graft", "!.claude", "!.mcp.json", "!**/*.md"]
   },
   "formatter": {
     "enabled": true,
