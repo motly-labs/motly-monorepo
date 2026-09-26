@@ -105,9 +105,30 @@ export interface BurstSpec {
   radius?: NumericProperty<LengthUnit>;
   /** How the Burst's own `radius` moves. Its Children take their own `easing`. */
   easing?: Easing<'radius'>;
-  /** The Child spawned `count` times: an Element, or another Emitter. */
+  /** The Child spawned `count` times: an Element, another Emitter, or a Modifier around either. */
   children: ChildSpec;
 }
 
-/** Anything an Emitter can spawn. Discriminated on `kind`. */
-export type ChildSpec = ShapeSpec | BurstSpec;
+/**
+ * The JSON-serializable description of a Swirl: one Child whose path it bends. A Swirl turns the
+ * ray the Burst around it throws its Child along, about the start of that ray, by
+ * `direction` × `size` × sin(2π × `frequency` × progress), where progress runs 0–1 along the throw
+ * as the Burst's `radius` eases, so for a radius moving between two values the waves sit at the
+ * same places on the path whatever the Burst's `easing`. It draws nothing and adds no time: a Swirl lasts as long as its Child. With no
+ * Burst around it there is no throw to bend, and its Child is drawn unchanged. Reach for it to make
+ * a Burst's Children wriggle outward instead of flying straight.
+ */
+export interface SwirlSpec {
+  kind: 'swirl';
+  /** How far the throw turns at the crest of a wave. The sideways reach grows with distance. */
+  size?: Distributable<NumericValue<AngleUnit>>;
+  /** How many waves over the whole throw. */
+  frequency?: Distributable<NumericValue>;
+  /** Which way the first wave turns: 1 clockwise, -1 counterclockwise. `each([1, -1])` alternates. */
+  direction?: Distributable<1 | -1>;
+  /** The Child whose path this bends: an Element, an Emitter, or another Modifier. */
+  child: ChildSpec;
+}
+
+/** Anything an Emitter or a Modifier can hold. Discriminated on `kind`. */
+export type ChildSpec = ShapeSpec | BurstSpec | SwirlSpec;

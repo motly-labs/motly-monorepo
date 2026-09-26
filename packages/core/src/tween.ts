@@ -29,3 +29,11 @@ export function colorAt(property: ResolvedColor, progress: number): string {
     ? property
     : keyframesAt(property.frames, property.ease(progress), mixColor);
 }
+
+/**
+ * How far a resolved property is through its Keyframes at linear `progress`, eased: 0 at the first,
+ * 1 at the last. A constant does not ease, so it is `progress` itself.
+ */
+export function easedAt(property: ResolvedNumeric, progress: number): number {
+  return typeof property === 'number' ? progress : property.ease(progress);
+}

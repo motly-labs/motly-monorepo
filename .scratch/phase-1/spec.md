@@ -106,6 +106,8 @@ The phase is done when `createScope().burst({ … }).play()` in a plain HTML fil
 
 - A curve can also be an SVG path string in mojs's 100×100 box, y down (`'M0,100 C…100,0'`). It must start at x 0 and end at x 100, never turn back in x, and use only M, L, H, V, C, S, Q and T (absolute or relative): a curve drawn in the wrong box fails at creation rather than silently flattening. y is free, so a path can overshoot or end where it started. Elastic and bounce ship as path-string constants. Decided with the user in ticket 06.
 
+- A Swirl bends the ray the Burst around it throws its Child along, turning it about the ray's start by `direction` × `size` × sin(2π × `frequency` × progress), with `size` an angle, `frequency` in waves per throw and progress along the throw as the Burst's radius eases. It draws nothing, adds no time, and passes its Seed and index through. With no Burst around it, there is nothing to bend. Decided with the user in ticket 09.
+
 - A Spec from JSON is validated in full when the Instance is created, so it gets the same guarantees as one the compiler checked. Validation is strict: an unknown field (`raduis`) is an error, not ignored. The cost is forward compatibility: a Spec saved with a field from a newer version fails on an older one. Decided with the user after ticket 05.
 
 - The RNG algorithm and the Seed derivation scheme are a compatibility contract from the first release: changing either changes every seeded burst anyone has saved. `descriptors.test.ts` pins two values under Seed 42 to catch it. Decided in ticket 03; write an ADR if it ever has to change.

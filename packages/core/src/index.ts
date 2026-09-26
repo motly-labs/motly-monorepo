@@ -62,6 +62,7 @@ export type {
   NumericValue,
   ShapeKind,
   ShapeSpec,
+  SwirlSpec,
   TimeUnit,
 } from './spec.js';
 

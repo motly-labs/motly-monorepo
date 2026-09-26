@@ -5,11 +5,12 @@ import {
   type Placement,
   type ResolvedElement,
   type ResolvedEmitter,
+  type ResolvedSwirl,
   type ResolvedTree,
   resolve,
 } from './resolve.js';
 import type { BurstSpec, ChildSpec, ShapeKind, ShapeSpec } from './spec.js';
-import { colorAt, numberAt } from './tween.js';
+import { colorAt, easedAt, numberAt } from './tween.js';
 import { clamp } from './utils/index.js';
 
 /** A point in a Renderer's coordinate space. */
@@ -108,6 +109,16 @@ function paint(record: CircleRecord, element: ResolvedElement, progress: number)
   record.opacity = numberAt(element.opacity, progress);
 }
 
+/** How far, in radians clockwise, `swirls` turn a throw `progress` of the way through it, 0–1. */
+function turnAt(swirls: readonly ResolvedSwirl[], progress: number): number {
+  let turn = 0;
+  for (let i = 0; i < swirls.length; i++) {
+    const { amplitude, rate } = swirls[i] as ResolvedSwirl;
+    turn += amplitude * Math.sin(rate * progress);
+  }
+  return turn;
+}
+
 function createRecord(): CircleRecord {
   return {
     kind: 'circle',
@@ -144,12 +155,15 @@ export class SpecInstance implements Instance {
   // Each Emitter's radius at the Playhead being sampled, for the Child start it was last worked out
   // for. Children that start together share one evaluation. Reused by every sample.
   readonly #distances: Float64Array;
+  // How far each of those radii is through its throw, eased, 0–1: what a Swirl's waves follow.
+  readonly #throwProgress: Float64Array;
   readonly #distanceStarts: Float64Array;
 
   constructor(spec: ChildSpec, binding: InstanceBinding, driver: Driver, onDestroy?: () => void) {
     this.#resolved = resolve(spec, binding.seed ?? freshSeed());
     this.#records = this.#resolved.elements.map(createRecord);
     this.#distances = new Float64Array(this.#resolved.emitters.length);
+    this.#throwProgress = new Float64Array(this.#resolved.emitters.length);
     this.#distanceStarts = new Float64Array(this.#resolved.emitters.length);
     this.#onDestroy = onDestroy;
     this.#origin = binding.origin;
@@ -237,6 +251,7 @@ export class SpecInstance implements Instance {
     const { elements, emitters } = this.#resolved;
     const records = this.#records;
     const distances = this.#distances;
+    const throwProgress = this.#throwProgress;
     const distanceStarts = this.#distanceStarts.fill(Number.NaN);
     // Indexed loops: this runs every frame for every Element, and must not allocate.
     for (let i = 0; i < elements.length; i++) {
@@ -245,16 +260,27 @@ export class SpecInstance implements Instance {
       let x = this.#origin.x;
       let y = this.#origin.y;
       for (let p = 0; p < element.placements.length; p++) {
-        const { emitter, start, dx, dy } = element.placements[p] as Placement;
+        const placement = element.placements[p] as Placement;
+        const { emitter, start } = placement;
         // Elements come in tree order, so the Children of one Child share this in a row.
         if (distanceStarts[emitter] !== start) {
           const { radius, duration } = emitters[emitter] as ResolvedEmitter;
-          distances[emitter] = numberAt(radius, progressAt(t - start, duration));
+          const progress = progressAt(t - start, duration);
+          distances[emitter] = numberAt(radius, progress);
+          throwProgress[emitter] = easedAt(radius, progress);
           distanceStarts[emitter] = start;
         }
         const distance = distances[emitter] as number;
-        x += dx * distance;
-        y += dy * distance;
+        if (placement.swirls.length === 0) {
+          x += placement.dx * distance;
+          y += placement.dy * distance;
+        } else {
+          const turn = turnAt(placement.swirls, throwProgress[emitter] as number);
+          const cos = Math.cos(turn);
+          const sin = Math.sin(turn);
+          x += (placement.dx * cos - placement.dy * sin) * distance;
+          y += (placement.dx * sin + placement.dy * cos) * distance;
+        }
       }
       record.x = x;
       record.y = y;

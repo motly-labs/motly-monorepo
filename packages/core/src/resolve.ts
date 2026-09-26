@@ -12,6 +12,9 @@ const DEFAULT_BURST_RADIUS: NumericProperty<LengthUnit> = [0, 50];
 const DEFAULT_RADIUS = 50;
 const DEFAULT_FILL = 'deeppink';
 const DEFAULT_STROKE = 'none';
+const DEFAULT_SWIRL_SIZE = 10;
+const DEFAULT_SWIRL_FREQUENCY = 1;
+const STRAIGHT: readonly ResolvedSwirl[] = [];
 
 /** Two or more Keyframes and the Ease that moves between them. */
 export interface Tween<T> {
@@ -53,6 +56,17 @@ export interface Placement {
   readonly start: number;
   readonly dx: number;
   readonly dy: number;
+  /** Every Swirl bending this throw, outermost first; empty for a straight one. */
+  readonly swirls: readonly ResolvedSwirl[];
+}
+
+/**
+ * One Swirl, turning a throw by `amplitude` × sin(`rate` × progress) radians clockwise, where
+ * progress runs 0–1 along the throw.
+ */
+export interface ResolvedSwirl {
+  readonly amplitude: number;
+  readonly rate: number;
 }
 
 /**
@@ -110,8 +124,12 @@ function resolveNumbers(
   return typeof drawn === 'object' ? drawn.map(convert) : convert(drawn);
 }
 
-/** The `delay` of `spec`, the Child at `index` with Seed `seed`, in seconds. */
+/**
+ * The `delay` of `spec`, the Child at `index` with Seed `seed`, in seconds. A Swirl adds no time, so
+ * its delay is its Child's.
+ */
 function delayOf(spec: ChildSpec, seed: number, index: number): number {
+  if (spec.kind === 'swirl') return delayOf(spec.child, seed, index);
   // A Distributable<NumericValue> holds no Keyframes, so it resolves to a number.
   return resolveNumbers('delay', spec.delay ?? 0, seed, index, TIME) as number;
 }
@@ -130,6 +148,30 @@ function walk(
 ): number {
   const numbers = (name: string, property: NumericProperty<string>, units: Units) =>
     resolveNumbers(name, property, seed, index, units);
+  if (spec.kind === 'swirl') {
+    const bending = placements.at(-1);
+    // With no throw around it, a Swirl has nothing to bend.
+    if (bending === undefined) return walk(spec.child, seed, index, start, placements, out);
+    // Each Swirl on one throw draws its own values from a Seed of its own, so nested Swirls draw
+    // apart. Its Child keeps this Seed and index, so wrapping it leaves every value it draws, other
+    // than its position, unchanged.
+    const own = derive(derive(seed, keyOf('swirl')), bending.swirls.length);
+    // Neither holds Keyframes, so each resolves to a number.
+    const size = resolveNumbers('size', spec.size ?? DEFAULT_SWIRL_SIZE, own, index, ANGLE);
+    const frequency = resolveNumbers(
+      'frequency',
+      spec.frequency ?? DEFAULT_SWIRL_FREQUENCY,
+      own,
+      index,
+      UNITLESS,
+    );
+    const swirl: ResolvedSwirl = {
+      amplitude: resolveValue(spec.direction ?? 1, index) * (size as number) * (Math.PI / 180),
+      rate: 2 * Math.PI * (frequency as number),
+    };
+    const bent = { ...bending, swirls: [...bending.swirls, swirl] };
+    return walk(spec.child, seed, index, start, [...placements.slice(0, -1), bent], out);
+  }
   const ease = easings(resolveValue(spec.easing ?? 'linear', index));
   const numeric = (name: string, property: NumericProperty<string>, units: Units) =>
     withEase(numbers(name, property, units), ease(name));
@@ -173,6 +215,7 @@ function walk(
       start: childStart,
       dx: Math.sin(angle),
       dy: -Math.cos(angle),
+      swirls: STRAIGHT,
     };
     const childEnd = walk(
       spec.children,

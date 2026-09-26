@@ -162,6 +162,11 @@ const count: Check = (value, path) => {
   }
 };
 
+const direction = distributable((value, path) => {
+  if (value !== 1 && value !== -1)
+    fail(path, value, 'Use 1 for clockwise or -1 for counterclockwise.');
+});
+
 /** The fields each kind of Spec takes, with what each one accepts. Adding a kind adds one entry. */
 const FIELDS: Readonly<Record<string, Readonly<Record<string, Check>>>> = {
   circle: {
@@ -183,6 +188,12 @@ const FIELDS: Readonly<Record<string, Readonly<Record<string, Check>>>> = {
     radius: numeric(LENGTH),
     easing: easing(['radius']),
     children: (value, path) => validate(value, path),
+  },
+  swirl: {
+    size: distributable(numberIn(ANGLE)),
+    frequency: distributable(numberIn(UNITLESS)),
+    direction,
+    child: (value, path) => validate(value, path),
   },
 };
 
@@ -210,5 +221,8 @@ export function validate(spec: unknown, path = ''): void {
   }
   if (kind === 'burst' && spec.children === undefined) {
     throw new Error(`motly: ${at(path, 'children')} is missing. A Burst needs a Child to spawn.`);
+  }
+  if (kind === 'swirl' && spec.child === undefined) {
+    throw new Error(`motly: ${at(path, 'child')} is missing. A Swirl needs a Child to bend.`);
   }
 }
