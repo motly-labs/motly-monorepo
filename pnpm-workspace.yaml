@@ -1,3 +1,6 @@
 packages:
   - 'packages/*'
   - 'apps/*'
+
+# Refuse to install on a Node outside package.json engines: everything runs on Node 24.
+engineStrict: true
