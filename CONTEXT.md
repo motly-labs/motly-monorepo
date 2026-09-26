@@ -71,6 +71,10 @@ _Avoid_: Current time, progress (progress is Playhead ÷ duration)
 Whatever advances the Playhead: core's rAF loop standalone, GSAP's ticker, or Motion. Owns play, pause, reverse and seek.
 _Avoid_: Ticker (that is one kind of Driver), clock, scheduler
 
+**Playback**:
+One Instance attached to a Driver: the controls for its Playhead (play, pause, resume, reverse, seek, stop). A Driver hands one out per Instance; the Instance delegates to it and holds no clock.
+_Avoid_: Tween, animation, controller
+
 **Stagger**:
 The offset of each Child's start time within an Emitter, shaped by an easing curve. An option of an Emitter, not a primitive.
 _Avoid_: Delay (that is a single Child's offset)

@@ -82,4 +82,44 @@ describe('the default Driver', () => {
 
     expect(frames.pending).toBe(0);
   });
+
+  it('runs no frame loop while every Instance is paused, at its end or never played', () => {
+    const frames = fakeFrames();
+    const { renderer } = recordingRenderer();
+    const shape = createScope().shape({ kind: 'circle' }, { renderer, origin: { x: 0, y: 0 } });
+
+    shape.setProgress(0.5);
+    expect(frames.pending).toBe(0);
+
+    shape.play();
+    frames.frame(1000);
+    shape.pause();
+    expect(frames.pending).toBe(0);
+
+    shape.resume();
+    expect(frames.pending).toBe(1);
+  });
+
+  it('carries on from a seek mid-play without losing a frame of time', () => {
+    const frames = fakeFrames();
+    const radii: number[] = [];
+    const renderer: Renderer = {
+      draw: (_owner, list) => radii.push(Math.round(list[0]?.radius ?? -1)),
+      release: () => {},
+    };
+    const shape = createScope().shape(
+      { kind: 'circle', radius: [0, 100], duration: 1 },
+      { renderer, origin: { x: 0, y: 0 } },
+    );
+
+    shape.play();
+    frames.frame(1000);
+    frames.frame(1100);
+    shape.seek(0.5);
+    frames.frame(1200);
+    shape.reverse();
+    frames.frame(1300);
+
+    expect(radii).toEqual([0, 10, 50, 60, 50]);
+  });
 });

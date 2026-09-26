@@ -1,33 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-  createScope,
-  type DrawList,
-  type Driver,
-  type DriverTarget,
-  type Renderer,
-  Shape,
-  type ShapeSpec,
-} from './index.js';
-
-/** A Driver whose Playhead moves only when the test says so. */
-function manualDriver() {
-  const targets = new Set<DriverTarget>();
-  const driver: Driver = {
-    play(target) {
-      targets.add(target);
-      return { stop: () => targets.delete(target) };
-    },
-  };
-  return {
-    driver,
-    seek(t: number) {
-      for (const target of targets) target.render(t);
-    },
-    get playing() {
-      return targets.size;
-    },
-  };
-}
+import { createScope, type DrawList, type Renderer, Shape, type ShapeSpec } from './index.js';
+import { manualDriver } from './testing/manual-driver.js';
 
 function recordingRenderer() {
   const drawn: DrawList[] = [];
@@ -159,7 +132,7 @@ describe('playing a Shape', () => {
 
     await played;
     expect(released).toEqual([shape]);
-    expect(manual.playing).toBe(0);
+    expect(manual.attached).toBe(0);
   });
 });
 
@@ -176,7 +149,7 @@ describe('a Scope', () => {
 
     await played;
     expect(released).toEqual([first, second]);
-    expect(manual.playing).toBe(0);
+    expect(manual.attached).toBe(0);
   });
 });
 

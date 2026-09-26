@@ -1,32 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import {
-  Burst,
-  type BurstSpec,
-  createScope,
-  type DrawList,
-  type Driver,
-  type DriverTarget,
-  type Renderer,
-} from './index.js';
+import { Burst, type BurstSpec, createScope, type DrawList, type Renderer } from './index.js';
+import { manualDriver } from './testing/manual-driver.js';
 
 const renderer: Renderer = { draw() {}, release() {} };
-
-/** A Driver whose Playhead moves only when the test says so. */
-function manualDriver() {
-  const targets = new Set<DriverTarget>();
-  const driver: Driver = {
-    play(target) {
-      targets.add(target);
-      return { stop: () => targets.delete(target) };
-    },
-  };
-  return {
-    driver,
-    seek(t: number) {
-      for (const target of targets) target.render(t);
-    },
-  };
-}
 
 /**
  * The x and y of every record, rounded so floating-point noise from sin and cos compares equal,

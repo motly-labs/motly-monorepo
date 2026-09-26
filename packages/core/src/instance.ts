@@ -27,6 +27,20 @@ export interface InstanceBinding {
    * reproduce a burst exactly on every run; leave it out for a fresh random one per Instance.
    */
   seed?: number;
+  /** Called on the first draw after each `play()`. Reach for it to reveal or log an effect. */
+  onStart?: () => void;
+  /**
+   * Called after every draw, by playing or seeking, with the Playhead in seconds. Reach for it to
+   * keep something else, such as a slider, in step with the effect.
+   */
+  onUpdate?: (t: number) => void;
+  /**
+   * Called when pending `play()`s settle because the Playhead reached the end moving forward:
+   * once for all of them, and not on `destroy()`. Where the Driver cannot run at all, as rAF on a
+   * server, `play()` settles at once and this fires with nothing drawn. Reach for it, or await
+   * `play()`, to chain what comes next.
+   */
+  onComplete?: () => void;
 }
 
 /** A Spec bound to a Renderer and an Origin: the thing that plays and is destroyed. */
@@ -35,8 +49,35 @@ export interface Instance {
   readonly duration: number;
   /** The Draw list at Playhead `t` seconds. Pure: depends on nothing but `t`. */
   sample(t: number): DrawList;
-  /** Play from the start. Resolves when the Playhead reaches the end, or on `destroy()`. */
+  /**
+   * Play from the start. Resolves the first time the Playhead then reaches the end moving
+   * forward, or on `destroy()`; never rejects.
+   */
   play(): Promise<void>;
+  /** Stop the Playhead where it is. Reach for it to hold an effect while something else happens. */
+  pause(): void;
+  /**
+   * Carry on from where `pause()` left the Playhead, in the direction it was moving. Reach for it to
+   * continue an effect held by `pause()`, rather than restart it with `play()`.
+   */
+  resume(): void;
+  /**
+   * Run the Playhead backward from where it is, stopping at 0. Reach for it to take an effect back
+   * out, as on a hover ending. Reaching 0 does not settle `play()`.
+   */
+  reverse(): void;
+  /**
+   * Move the Playhead to `t` seconds, held within 0 and `duration`, and draw there now, playing
+   * or paused as before. Works on an Instance that has never played. Reach for it to jump to a
+   * moment, or scrub in seconds. A seek forward to the end settles a pending `play()`, whichever
+   * way the Playhead was running.
+   */
+  seek(t: number): void;
+  /**
+   * `seek()` by progress: 0 is the first frame, 1 the last. Reach for it to scrub from a slider or
+   * a scroll position. Draws what `sample(p * duration)` returns.
+   */
+  setProgress(p: number): void;
   /** Stop playing and remove everything drawn. Resolves a pending `play()` rather than rejecting. */
   destroy(): void;
 }
@@ -91,8 +132,12 @@ export class SpecInstance implements Instance {
   readonly #driver: Driver;
   readonly #target: DriverTarget;
   readonly #onDestroy: (() => void) | undefined;
+  readonly #callbacks: Pick<InstanceBinding, 'onStart' | 'onUpdate' | 'onComplete'>;
   #playback: Playback | undefined;
+  // Each pending play(): resolved together when the Playhead reaches the end moving forward.
   #waiters: (() => void)[] = [];
+  // Whether a play() has yet to draw its first frame.
+  #starting = false;
   #destroyed = false;
   // The pool: one record per Element, allocated here and reused by every sample.
   readonly #records: CircleRecord[];
@@ -109,21 +154,48 @@ export class SpecInstance implements Instance {
     this.#onDestroy = onDestroy;
     this.#origin = binding.origin;
     this.#renderer = binding.renderer;
+    this.#callbacks = binding;
     this.#driver = driver;
     this.duration = this.#resolved.duration;
     this.#target = {
       duration: this.duration,
       render: (t) => this.#render(t),
-      finish: () => this.#settle(),
+      finish: () => this.#finish(),
     };
   }
 
   play(): Promise<void> {
     if (this.#destroyed) return Promise.resolve();
-    this.#playback?.stop();
     const finished = new Promise<void>((resolve) => this.#waiters.push(resolve));
-    this.#playback = this.#driver.play(this.#target);
+    this.#starting = true;
+    this.#attached().play();
     return finished;
+  }
+
+  pause(): void {
+    if (!this.#destroyed) this.#attached().pause();
+  }
+
+  resume(): void {
+    if (!this.#destroyed) this.#attached().resume();
+  }
+
+  reverse(): void {
+    if (!this.#destroyed) this.#attached().reverse();
+  }
+
+  seek(t: number): void {
+    if (!this.#destroyed) this.#attached().seek(t);
+  }
+
+  setProgress(p: number): void {
+    this.seek(p * this.duration);
+  }
+
+  /** The Playback for this Instance, attaching to the Driver the first time it is needed. */
+  #attached(): Playback {
+    this.#playback ??= this.#driver.attach(this.#target);
+    return this.#playback;
   }
 
   destroy(): void {
@@ -137,8 +209,22 @@ export class SpecInstance implements Instance {
   }
 
   #render(t: number): void {
+    if (this.#destroyed) return;
     this.#renderer.draw(this, this.sample(t));
-    if (t >= this.duration) this.#settle();
+    if (this.#starting) {
+      this.#starting = false;
+      this.#callbacks.onStart?.();
+    }
+    // A callback may have destroyed the Instance: nothing more fires after destroy().
+    if (!this.#destroyed) this.#callbacks.onUpdate?.(t);
+  }
+
+  /** The Driver's word that the Playhead reached the end moving forward: complete any play(). */
+  #finish(): void {
+    if (this.#waiters.length === 0) return;
+    this.#starting = false;
+    this.#settle();
+    this.#callbacks.onComplete?.();
   }
 
   #settle(): void {

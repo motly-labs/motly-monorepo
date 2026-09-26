@@ -4,13 +4,12 @@ import {
   type BurstSpec,
   backIn,
   createScope,
-  type Driver,
-  type DriverTarget,
   each,
   type InstanceBinding,
   type Renderer,
   rand,
 } from './index.js';
+import { manualDriver } from './testing/manual-driver.js';
 
 const renderer: Renderer = { draw() {}, release() {} };
 const binding: InstanceBinding = { renderer, origin: { x: 0, y: 0 }, seed: 1 };
@@ -121,17 +120,8 @@ describe('derived duration', () => {
 
 describe('play()', () => {
   it('resolves when the last offset Child ends, not before', async () => {
-    const targets = new Set<DriverTarget>();
-    const driver: Driver = {
-      play(target) {
-        targets.add(target);
-        return { stop: () => targets.delete(target) };
-      },
-    };
-    const seek = (t: number) => {
-      for (const target of targets) target.render(t);
-    };
-    const instance = createScope({ driver }).burst(
+    const manual = manualDriver();
+    const instance = createScope({ driver: manual.driver }).burst(
       { kind: 'burst', count: 3, stagger: 0.5, children: { kind: 'circle', delay: 0.25 } },
       binding,
     );
@@ -140,11 +130,11 @@ describe('play()', () => {
       done = true;
     });
 
-    seek(1.5);
+    manual.seek(1.5);
     await Promise.resolve();
     expect(done).toBe(false);
 
-    seek(2.25);
+    manual.seek(2.25);
     await played;
     expect(done).toBe(true);
   });
