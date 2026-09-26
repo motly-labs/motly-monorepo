@@ -77,5 +77,6 @@ export type {
   SwirlSpec,
   TimeUnit,
 } from './spec.js';
+export type { Timeline } from './timeline.js';
 
 export const VERSION = '0.0.0';

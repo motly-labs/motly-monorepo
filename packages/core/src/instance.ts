@@ -45,7 +45,12 @@ export interface InstanceBinding {
   onComplete?: () => void;
 }
 
-/** A Spec bound to a Renderer and an Origin: the thing that plays and is destroyed. */
+/**
+ * A Spec bound to a Renderer and an Origin: the thing that plays and is destroyed. On a Timeline,
+ * the Timeline moves its Playhead: its `play()`, `pause()`, `resume()`, `reverse()`, `seek()` and
+ * `setProgress()` do nothing, though `play()` still resolves when the Timeline carries it past its
+ * end.
+ */
 export interface Instance {
   /** Seconds from the first frame to the last. */
   readonly duration: number;
@@ -159,11 +164,10 @@ export class SpecInstance implements Instance {
   readonly #resolved: ResolvedTree;
   readonly #origin: Origin;
   readonly #renderer: Renderer;
-  readonly #driver: Driver;
   readonly #target: DriverTarget;
   readonly #onDestroy: (() => void) | undefined;
   readonly #callbacks: Pick<InstanceBinding, 'onStart' | 'onUpdate' | 'onComplete'>;
-  #playback: Playback | undefined;
+  readonly #playback: Playback;
   // Each pending play(): resolved together when the Playhead reaches the end moving forward.
   #waiters: (() => void)[] = [];
   // Whether a play() has yet to draw its first frame.
@@ -188,54 +192,48 @@ export class SpecInstance implements Instance {
     this.#origin = binding.origin;
     this.#renderer = binding.renderer;
     this.#callbacks = binding;
-    this.#driver = driver;
     this.duration = this.#resolved.duration;
     this.#target = {
       duration: this.duration,
       render: (t) => this.#render(t),
       finish: () => this.#finish(),
     };
+    // Attached now, paused at 0 with nothing drawn, so a Timeline knows every Instance on it.
+    this.#playback = driver.attach(this.#target);
   }
 
   play(): Promise<void> {
     if (this.#destroyed) return Promise.resolve();
     const finished = new Promise<void>((resolve) => this.#waiters.push(resolve));
     this.#starting = true;
-    this.#attached().play();
+    this.#playback.play();
     return finished;
   }
 
   pause(): void {
-    if (!this.#destroyed) this.#attached().pause();
+    if (!this.#destroyed) this.#playback.pause();
   }
 
   resume(): void {
-    if (!this.#destroyed) this.#attached().resume();
+    if (!this.#destroyed) this.#playback.resume();
   }
 
   reverse(): void {
-    if (!this.#destroyed) this.#attached().reverse();
+    if (!this.#destroyed) this.#playback.reverse();
   }
 
   seek(t: number): void {
-    if (!this.#destroyed) this.#attached().seek(t);
+    if (!this.#destroyed) this.#playback.seek(t);
   }
 
   setProgress(p: number): void {
     this.seek(p * this.duration);
   }
 
-  /** The Playback for this Instance, attaching to the Driver the first time it is needed. */
-  #attached(): Playback {
-    this.#playback ??= this.#driver.attach(this.#target);
-    return this.#playback;
-  }
-
   destroy(): void {
     if (this.#destroyed) return;
     this.#destroyed = true;
-    this.#playback?.stop();
-    this.#playback = undefined;
+    this.#playback.stop();
     this.#renderer.release(this);
     this.#settle();
     this.#onDestroy?.();
