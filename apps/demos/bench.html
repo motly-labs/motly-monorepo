@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>motly renderer benchmark</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "@motly/core": "./node_modules/@motly/core/dist/index.mjs",
+          "@motly/core/svg": "./node_modules/@motly/core/dist/svg/index.mjs",
+          "@motly/core/canvas": "./node_modules/@motly/core/dist/canvas/index.mjs"
+        }
+      }
+    </script>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 2rem; }
+      #stage { width: 600px; height: 600px; border: 1px solid #ddd; }
+      #stage > * { width: 600px; height: 600px; display: block; }
+    </style>
+  </head>
+  <body>
+    <h1>SVG / Canvas frame cost</h1>
+    <p>
+      Keep this tab in front while it runs: a hidden tab gets no animation frames. Each row is the
+      median main-thread cost of one frame, from the start of the frame callback that samples and
+      draws a Burst, through the browser's style, layout and paint, to the first task after it.
+    </p>
+    <button id="run" type="button">Run</button>
+    <div id="stage"></div>
+    <pre id="out"></pre>
+
+    <script type="module">
+      import { createScope, each } from '@motly/core';
+      import { CanvasRenderer } from '@motly/core/canvas';
+      import { SVGRenderer } from '@motly/core/svg';
+
+      const WARMUP = 30;
+      const FRAMES = 120;
+      const stage = document.getElementById('stage');
+      const out = document.getElementById('out');
+
+      /** A typical Burst: every Child animates its radius, opacity and color. */
+      function spec(count) {
+        return {
+          kind: 'burst',
+          count,
+          radius: [0, 280],
+          children: {
+            kind: 'circle',
+            radius: [8, 2],
+            opacity: [1, 0.2],
+            fill: each([['deeppink', 'cyan'], ['gold', 'mediumpurple']]),
+          },
+        };
+      }
+
+      const nextTask = () => new Promise((resolve) => {
+        const channel = new MessageChannel();
+        channel.port1.onmessage = () => resolve(performance.now());
+        channel.port2.postMessage(null);
+      });
+
+      /** Median cost of one frame drawing `count` Elements with `kind` of Renderer, in ms. */
+      async function measure(kind, count) {
+        const element =
+          kind === 'svg'
+            ? document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+            : document.createElement('canvas');
+        stage.replaceChildren(element);
+        const renderer = kind === 'svg' ? new SVGRenderer(element) : new CanvasRenderer(element);
+        const scope = createScope();
+        const burst = scope.burst(spec(count), { renderer, origin: { x: 300, y: 300 }, seed: 1 });
+        const costs = [];
+        for (let frame = 0; frame < WARMUP + FRAMES; frame++) {
+          const cost = await new Promise((resolve) => {
+            requestAnimationFrame(() => {
+              const start = performance.now();
+              // Sweep back and forth through the middle, where every property is moving.
+              burst.setProgress(0.2 + 0.6 * Math.abs(((frame / 60) % 2) - 1));
+              // Posted now, it runs after this frame's style, layout and paint.
+              nextTask().then((end) => resolve(end - start));
+            });
+          });
+          if (frame >= WARMUP) costs.push(cost);
+        }
+        scope.destroy();
+        costs.sort((a, b) => a - b);
+        return costs[Math.floor(costs.length / 2)];
+      }
+
+      async function run() {
+        const counts = [25, 50, 100, 150, 200, 300, 400, 500, 750, 1000, 2000, 5000];
+        const rows = [];
+        out.textContent = 'running…';
+        for (const count of counts) {
+          const svg = count <= 2000 ? await measure('svg', count) : undefined;
+          const canvas = await measure('canvas', count);
+          rows.push({ count, svg, canvas });
+          out.textContent = rows
+            .map(
+              (row) =>
+                `${String(row.count).padStart(5)}  svg ${row.svg?.toFixed(2).padStart(6) ?? '     -'} ms` +
+                `  canvas ${row.canvas.toFixed(2).padStart(6)} ms`,
+            )
+            .join('\n');
+        }
+        window.benchmark = { userAgent: navigator.userAgent, devicePixelRatio, rows };
+        out.textContent += `\n\ndone · DPR ${devicePixelRatio} · ${navigator.userAgent}`;
+      }
+
+      document.getElementById('run').addEventListener('click', run);
+      if (location.hash === '#run') run();
+    </script>
+  </body>
+</html>
