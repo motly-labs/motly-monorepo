@@ -1,8 +1,10 @@
 name: Release
 
+# Manual until the first npm publish: a push to main no longer runs it. Before switching it back
+# to `push: branches: [main]`, mark the placeholder packages private, add `registry-url` to
+# setup-node, and allow Actions to create pull requests in the repo settings.
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: release
