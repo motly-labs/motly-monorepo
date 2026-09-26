@@ -1,5 +1,11 @@
-import type { Driver, DriverTarget, Playback } from './driver.js';
-import { type Instance, type InstanceBinding, SpecInstance } from './instance.js';
+import type { Driver, Playback } from './driver.js';
+import {
+  type Instance,
+  type InstanceBinding,
+  type InstanceTarget,
+  SpecInstance,
+} from './instance.js';
+import { isMotionReduced, type ReducedMotion } from './reduced-motion.js';
 import type { BurstSpec, ChildSpec, ShapeKind, ShapeSpec } from './spec.js';
 import { clamp } from './utils/index.js';
 
@@ -63,9 +69,22 @@ export interface Timeline {
   destroy(): void;
 }
 
+/** Options for a Scope's `timeline()`. */
+export interface TimelineOptions {
+  /**
+   * Whether to show still frames instead of motion. `'user'`, the default, follows the viewer's
+   * `prefers-reduced-motion`, read at each `play()`. Under reduced motion, `play()` draws every
+   * Instance on the Timeline once at its own Resting frame and resolves at once, `resume()` does
+   * nothing, and `reverse()` jumps to the first frame; no Driver runs. It decides for every
+   * Instance on the Timeline, whatever their own bindings say. Leave it out to respect the viewer;
+   * force it only in a demo or a test.
+   */
+  reducedMotion?: ReducedMotion;
+}
+
 /** One Instance's target, and where on the Timeline it starts. */
 interface Placement {
-  readonly target: DriverTarget;
+  readonly target: InstanceTarget;
   readonly at: number;
 }
 
@@ -76,7 +95,12 @@ const idle = () => {};
  * A Timeline played by `driver`. `onDestroy` is told when it is destroyed, so its Scope can let
  * go of it.
  */
-export function createTimeline(driver: Driver, onDestroy?: () => void): Timeline {
+export function createTimeline(
+  driver: Driver,
+  options: TimelineOptions = {},
+  onDestroy?: () => void,
+): Timeline {
+  const reduced = () => isMotionReduced(options.reducedMotion ?? 'user');
   const placements: Placement[] = [];
   const instances = new Set<Instance>();
   let waiters: (() => void)[] = [];
@@ -116,7 +140,8 @@ export function createTimeline(driver: Driver, onDestroy?: () => void): Timeline
   function create(spec: ChildSpec, binding: InstanceBinding, at = end()): Instance {
     const placing: Driver = {
       attach(target) {
-        const placement: Placement = { target, at };
+        // Only this Timeline's own SpecInstances attach here, and theirs carry a Resting frame.
+        const placement: Placement = { target: target as InstanceTarget, at };
         placements.push(placement);
         return {
           play: idle,
@@ -131,8 +156,13 @@ export function createTimeline(driver: Driver, onDestroy?: () => void): Timeline
         };
       },
     };
-    const instance: Instance = new SpecInstance(spec, binding, placing, () =>
-      instances.delete(instance),
+    // The Timeline decides reduced motion for everything on it, so an Instance's own setting
+    // would only draw it out of turn.
+    const instance: Instance = new SpecInstance(
+      spec,
+      { ...binding, reducedMotion: 'never' },
+      placing,
+      () => instances.delete(instance),
     );
     instances.add(instance);
     return instance;
@@ -150,17 +180,32 @@ export function createTimeline(driver: Driver, onDestroy?: () => void): Timeline
       const finished = new Promise<void>((resolve) => waiters.push(resolve));
       // A new run: every end ahead of the Playhead is still to be passed.
       drawn = Number.NEGATIVE_INFINITY;
-      playback.play();
+      if (reduced()) {
+        // Each Instance's Resting frame, drawn once, as a play that went straight to its end.
+        playback.pause();
+        for (const { target } of [...placements]) target.render(target.rest);
+        for (const { target } of [...placements]) target.finish();
+        settle();
+      } else {
+        playback.play();
+      }
       return finished;
     },
     pause() {
       if (!destroyed) playback.pause();
     },
     resume() {
-      if (!destroyed) playback.resume();
+      if (!destroyed && !reduced()) playback.resume();
     },
     reverse() {
-      if (!destroyed) playback.reverse();
+      if (destroyed) return;
+      if (reduced()) {
+        // Where reversing would have run to, without running.
+        playback.pause();
+        playback.seek(0);
+      } else {
+        playback.reverse();
+      }
     },
     seek(t) {
       if (!destroyed) playback.seek(t);

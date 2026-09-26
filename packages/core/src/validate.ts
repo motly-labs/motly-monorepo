@@ -157,6 +157,12 @@ const stagger: Check = (value, path) => {
   if (value.easing !== undefined) curve(value.easing, `${path}.easing`);
 };
 
+const restAt: Check = (value, path) => {
+  if (typeof value !== 'number' || !(value >= 0 && value <= 1)) {
+    fail(path, value, 'Use a progress from 0 to 1.');
+  }
+};
+
 /** A whole number, `min` or more. */
 function wholeFrom(min: number): Check {
   return (value, path) => {
@@ -199,7 +205,14 @@ function shapeFields<
     stroke: color,
     strokeWidth: numeric(LENGTH),
   };
-  return { ...properties, ...held, duration, delay, easing: easing(Object.keys(properties)) };
+  return {
+    ...properties,
+    ...held,
+    duration,
+    delay,
+    restAt,
+    easing: easing(Object.keys(properties)),
+  };
 }
 
 type Kind = ChildSpec['kind'];
@@ -232,6 +245,7 @@ const FIELDS = {
   burst: {
     count: wholeFrom(0),
     delay,
+    restAt,
     stagger,
     radius: numeric(LENGTH),
     easing: easing(['radius']),

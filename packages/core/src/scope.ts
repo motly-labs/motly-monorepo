@@ -1,7 +1,7 @@
 import { createRafDriver, type Driver } from './driver.js';
 import { type Instance, type InstanceBinding, SpecInstance } from './instance.js';
 import type { BurstSpec, ChildSpec, ShapeKind, ShapeSpec } from './spec.js';
-import { createTimeline, type Timeline } from './timeline.js';
+import { createTimeline, type Timeline, type TimelineOptions } from './timeline.js';
 
 /** An explicitly created owner of a set of Instances. */
 export interface Scope {
@@ -13,7 +13,7 @@ export interface Scope {
    * Create a Timeline owned by this Scope and played by its Driver. Reach for it to sequence
    * several Instances on one Playhead; create them with the Timeline's own `shape()` and `burst()`.
    */
-  timeline(): Timeline;
+  timeline(options?: TimelineOptions): Timeline;
   /** Destroy every Instance and Timeline this Scope created and is still holding. */
   destroy(): void;
 }
@@ -39,8 +39,10 @@ export function createScope(options: ScopeOptions = {}): Scope {
     // A ShapeSpec<K> is one of ShapeSpec's members; the compiler cannot see it through K.
     shape: (spec, binding) => create(spec as ShapeSpec, binding),
     burst: create,
-    timeline() {
-      const timeline: Timeline = createTimeline(driver, () => owned.delete(timeline));
+    timeline(timelineOptions) {
+      const timeline: Timeline = createTimeline(driver, timelineOptions, () =>
+        owned.delete(timeline),
+      );
       owned.add(timeline);
       return timeline;
     },

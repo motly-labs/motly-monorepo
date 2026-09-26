@@ -111,6 +111,12 @@ interface ShapeCommon {
    * few with `each()`; use a Burst's `stagger` to offset all of them in turn.
    */
   delay?: Distributable<NumericValue<TimeUnit>>;
+  /**
+   * The progress, 0 to 1, of the one still frame shown instead of motion to a viewer who asks for
+   * reduced motion (ADR-0012). The last frame if left out; set it lower where the last frame is
+   * empty, as a Burst's often is. Read from the Spec an Instance is created from; a Child's is not.
+   */
+  restAt?: number;
   /** Clockwise. */
   angle?: NumericProperty<AngleUnit>;
   scale?: NumericProperty;
@@ -156,7 +162,7 @@ export type HeldParameter = 'points' | 'd';
 /** The animated properties of a Shape of kind `K`: what its `easing` map is keyed by. */
 type ShapeProperty<K extends ShapeKind> = Exclude<
   keyof (ShapeParams[K] & ShapeCommon),
-  'duration' | 'delay' | HeldParameter
+  'duration' | 'delay' | 'restAt' | HeldParameter
 > &
   string;
 
@@ -177,6 +183,12 @@ export interface BurstSpec {
   stagger?: NumericValue<TimeUnit> | { each: NumericValue<TimeUnit>; easing?: Curve };
   /** Time to wait before the Burst starts: before any Child starts, and before it throws them. */
   delay?: Distributable<NumericValue<TimeUnit>>;
+  /**
+   * The progress, 0 to 1, of the one still frame shown instead of motion to a viewer who asks for
+   * reduced motion (ADR-0012). The last frame if left out; set it lower where the last frame is
+   * empty, as a Burst's often is. Read from the Spec an Instance is created from; a Child's is not.
+   */
+  restAt?: number;
   /** Distance from the Origin to each Child. Animates over the Burst's duration. */
   radius?: NumericProperty<LengthUnit>;
   /** How the Burst's own `radius` moves. Its Children take their own `easing`. */

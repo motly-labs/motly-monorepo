@@ -60,6 +60,7 @@ export type {
 export type { Driver, DriverTarget, Playback } from './driver.js';
 export type { CssEasing, CubicBezier, Curve, PathCurve } from './easing.js';
 export { Burst, type Instance, type InstanceBinding, type Origin, Shape } from './instance.js';
+export type { ReducedMotion } from './reduced-motion.js';
 export type { Renderer } from './renderer.js';
 export { createScope, type Scope, type ScopeOptions } from './scope.js';
 export type {
@@ -77,6 +78,6 @@ export type {
   SwirlSpec,
   TimeUnit,
 } from './spec.js';
-export type { Timeline } from './timeline.js';
+export type { Timeline, TimelineOptions } from './timeline.js';
 
 export const VERSION = '0.0.0';

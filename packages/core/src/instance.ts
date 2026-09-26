@@ -1,5 +1,6 @@
 import type { DrawList, DrawRecord } from './draw-list.js';
 import { createRafDriver, type Driver, type DriverTarget, type Playback } from './driver.js';
+import { isMotionReduced, type ReducedMotion } from './reduced-motion.js';
 import type { Renderer } from './renderer.js';
 import {
   type Placement,
@@ -29,6 +30,16 @@ export interface InstanceBinding {
    * reproduce a burst exactly on every run; leave it out for a fresh random one per Instance.
    */
   seed?: number;
+  /**
+   * Whether to show the Spec's still Resting frame instead of motion. `'user'`, the default,
+   * follows the viewer's `prefers-reduced-motion`, read at each `play()`. Under reduced motion,
+   * `play()` draws the frame at `restAt` × `duration` once and resolves at once, `resume()` does
+   * nothing, and `reverse()` jumps to the first frame; no Driver runs. `seek()` and
+   * `setProgress()` still move the Playhead, as the page calls them on the viewer's own input.
+   * Leave it out to respect the viewer; force it only in a demo or a test. Ignored on a Timeline,
+   * which decides for everything on it.
+   */
+  reducedMotion?: ReducedMotion;
   /** Called on the first draw after each `play()`. Reach for it to reveal or log an effect. */
   onStart?: () => void;
   /**
@@ -158,15 +169,24 @@ function createRecord(element: ResolvedElement): DrawRecord {
   return Object.assign(record, element.held, animated) as DrawRecord;
 }
 
+/**
+ * What an Instance hands its Driver: a DriverTarget, and the Playhead of its Resting frame, which
+ * a Timeline reads to show each Instance on it at its own.
+ */
+export interface InstanceTarget extends DriverTarget {
+  readonly rest: number;
+}
+
 /** Any Spec bound to a Renderer, an Origin and a Driver. Shape and Burst are this, typed. */
 export class SpecInstance implements Instance {
   readonly duration: number;
   readonly #resolved: ResolvedTree;
   readonly #origin: Origin;
   readonly #renderer: Renderer;
-  readonly #target: DriverTarget;
+  readonly #target: InstanceTarget;
   readonly #onDestroy: (() => void) | undefined;
   readonly #callbacks: Pick<InstanceBinding, 'onStart' | 'onUpdate' | 'onComplete'>;
+  readonly #reducedMotion: ReducedMotion;
   readonly #playback: Playback;
   // Each pending play(): resolved together when the Playhead reaches the end moving forward.
   #waiters: (() => void)[] = [];
@@ -192,9 +212,11 @@ export class SpecInstance implements Instance {
     this.#origin = binding.origin;
     this.#renderer = binding.renderer;
     this.#callbacks = binding;
+    this.#reducedMotion = binding.reducedMotion ?? 'user';
     this.duration = this.#resolved.duration;
     this.#target = {
       duration: this.duration,
+      rest: this.#resolved.restAt * this.duration,
       render: (t) => this.#render(t),
       finish: () => this.#finish(),
     };
@@ -206,7 +228,15 @@ export class SpecInstance implements Instance {
     if (this.#destroyed) return Promise.resolve();
     const finished = new Promise<void>((resolve) => this.#waiters.push(resolve));
     this.#starting = true;
-    this.#playback.play();
+    if (isMotionReduced(this.#reducedMotion)) {
+      // The Resting frame, drawn once as a play that went straight to its end, with the Playhead
+      // left on it. A seek moves no frame loop.
+      this.#playback.pause();
+      this.#playback.seek(this.#target.rest);
+      this.#finish();
+    } else {
+      this.#playback.play();
+    }
     return finished;
   }
 
@@ -215,11 +245,18 @@ export class SpecInstance implements Instance {
   }
 
   resume(): void {
-    if (!this.#destroyed) this.#playback.resume();
+    if (!this.#destroyed && !isMotionReduced(this.#reducedMotion)) this.#playback.resume();
   }
 
   reverse(): void {
-    if (!this.#destroyed) this.#playback.reverse();
+    if (this.#destroyed) return;
+    if (isMotionReduced(this.#reducedMotion)) {
+      // Where reversing would have run to, without running.
+      this.#playback.pause();
+      this.#playback.seek(0);
+    } else {
+      this.#playback.reverse();
+    }
   }
 
   seek(t: number): void {

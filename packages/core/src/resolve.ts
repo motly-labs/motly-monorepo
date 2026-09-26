@@ -108,6 +108,8 @@ export interface ResolvedElement {
 export interface ResolvedTree {
   /** The latest end across every Child, recursively (ADR-0016). */
   readonly duration: number;
+  /** The progress of the Resting frame, 0 to 1 (ADR-0012). */
+  readonly restAt: number;
   readonly elements: readonly ResolvedElement[];
   readonly emitters: readonly ResolvedEmitter[];
 }
@@ -118,7 +120,8 @@ export function resolve(spec: ChildSpec, seed: number): ResolvedTree {
   const tree = { elements: [], emitters: [] };
   const root = seed >>> 0;
   const duration = walk(spec, root, 0, delayOf(spec, root, 0), [], tree);
-  return { duration, ...tree };
+  const restAt = spec.kind === 'swirl' ? 1 : (spec.restAt ?? 1);
+  return { duration, restAt, ...tree };
 }
 
 /**
