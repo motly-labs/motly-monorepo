@@ -1,6 +1,6 @@
 # 17: Playwright visual regression harness
 
-Status: ready-for-agent
+Status: resolved
 Blocked by: 16
 
 **What to build:** A geometry change fails CI instead of being noticed in a demo weeks later. `toHaveScreenshot()` with committed PNGs, no hosted service (ADR-0003). Budget 15–20 hours for seeding, frame pinning, tolerance and flake control before the first assertion lands. This is the one Phase 1 ticket allowed to slip into Phase 2; the coverage target is not.
@@ -8,7 +8,7 @@ Blocked by: 16
 - [x] Each of the five demos is snapshotted under both Renderers at pinned Playheads, with fixed Seeds.
 - [x] Baseline PNGs are committed; diffs and actuals are not.
 - [x] The tolerance is tuned, and the chosen value and its reason are written down.
-- [ ] CI runs the suite, and it passes five consecutive runs with no retries configured.
+- [x] CI runs the suite, and it passes five consecutive runs with no retries configured.
 - [x] Changing any Element's geometry makes the suite fail.
 
 **Implementation notes (ticket 17, part 1).**
@@ -31,4 +31,4 @@ Blocked by: 16
   | Line length ×1.1 | 6, every Confetti snapshot | 1 (0.75) to 12 (0.25) |
   | Circle radius +0.25 px | 18, every Confetti, Swirl and Fireworks snapshot | 1 (Swirl 0.75, Confetti 0.25) to 1,674 (Fireworks 0.25) |
 
-- **Left to do:** five consecutive green CI runs with the new baselines.
+- Five consecutive green CI runs on 5a11d50, with no retries: run 36273549001, attempts 1 to 5, every job green.
