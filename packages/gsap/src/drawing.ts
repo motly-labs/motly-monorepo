@@ -3,7 +3,9 @@ import {
   createScope,
   type Driver,
   type Instance,
+  isMotionReduced,
   type Origin,
+  type ReducedMotion,
   type Renderer,
   type Scope,
 } from '@motly/core';
@@ -59,6 +61,8 @@ export interface DrawingOptions {
   /** The element painted into, or the overlay when not given. */
   container: HTMLElement | undefined;
   rendererName: RendererName;
+  /** Whether to show the Resting frame instead of motion, as for an Instance (ADR-0012). */
+  reducedMotion: ReducedMotion;
 }
 
 /**
@@ -127,7 +131,10 @@ export class Drawing {
   readonly #scope: Scope = createScope({ driver: seekDriver() });
   readonly #container: HTMLElement | undefined;
   readonly #rendererName: RendererName;
+  readonly #reducedMotion: ReducedMotion;
   #origins: Origin[] | undefined;
+  // Whether the draws since the last start show the Resting frame rather than motion.
+  #reduced = false;
   #layer: HTMLElement | SVGSVGElement | undefined;
   #renderer: Renderer | undefined;
   #instances: Instance[] = [];
@@ -137,12 +144,13 @@ export class Drawing {
   constructor(
     spec: BurstSpec,
     targets: readonly (Anchor | Origin)[],
-    { seed, container, rendererName }: DrawingOptions,
+    { seed, container, rendererName, reducedMotion }: DrawingOptions,
   ) {
     this.#spec = spec;
     this.#targets = targets;
     this.#container = container;
     this.#rendererName = rendererName;
+    this.#reducedMotion = reducedMotion;
     // One Seed per tween, so every remount draws the same burst; target i resolves from seed + i.
     this.#seed = seed ?? Math.floor(Math.random() * 2 ** 32);
     // Targets that match nothing still give a tween as long as the Spec, so a timeline keeps time.
@@ -162,7 +170,11 @@ export class Drawing {
     const progress = tween.progress();
     if (progress > 0 && progress < 1) {
       if (this.#instances.length === 0) this.#mount();
-      for (const instance of this.#instances) instance.seek(ratio * instance.duration);
+      for (const instance of this.#instances) {
+        // Under reduced motion the tween still runs its full length, so what follows it in a
+        // timeline keeps its timing; only what it draws holds still (ADR-0012).
+        instance.seek(this.#reduced ? instance.restingPlayhead : ratio * instance.duration);
+      }
     } else {
       this.release();
     }
@@ -181,8 +193,10 @@ export class Drawing {
     const container = this.#container;
     // Measured at each start from the tween's very start, where GSAP calls onStart; scrubbing back
     // in, a repeat and a yoyo keep where it began. In a container, both the targets and the
-    // container are read then, and the Origins are moved into its coordinates.
+    // container are read then, and the Origins are moved into its coordinates. The viewer's
+    // preference is read then too, so changing it takes effect on the next start without a reload.
     if (this.#atStart || this.#origins === undefined) {
+      this.#reduced = isMotionReduced(this.#reducedMotion);
       const { x, y } = container === undefined ? { x: 0, y: 0 } : corner(container);
       this.#origins = this.#targets
         .map(originOf)

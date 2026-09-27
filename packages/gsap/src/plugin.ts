@@ -1,4 +1,4 @@
-import type { BurstSpec, Origin } from '@motly/core';
+import type { BurstSpec, Origin, ReducedMotion } from '@motly/core';
 import type { gsap } from 'gsap';
 import { type Anchor, Drawing, type RendererName } from './drawing.js';
 
@@ -24,6 +24,12 @@ interface BurstVars extends gsap.TweenVars {
    * `'canvas'` to paint a small one on a canvas as well.
    */
   renderer?: RendererName;
+  /**
+   * Leave it at `'user'`, which shows a viewer who prefers reduced motion the Spec's still Resting
+   * frame for the tween's full length, read each time the tween starts from 0, not on a repeat.
+   * Force `'always'` or `'never'` only in a demo or a test (ADR-0012).
+   */
+  reducedMotion?: ReducedMotion;
 }
 
 /** What the plugin keeps per tween, between `init()` and each `render()`. */
@@ -36,7 +42,7 @@ interface PluginData {
 const KEY = 'motly';
 
 function burst(core: GSAP, targets: (Anchor | Origin)[], vars: BurstVars): gsap.core.Tween {
-  const { spec, seed, container, renderer = 'auto', ...tweenVars } = vars;
+  const { spec, seed, container, renderer = 'auto', reducedMotion = 'user', ...tweenVars } = vars;
   // As GSAP warns for a tween's own targets; GSAP has already resolved a selector into none here.
   if (targets.length === 0) console.warn('motly: burst target not found, so it draws nothing.');
   // Given here, it takes the place of one set with gsap.defaults(), so that one is called instead.
@@ -51,6 +57,7 @@ function burst(core: GSAP, targets: (Anchor | Origin)[], vars: BurstVars): gsap.
     seed,
     container: element,
     rendererName: renderer,
+    reducedMotion,
   });
   return core.to(
     {},
