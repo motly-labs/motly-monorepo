@@ -180,7 +180,7 @@ function createRecord(element: ResolvedElement): DrawRecord {
  * a Timeline reads to show each Instance on it at its own.
  */
 export interface InstanceTarget extends DriverTarget {
-  readonly rest: number;
+  readonly restingPlayhead: number;
 }
 
 /** Any Spec bound to a Renderer, an Origin and a Driver. Shape and Burst are this, typed. */
@@ -224,7 +224,7 @@ export class SpecInstance implements Instance {
     this.restingPlayhead = this.#resolved.restAt * this.duration;
     this.#target = {
       duration: this.duration,
-      rest: this.restingPlayhead,
+      restingPlayhead: this.restingPlayhead,
       render: (t) => this.#render(t),
       finish: () => this.#finish(),
     };
@@ -240,7 +240,7 @@ export class SpecInstance implements Instance {
       // The Resting frame, drawn once as a play that went straight to its end, with the Playhead
       // left on it. A seek moves no frame loop.
       this.#playback.pause();
-      this.#playback.seek(this.#target.rest);
+      this.#playback.seek(this.#target.restingPlayhead);
       this.#finish();
     } else {
       this.#playback.play();

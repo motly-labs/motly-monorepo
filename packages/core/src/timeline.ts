@@ -183,7 +183,7 @@ export function createTimeline(
       if (reduced()) {
         // Each Instance's Resting frame, drawn once, as a play that went straight to its end.
         playback.pause();
-        for (const { target } of [...placements]) target.render(target.rest);
+        for (const { target } of [...placements]) target.render(target.restingPlayhead);
         for (const { target } of [...placements]) target.finish();
         settle();
       } else {
