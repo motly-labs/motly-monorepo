@@ -59,7 +59,7 @@ const nowhere: Renderer = { draw: () => {}, release: () => {} };
 
 /**
  * What one GSAP tween draws: an Instance per Anchor, in an overlay that is in the document only
- * while the tween is strictly between its ends. The tween's plugin hands it every `ratio`.
+ * while the tween is strictly between its ends. The tween's plugin hands it every render.
  */
 export class Drawing {
   /** The tween's length: the longest of its Instances' durations. */
@@ -72,7 +72,8 @@ export class Drawing {
   #overlay: SVGSVGElement | undefined;
   #renderer: SVGRenderer | undefined;
   #instances: Instance[] = [];
-  #lastRatio = 0;
+  // Whether the tween was last rendered at its very start, before any iteration ran.
+  #atStart = true;
 
   constructor(spec: BurstSpec, anchors: readonly Element[]) {
     this.#spec = spec;
@@ -84,15 +85,20 @@ export class Drawing {
     for (const instance of measured) instance.destroy();
   }
 
-  /** Draw at `ratio` of the tween: between the ends, mounted; at either end, released. */
-  render(ratio: number): void {
-    if (ratio > 0 && ratio < 1) {
+  /**
+   * Draw `tween` where GSAP's eased `ratio` puts the Playheads. The ends come from the tween's own
+   * progress through its iteration, since an ease can overshoot 0 or 1 mid-tween: between them the
+   * overlay is mounted, at either one it is released.
+   */
+  render(ratio: number, tween: gsap.core.Tween): void {
+    const progress = tween.progress();
+    if (progress > 0 && progress < 1) {
       if (this.#instances.length === 0) this.#mount();
       for (const instance of this.#instances) instance.seek(ratio * instance.duration);
     } else {
       this.release();
     }
-    this.#lastRatio = ratio;
+    this.#atStart = tween.totalProgress() === 0;
   }
 
   /** Remove everything drawn. A later draw between the ends mounts it again. */
@@ -105,8 +111,9 @@ export class Drawing {
   #mount(): void {
     const [first] = this.#anchors;
     if (first === undefined) return;
-    // Measured at each start from 0 moving forward; scrubbing back in keeps where it started.
-    if (this.#lastRatio === 0 || this.#origins === undefined) {
+    // Measured at each start from the tween's very start, where GSAP calls onStart; scrubbing back
+    // in, a repeat and a yoyo keep where it began.
+    if (this.#atStart || this.#origins === undefined) {
       this.#origins = this.#anchors.map(centre);
     }
     const origins = this.#origins;

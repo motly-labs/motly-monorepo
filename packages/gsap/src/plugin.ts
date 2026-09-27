@@ -9,6 +9,12 @@ interface BurstVars extends gsap.TweenVars {
   spec: BurstSpec;
 }
 
+/** What the plugin keeps per tween, between `init()` and each `render()`. */
+interface PluginData {
+  drawing: Drawing;
+  tween: gsap.core.Tween;
+}
+
 /** The plugin's key on the private proxy each burst tween animates. Not an API. */
 const KEY = 'motly';
 
@@ -37,12 +43,13 @@ export const Motly = {
       effect: (targets: object[], vars: BurstVars) => burst(core, targets, vars),
     });
   },
-  init(this: { drawing?: Drawing }, _proxy: object, drawing: Drawing): void {
+  init(this: Partial<PluginData>, _proxy: object, drawing: Drawing, tween: gsap.core.Tween): void {
     this.drawing = drawing;
+    this.tween = tween;
   },
   // GSAP calls this on every render of the tween, including those with events suppressed, as
   // tl.revert() makes at ratio 0 (ADR-0018).
-  render(ratio: number, data: { drawing: Drawing }): void {
-    data.drawing.render(ratio);
+  render(ratio: number, { drawing, tween }: PluginData): void {
+    drawing.render(ratio, tween);
   },
 };

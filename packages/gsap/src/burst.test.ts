@@ -1,45 +1,8 @@
 // @vitest-environment happy-dom
-import { type BurstSpec, createScope, type Origin } from '@motly/core';
-import { SVGRenderer } from '@motly/core/svg';
 import { gsap } from 'gsap';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { Motly } from './index.js';
-
-const SVG_NS = 'http://www.w3.org/2000/svg';
-
-// No rand(): the burst is the same for every Seed, so core's sample() is the oracle.
-const spec: BurstSpec = {
-  kind: 'burst',
-  count: 5,
-  radius: [0, 80],
-  children: { kind: 'circle', radius: [10, 0], fill: ['red', 'blue'], duration: 0.8 },
-};
-
-/** A button laid out at `left`, `top`, 40 × 20, whose centre is (`left` + 20, `top` + 10). */
-function button(left: number, top: number): HTMLElement {
-  const element = document.createElement('button');
-  document.body.append(element);
-  place(element, left, top);
-  return element;
-}
-
-function place(element: HTMLElement, left: number, top: number): void {
-  element.getBoundingClientRect = () => new DOMRect(left, top, 40, 20);
-}
-
-/** The overlay the burst is painted in, if it is in the document. */
-function overlay(): SVGSVGElement | null {
-  return document.querySelector('svg');
-}
-
-/** What core paints for `spec` from `origin` at Playhead `t` seconds. */
-function oracle(origin: Origin, t: number): string {
-  const svg = document.createElementNS(SVG_NS, 'svg');
-  const renderer = new SVGRenderer(svg);
-  const instance = createScope().burst(spec, { renderer, origin });
-  renderer.draw(instance, instance.sample(t));
-  return svg.innerHTML;
-}
+import { button, oracle, overlay, place, spec } from './testing/dom.js';
 
 beforeAll(() => {
   gsap.registerPlugin(Motly);
