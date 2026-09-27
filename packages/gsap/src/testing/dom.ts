@@ -34,11 +34,15 @@ export function overlays(): NodeListOf<SVGSVGElement> {
   return document.querySelectorAll('svg');
 }
 
-/** What core paints for `burst` from `origin` at Playhead `t` seconds. */
-export function oracle(origin: Origin, t: number, burst: BurstSpec = spec): string {
+/** What core paints for `burst` from `origin` at Playhead `t` seconds, under `seed` if given. */
+export function oracle(origin: Origin, t: number, burst: BurstSpec = spec, seed?: number): string {
   const svg = document.createElementNS(SVG_NS, 'svg');
   const renderer = new SVGRenderer(svg);
-  const instance = createScope().burst(burst, { renderer, origin });
+  const instance = createScope().burst(burst, {
+    renderer,
+    origin,
+    ...(seed === undefined ? {} : { seed }),
+  });
   renderer.draw(instance, instance.sample(t));
   return svg.innerHTML;
 }

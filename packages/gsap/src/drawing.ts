@@ -31,9 +31,19 @@ function seekDriver(): Driver {
   };
 }
 
-/** Where an Anchor's burst comes from: its centre, in viewport CSS pixels. */
-function centre(anchor: Element): Origin {
-  const box = anchor.getBoundingClientRect();
+/** The element a burst is read from, at its centre. */
+export type Anchor = Element;
+
+// By node type, not by `x` and `y`: an `<img>` has numeric ones of its own. Not `instanceof`,
+// which fails for an element from another frame.
+function isAnchor(target: Anchor | Origin): target is Anchor {
+  return (target as Partial<Anchor>).nodeType === 1;
+}
+
+/** Where `target`'s burst comes from, in viewport CSS pixels: an Anchor's centre, or the point. */
+function originOf(target: Anchor | Origin): Origin {
+  if (!isAnchor(target)) return { x: target.x, y: target.y };
+  const box = target.getBoundingClientRect();
   return { x: box.left + box.width / 2, y: box.top + box.height / 2 };
 }
 
@@ -58,14 +68,14 @@ function createOverlay(document: Document): SVGSVGElement {
 const nowhere: Renderer = { draw: () => {}, release: () => {} };
 
 /**
- * What one GSAP tween draws: an Instance per Anchor, in an overlay that is in the document only
+ * What one GSAP tween draws: an Instance per target, in an overlay that is in the document only
  * while the tween is strictly between its ends. The tween's plugin hands it every render.
  */
 export class Drawing {
   /** The tween's length: the longest of its Instances' durations. */
   readonly duration: number;
   readonly #spec: BurstSpec;
-  readonly #anchors: readonly Element[];
+  readonly #targets: readonly (Anchor | Origin)[];
   readonly #seed: number;
   readonly #scope: Scope = createScope({ driver: seekDriver() });
   #origins: Origin[] | undefined;
@@ -75,12 +85,15 @@ export class Drawing {
   // Whether the tween was last rendered at its very start, before any iteration ran.
   #atStart = true;
 
-  constructor(spec: BurstSpec, anchors: readonly Element[]) {
+  constructor(spec: BurstSpec, targets: readonly (Anchor | Origin)[], seed?: number) {
     this.#spec = spec;
-    this.#anchors = anchors;
-    // One Seed per tween, so every remount draws the same burst; Anchor i resolves from seed + i.
-    this.#seed = Math.floor(Math.random() * 2 ** 32);
-    const measured = anchors.map((_, i) => this.#create(nowhere, { x: 0, y: 0 }, i));
+    this.#targets = targets;
+    // One Seed per tween, so every remount draws the same burst; target i resolves from seed + i.
+    this.#seed = seed ?? Math.floor(Math.random() * 2 ** 32);
+    // Targets that match nothing still give a tween as long as the Spec, so a timeline keeps time.
+    const measured = Array.from({ length: Math.max(targets.length, 1) }, (_, i) =>
+      this.#create(nowhere, { x: 0, y: 0 }, i),
+    );
     this.duration = Math.max(0, ...measured.map((instance) => instance.duration));
     for (const instance of measured) instance.destroy();
   }
@@ -109,17 +122,18 @@ export class Drawing {
   }
 
   #mount(): void {
-    const [first] = this.#anchors;
-    if (first === undefined) return;
+    if (this.#targets.length === 0) return;
     // Measured at each start from the tween's very start, where GSAP calls onStart; scrubbing back
     // in, a repeat and a yoyo keep where it began.
     if (this.#atStart || this.#origins === undefined) {
-      this.#origins = this.#anchors.map(centre);
+      this.#origins = this.#targets.map(originOf);
     }
     const origins = this.#origins;
-    this.#overlay ??= createOverlay(first.ownerDocument);
+    // An Anchor's own document, so a burst on an element in an iframe is drawn there.
+    const anchor = this.#targets.find(isAnchor);
+    this.#overlay ??= createOverlay(anchor?.ownerDocument ?? globalThis.document);
     this.#renderer ??= new SVGRenderer(this.#overlay);
-    first.ownerDocument.body.append(this.#overlay);
+    this.#overlay.ownerDocument.body.append(this.#overlay);
     const renderer = this.#renderer;
     this.#instances = origins.map((origin, i) => this.#create(renderer, origin, i));
   }

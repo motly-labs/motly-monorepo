@@ -1,12 +1,17 @@
-import type { BurstSpec } from '@motly/core';
+import type { BurstSpec, Origin } from '@motly/core';
 import type { gsap } from 'gsap';
-import { Drawing } from './drawing.js';
+import { type Anchor, Drawing } from './drawing.js';
 
 type GSAP = typeof gsap;
 
 /** What `gsap.effects.burst()` and `tl.burst()` take: the Spec, and GSAP's own tween vars. */
 interface BurstVars extends gsap.TweenVars {
   spec: BurstSpec;
+  /**
+   * Give one when a burst must look the same on every page load, as in a test or a screenshot:
+   * target `i` draws from `seed + i`. Without one, each effect call draws a random Seed.
+   */
+  seed?: number;
 }
 
 /** What the plugin keeps per tween, between `init()` and each `render()`. */
@@ -18,11 +23,13 @@ interface PluginData {
 /** The plugin's key on the private proxy each burst tween animates. Not an API. */
 const KEY = 'motly';
 
-function burst(core: GSAP, targets: object[], vars: BurstVars): gsap.core.Tween {
-  const { spec, ...tweenVars } = vars;
+function burst(core: GSAP, targets: (Anchor | Origin)[], vars: BurstVars): gsap.core.Tween {
+  const { spec, seed, ...tweenVars } = vars;
+  // As GSAP warns for a tween's own targets; GSAP has already resolved a selector into none here.
+  if (targets.length === 0) console.warn('motly: burst target not found, so it draws nothing.');
   // Given here, it takes the place of one set with gsap.defaults(), so that one is called instead.
   const onInterrupt = vars.onInterrupt ?? core.defaults().onInterrupt;
-  const drawing = new Drawing(spec, targets as Element[]);
+  const drawing = new Drawing(spec, targets, seed);
   return core.to(
     {},
     {
@@ -56,7 +63,7 @@ export const Motly = {
     core.registerEffect({
       name: 'burst',
       extendTimeline: true,
-      effect: (targets: object[], vars: BurstVars) => burst(core, targets, vars),
+      effect: (targets: (Anchor | Origin)[], vars: BurstVars) => burst(core, targets, vars),
     });
   },
   init(this: Partial<PluginData>, _proxy: object, drawing: Drawing, tween: gsap.core.Tween): void {
