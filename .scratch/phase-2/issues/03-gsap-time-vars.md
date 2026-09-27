@@ -13,3 +13,11 @@
 - [ ] The user's `onStart`, `onUpdate` and `onComplete` are called as GSAP calls them.
 - [ ] Scrubbing a finished burst back into its range redraws it.
 - [ ] `pnpm lint && pnpm typecheck && pnpm test` green.
+
+## Comments
+
+From ticket 02's review:
+
+- `Drawing.render()` decides "at an end" from the eased `ratio`. An ease that overshoots (`back.out`, `elastic`) takes `ratio` past 0 or 1 mid-tween, and the overlay is released there: a probe saw it gone from progress 0.3 to 0.9 under `back.out(3)`. Decide the ends from the tween's own time, not `ratio`; the seek Driver already clamps the Playhead into the Instance's duration.
+- The effect already builds `{ ease: 'none', duration: <the Instance's>, ...vars }`, so a given `ease` and `duration` pass through untested. This ticket's tests pin them.
+- With `repeat`, a new iteration does not re-read the Anchor, since `ratio` never visits 0 between iterations. Decide with ticket 05 whether a repeat counts as a start from 0 moving forward.

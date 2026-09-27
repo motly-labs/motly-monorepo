@@ -1,13 +1,7 @@
 /**
- * `@motly/gsap` — the wedge (Phase 2).
- *
- * Registers motly's primitives as GSAP effects via `gsap.registerEffect()`, so
- * they are reachable as `gsap.effects.burst(...)` inside an existing GSAP
- * timeline. Note `gsap.registerPlugin()` registers *property* plugins consumed
- * inside a tween's vars — it does not create named top-level methods.
- *
- * Open question before any code here: ticker ownership (product.md §1.8.3). Inside
- * a GSAP host, GSAP owns the clock; core's driver has to be replaceable.
+ * `@motly/gsap` — motly's bursts as GSAP effects. Register the plugin with
+ * `gsap.registerPlugin(Motly)`; importing this entry registers nothing (ADR-0018).
  */
 
 export { VERSION } from '@motly/core';
+export { Motly } from './plugin.js';

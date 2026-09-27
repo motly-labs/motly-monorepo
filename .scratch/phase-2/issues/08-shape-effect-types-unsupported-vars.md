@@ -11,3 +11,7 @@
 - [ ] Unsupported vars warn once per registration and are ignored; a second registration warns again.
 - [ ] An invalid Spec throws core's validation message.
 - [ ] `pnpm lint && pnpm typecheck && pnpm test` green.
+
+## Comments
+
+From ticket 02's review: GSAP's `_createPlugin` returns early when a plugin of the same name is already registered on that copy of GSAP, so `register()` does not run on a second `gsap.registerPlugin(Motly)`. "A second registration warns again" can only mean a second copy of GSAP; the test needs one (for example `vi.resetModules()` and a fresh import).

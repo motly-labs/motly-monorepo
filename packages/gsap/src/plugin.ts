@@ -1,0 +1,48 @@
+import type { BurstSpec } from '@motly/core';
+import type { gsap } from 'gsap';
+import { Drawing } from './drawing.js';
+
+type GSAP = typeof gsap;
+
+/** What `gsap.effects.burst()` and `tl.burst()` take: the Spec, and GSAP's own tween vars. */
+interface BurstVars extends gsap.TweenVars {
+  spec: BurstSpec;
+}
+
+/** The plugin's key on the private proxy each burst tween animates. Not an API. */
+const KEY = 'motly';
+
+function burst(core: GSAP, targets: object[], vars: BurstVars): gsap.core.Tween {
+  const { spec, ...tweenVars } = vars;
+  const drawing = new Drawing(spec, targets as Element[]);
+  return core.to({}, { ease: 'none', duration: drawing.duration, ...tweenVars, [KEY]: drawing });
+}
+
+/**
+ * motly's GSAP plugin. Pass it to `gsap.registerPlugin(Motly)` once, then fire a burst the way
+ * you fire any GSAP effect: `gsap.effects.burst(button, { spec })`, or place one in a timeline
+ * with `tl.burst(button, { spec }, '<')`. Each returns an ordinary tween.
+ */
+export const Motly = {
+  name: KEY,
+  // Registers where there is no window, as on a server, instead of waiting for one.
+  headless: true,
+  // Hand init() the Drawing as is, rather than as GSAP's processed tween values.
+  rawVars: true,
+  /** Registers the effects on the copy of GSAP the host registered the plugin with. */
+  register(core: GSAP): void {
+    core.registerEffect({
+      name: 'burst',
+      extendTimeline: true,
+      effect: (targets: object[], vars: BurstVars) => burst(core, targets, vars),
+    });
+  },
+  init(this: { drawing?: Drawing }, _proxy: object, drawing: Drawing): void {
+    this.drawing = drawing;
+  },
+  // GSAP calls this on every render of the tween, including those with events suppressed, as
+  // tl.revert() makes at ratio 0 (ADR-0018).
+  render(ratio: number, data: { drawing: Drawing }): void {
+    data.drawing.render(ratio);
+  },
+};

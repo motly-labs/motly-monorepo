@@ -13,3 +13,11 @@
 - [ ] An element moved before a burst placed late in a timeline starts is read where it is by then.
 - [ ] An empty selector warns once and returns a tween of the Spec's duration that draws nothing.
 - [ ] `pnpm lint && pnpm typecheck && pnpm test` green.
+
+## Comments
+
+From ticket 02's review:
+
+- Ticket 02 already draws one random Seed per tween at the effect call and gives Anchor `i` `seed + i`, so a remount draws the same burst. This ticket adds `vars.seed` and its tests.
+- The tween's length comes from throwaway Instances built with a Renderer that draws nothing. That is also the answer for targets that match nothing, but it is a workaround for a missing core API (Invariant 6); raise it if a second adapter needs the same.
+- Whether a `repeat` re-reads the Anchor: see ticket 03's comments.

@@ -6,15 +6,15 @@ This ticket also lays down the test seam every later adapter ticket uses: Vitest
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] Registering in Node succeeds and adds `gsap.effects.burst` and `tl.burst`; importing the package registers nothing.
-- [ ] Registration uses the GSAP core passed to `register`, never an imported copy; `gsap` stays a peer dependency, `>=3.13.0`.
-- [ ] `gsap.effects.burst(el, { spec })` returns a tween whose length is the Instance's computed duration (ADR-0016), with a linear mapping from progress to Playhead.
-- [ ] The Origin is the element's centre, read when the tween starts from 0 moving forward.
-- [ ] One overlay per tween: `position: fixed`, viewport-sized, `pointer-events: none`, painted by an SVG Renderer; mounted on the first draw strictly between the ends, released at progress 0 and 1, mounted again when scrubbed back in.
-- [ ] Tests: at progress `p` the painted SVG matches core's `sample(p × duration)` for the same Spec, Seed and Origin; the overlay is absent at 0 and 1 and present between.
-- [ ] `tl.burst(el, { spec }, '<')` places the tween by GSAP's position parameter.
-- [ ] The placeholder header comment in the adapter's entry is replaced.
-- [ ] A changeset for `@motly/gsap`.
-- [ ] `pnpm lint && pnpm typecheck && pnpm test` green.
+- [x] Registering in Node succeeds and adds `gsap.effects.burst` and `tl.burst`; importing the package registers nothing.
+- [x] Registration uses the GSAP core passed to `register`, never an imported copy; `gsap` stays a peer dependency, `>=3.13.0`.
+- [x] `gsap.effects.burst(el, { spec })` returns a tween whose length is the Instance's computed duration (ADR-0016), with a linear mapping from progress to Playhead.
+- [x] The Origin is the element's centre, read when the tween starts from 0 moving forward.
+- [x] One overlay per tween: `position: fixed`, viewport-sized, `pointer-events: none`, painted by an SVG Renderer; mounted on the first draw strictly between the ends, released at progress 0 and 1, mounted again when scrubbed back in.
+- [x] Tests: at progress `p` the painted SVG matches core's `sample(p × duration)` for the same Spec, Seed and Origin; the overlay is absent at 0 and 1 and present between.
+- [x] `tl.burst(el, { spec }, '<')` places the tween by GSAP's position parameter.
+- [x] The placeholder header comment in the adapter's entry is replaced.
+- [x] A changeset for `@motly/gsap`.
+- [x] `pnpm lint && pnpm typecheck && pnpm test` green.
