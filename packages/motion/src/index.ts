@@ -5,4 +5,5 @@
  * the GSAP adapter: inside a Motion host, Motion owns the clock.
  */
 
-export { VERSION } from '@motly/core';
+// Nothing yet: the package is a private placeholder until its phase (ADR-0007).
+export {};

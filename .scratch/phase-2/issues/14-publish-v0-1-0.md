@@ -11,3 +11,9 @@
 - [ ] The release workflow's trigger is switched back to `push` to `main`.
 - [ ] The version PR is merged and the workflow publishes both packages; no `npm publish` by hand.
 - [ ] Both packages install from npm, and the IIFE loads from a CDN.
+
+## Comments
+
+
+From ticket 12's review: npm issues granular tokens only, so `NPM_TOKEN` must be a granular token with publish rights on the `@motly` scope, which needs the org from ticket 13 first. The workflow authenticates through setup-node's `.npmrc` and `NODE_AUTH_TOKEN`; changesets/action v2.1.2 writes none of its own.
+

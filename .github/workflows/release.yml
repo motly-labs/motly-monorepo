@@ -1,8 +1,7 @@
 name: Release
 
 # Manual until the first npm publish: a push to main no longer runs it. Before switching it back
-# to `push: branches: [main]`, mark the placeholder packages private, add `registry-url` to
-# setup-node, and allow Actions to create pull requests in the repo settings.
+# to `push: branches: [main]`, allow Actions to create pull requests in the repo settings.
 on:
   workflow_dispatch:
 
@@ -26,6 +25,8 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
+          # Writes the .npmrc that NODE_AUTH_TOKEN authenticates against.
+          registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
 

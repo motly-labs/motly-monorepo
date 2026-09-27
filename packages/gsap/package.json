@@ -3,6 +3,11 @@
   "version": "0.0.0",
   "description": "GSAP plugin: motly primitives as registered GSAP effects.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/motly-labs/motly-monorepo.git",
+    "directory": "packages/gsap"
+  },
   "type": "module",
   "sideEffects": false,
   "files": [

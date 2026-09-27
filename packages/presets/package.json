@@ -1,6 +1,7 @@
 {
   "name": "@motly/presets",
   "version": "0.0.0",
+  "private": true,
   "description": "Ready-made motly effects: confetti, sparkle, ripple, and friends.",
   "license": "MIT",
   "type": "module",

@@ -79,5 +79,3 @@ export type {
   TimeUnit,
 } from './spec.js';
 export type { Timeline, TimelineOptions } from './timeline.js';
-
-export const VERSION = '0.0.0';

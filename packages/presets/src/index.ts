@@ -5,4 +5,5 @@
  * short — add it to core, do not reach inside.
  */
 
-export { VERSION } from '@motly/core';
+// Nothing yet: the package is a private placeholder until its phase (ADR-0007).
+export {};

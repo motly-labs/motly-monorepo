@@ -1,6 +1,7 @@
 {
   "name": "@motly/motion",
   "version": "0.0.0",
+  "private": true,
   "description": "Motion adapter: motly primitives driven by Motion's animation engine.",
   "license": "MIT",
   "type": "module",

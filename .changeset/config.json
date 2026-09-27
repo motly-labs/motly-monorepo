@@ -7,5 +7,5 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["docs", "demos"]
+  "ignore": ["docs", "demos", "@motly/motion", "@motly/react", "@motly/presets"]
 }

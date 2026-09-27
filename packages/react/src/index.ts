@@ -5,4 +5,5 @@
  * dumb: no animation logic lives here that core could own.
  */
 
-export { VERSION } from '@motly/core';
+// Nothing yet: the package is a private placeholder until its phase (ADR-0007).
+export {};

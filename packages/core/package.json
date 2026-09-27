@@ -3,6 +3,11 @@
   "version": "0.0.0",
   "description": "Renderer-agnostic procedural motion-graphics engine. Zero runtime dependencies.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/motly-labs/motly-monorepo.git",
+    "directory": "packages/core"
+  },
   "type": "module",
   "sideEffects": false,
   "files": [
