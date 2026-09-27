@@ -95,8 +95,18 @@ _Avoid_: Backend, painter
 
 **Origin**:
 The point in a Renderer's coordinate space an Instance is placed at.
-_Avoid_: Target, anchor, position
+_Avoid_: Target, position
 
 **Draw list**:
 The renderer-agnostic, per-frame description of everything to paint, produced by sampling an Instance.
 _Avoid_: Render commands, scene, frame data
+
+### Hosts
+
+**Anchor**:
+The element an Instance's Origin is read from, at its centre. A point is an Origin; an element is an Anchor.
+_Avoid_: Target, trigger, source
+
+**GSAP effect**:
+GSAP's own term for a named function registered with `gsap.registerEffect()` (`gsap.effects.burst`, `tl.burst`). Used only for that GSAP mechanism, never for a motly concept.
+_Avoid_: Effect (unqualified), plugin method
