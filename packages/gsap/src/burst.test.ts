@@ -2,7 +2,7 @@
 import { gsap } from 'gsap';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { Motly } from './index.js';
-import { button, oracle, overlay, place, spec } from './testing/dom.js';
+import { button, layer, oracle, overlay, place, spec } from './testing/dom.js';
 
 beforeAll(() => {
   gsap.registerPlugin(Motly);
@@ -28,10 +28,12 @@ describe('gsap.effects.burst', () => {
 
     expect(overlay()).toBeNull();
     tween.progress(0.5);
-    expect(overlay()?.style.position).toBe('fixed');
-    expect(overlay()?.style.pointerEvents).toBe('none');
-    expect(overlay()?.style.width).toBe('100%');
-    expect(overlay()?.style.height).toBe('100%');
+    const { style } = layer() as HTMLElement;
+    expect(layer()?.parentElement).toBe(document.body);
+    expect(style.position).toBe('fixed');
+    expect(style.pointerEvents).toBe('none');
+    expect(style.width).toBe('100%');
+    expect(style.height).toBe('100%');
     tween.progress(1);
     expect(overlay()).toBeNull();
     tween.progress(0.5);

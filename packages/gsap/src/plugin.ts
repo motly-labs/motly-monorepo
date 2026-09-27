@@ -1,6 +1,6 @@
 import type { BurstSpec, Origin } from '@motly/core';
 import type { gsap } from 'gsap';
-import { type Anchor, Drawing } from './drawing.js';
+import { type Anchor, Drawing, type RendererName } from './drawing.js';
 
 type GSAP = typeof gsap;
 
@@ -12,6 +12,18 @@ interface BurstVars extends gsap.TweenVars {
    * target `i` draws from `seed + i`. Without one, each effect call draws a random Seed.
    */
   seed?: number;
+  /**
+   * Give one, an element or a selector, when the burst must scroll with a section or be clipped by
+   * a card, as a ScrollTrigger-scrubbed burst should. The burst is painted inside it rather than
+   * over the viewport. It must have a size of its own; a static one is made relative.
+   */
+  container?: HTMLElement | string;
+  /**
+   * Leave it at `'auto'`, which paints bursts under 50 Elements in SVG and larger ones on a canvas
+   * (ADR-0015). Name `'svg'` when a large burst must still be inspected or styled with CSS, and
+   * `'canvas'` to paint a small one on a canvas as well.
+   */
+  renderer?: RendererName;
 }
 
 /** What the plugin keeps per tween, between `init()` and each `render()`. */
@@ -24,12 +36,17 @@ interface PluginData {
 const KEY = 'motly';
 
 function burst(core: GSAP, targets: (Anchor | Origin)[], vars: BurstVars): gsap.core.Tween {
-  const { spec, seed, ...tweenVars } = vars;
+  const { spec, seed, container, renderer = 'auto', ...tweenVars } = vars;
   // As GSAP warns for a tween's own targets; GSAP has already resolved a selector into none here.
   if (targets.length === 0) console.warn('motly: burst target not found, so it draws nothing.');
   // Given here, it takes the place of one set with gsap.defaults(), so that one is called instead.
   const onInterrupt = vars.onInterrupt ?? core.defaults().onInterrupt;
-  const drawing = new Drawing(spec, targets, seed);
+  // Resolved as GSAP resolves targets, so a selector is scoped by a gsap.context() it runs in.
+  const [element] = container === undefined ? [] : core.utils.toArray<HTMLElement>(container);
+  if (container !== undefined && element === undefined) {
+    console.warn('motly: burst container not found, so it is drawn over the viewport.');
+  }
+  const drawing = new Drawing(spec, targets, { seed, container: element, rendererName: renderer });
   return core.to(
     {},
     {

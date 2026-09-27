@@ -24,12 +24,17 @@ export function place(element: HTMLElement, left: number, top: number): void {
   element.getBoundingClientRect = () => new DOMRect(left, top, 40, 20);
 }
 
-/** The overlay the burst is painted in, if it is in the document. */
+/** The `<svg>` the burst is painted in, if it is in the document. */
 export function overlay(): SVGSVGElement | null {
   return document.querySelector('svg');
 }
 
-/** Every burst overlay in the document. */
+/** The layer the adapter mounts for a burst: the `<svg>` itself, or the element holding it. */
+export function layer(): Element | null {
+  return document.querySelector('[aria-hidden="true"]');
+}
+
+/** Every `<svg>` a burst is painted in, in the overlay or a container. */
 export function overlays(): NodeListOf<SVGSVGElement> {
   return document.querySelectorAll('svg');
 }

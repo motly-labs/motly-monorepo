@@ -7,6 +7,8 @@ import {
   type Renderer,
   type Scope,
 } from '@motly/core';
+import { AutoRenderer } from '@motly/core/auto';
+import { CanvasRenderer } from '@motly/core/canvas';
 import { SVGRenderer } from '@motly/core/svg';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -47,29 +49,74 @@ function originOf(target: Anchor | Origin): Origin {
   return { x: box.left + box.width / 2, y: box.top + box.height / 2 };
 }
 
-/** A viewport-sized `<svg>` above the page that catches no clicks, not yet in the document. */
-function createOverlay(document: Document): SVGSVGElement {
-  const svg = document.createElementNS(SVG_NS, 'svg');
-  svg.setAttribute('aria-hidden', 'true');
-  Object.assign(svg.style, {
-    position: 'fixed',
+/** Which Renderer paints a burst. `auto` picks SVG or canvas by its Element count (ADR-0015). */
+export type RendererName = 'svg' | 'canvas' | 'auto';
+
+/** The GSAP effect's binding keys from `vars`, with `container` resolved to its element. */
+export interface DrawingOptions {
+  /** Target `i` draws from `seed + i`; a random Seed when not given. */
+  seed: number | undefined;
+  /** The element painted into, or the overlay when not given. */
+  container: HTMLElement | undefined;
+  rendererName: RendererName;
+}
+
+/**
+ * The element a burst is painted in and the Renderer that paints it, not yet in the document. It
+ * covers the viewport, above everything the page stacks, or else its container, and catches no
+ * clicks.
+ */
+function createLayer(
+  document: Document,
+  name: RendererName,
+  container: HTMLElement | undefined,
+): [HTMLElement | SVGSVGElement, Renderer] {
+  let layer: HTMLElement | SVGSVGElement;
+  let renderer: Renderer;
+  if (name === 'svg') {
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    [layer, renderer] = [svg, new SVGRenderer(svg)];
+  } else if (name === 'canvas') {
+    const canvas = document.createElement('canvas');
+    [layer, renderer] = [canvas, new CanvasRenderer(canvas)];
+  } else {
+    const div = document.createElement('div');
+    [layer, renderer] = [div, new AutoRenderer(div)];
+  }
+  layer.setAttribute('aria-hidden', 'true');
+  Object.assign(layer.style, {
+    position: container === undefined ? 'fixed' : 'absolute',
     left: '0',
     top: '0',
     width: '100%',
     height: '100%',
     pointerEvents: 'none',
-    // Above everything the page stacks: a burst drawn under a card would look broken.
-    zIndex: '2147483647',
+    // Above everything the page stacks: a burst drawn under a card would look broken. In a
+    // container, the container's own stacking decides.
+    zIndex: container === undefined ? '2147483647' : '',
   });
-  return svg;
+  return [layer, renderer];
+}
+
+/**
+ * Where the layer's top left corner is in viewport CSS pixels: inside the container's border, and
+ * moved by its scroll, since an absolute layer scrolls with the container's content.
+ */
+function corner(container: HTMLElement): Origin {
+  const box = container.getBoundingClientRect();
+  return {
+    x: box.left + container.clientLeft - container.scrollLeft,
+    y: box.top + container.clientTop - container.scrollTop,
+  };
 }
 
 /** Nothing: for the Instances that are only asked their duration. */
 const nowhere: Renderer = { draw: () => {}, release: () => {} };
 
 /**
- * What one GSAP tween draws: an Instance per target, in an overlay that is in the document only
- * while the tween is strictly between its ends. The tween's plugin hands it every render.
+ * What one GSAP tween draws: an Instance per target, in a layer over the viewport or its container
+ * that is in the document only while the tween is strictly between its ends. The tween's plugin
+ * hands it every render.
  */
 export class Drawing {
   /** The tween's length: the longest of its Instances' durations. */
@@ -78,16 +125,24 @@ export class Drawing {
   readonly #targets: readonly (Anchor | Origin)[];
   readonly #seed: number;
   readonly #scope: Scope = createScope({ driver: seekDriver() });
+  readonly #container: HTMLElement | undefined;
+  readonly #rendererName: RendererName;
   #origins: Origin[] | undefined;
-  #overlay: SVGSVGElement | undefined;
-  #renderer: SVGRenderer | undefined;
+  #layer: HTMLElement | SVGSVGElement | undefined;
+  #renderer: Renderer | undefined;
   #instances: Instance[] = [];
   // Whether the tween was last rendered at its very start, before any iteration ran.
   #atStart = true;
 
-  constructor(spec: BurstSpec, targets: readonly (Anchor | Origin)[], seed?: number) {
+  constructor(
+    spec: BurstSpec,
+    targets: readonly (Anchor | Origin)[],
+    { seed, container, rendererName }: DrawingOptions,
+  ) {
     this.#spec = spec;
     this.#targets = targets;
+    this.#container = container;
+    this.#rendererName = rendererName;
     // One Seed per tween, so every remount draws the same burst; target i resolves from seed + i.
     this.#seed = seed ?? Math.floor(Math.random() * 2 ** 32);
     // Targets that match nothing still give a tween as long as the Spec, so a timeline keeps time.
@@ -101,7 +156,7 @@ export class Drawing {
   /**
    * Draw `tween` where GSAP's eased `ratio` puts the Playheads. The ends come from the tween's own
    * progress through its iteration, since an ease can overshoot 0 or 1 mid-tween: between them the
-   * overlay is mounted, at either one it is released.
+   * layer is mounted, at either one it is released.
    */
   render(ratio: number, tween: gsap.core.Tween): void {
     const progress = tween.progress();
@@ -118,22 +173,36 @@ export class Drawing {
   release(): void {
     for (const instance of this.#instances) instance.destroy();
     this.#instances = [];
-    this.#overlay?.remove();
+    this.#layer?.remove();
   }
 
   #mount(): void {
     if (this.#targets.length === 0) return;
+    const container = this.#container;
     // Measured at each start from the tween's very start, where GSAP calls onStart; scrubbing back
-    // in, a repeat and a yoyo keep where it began.
+    // in, a repeat and a yoyo keep where it began. In a container, both the targets and the
+    // container are read then, and the Origins are moved into its coordinates.
     if (this.#atStart || this.#origins === undefined) {
-      this.#origins = this.#targets.map(originOf);
+      const { x, y } = container === undefined ? { x: 0, y: 0 } : corner(container);
+      this.#origins = this.#targets
+        .map(originOf)
+        .map((point) => ({ x: point.x - x, y: point.y - y }));
     }
     const origins = this.#origins;
-    // An Anchor's own document, so a burst on an element in an iframe is drawn there.
-    const anchor = this.#targets.find(isAnchor);
-    this.#overlay ??= createOverlay(anchor?.ownerDocument ?? globalThis.document);
-    this.#renderer ??= new SVGRenderer(this.#overlay);
-    this.#overlay.ownerDocument.body.append(this.#overlay);
+    if (this.#layer === undefined || this.#renderer === undefined) {
+      // The container's, or an Anchor's own document, so a burst in an iframe is drawn there.
+      const document =
+        container?.ownerDocument ??
+        this.#targets.find(isAnchor)?.ownerDocument ??
+        globalThis.document;
+      [this.#layer, this.#renderer] = createLayer(document, this.#rendererName, container);
+    }
+    // A static container is made relative, so the layer sits on it, as core's AutoRenderer does.
+    const view = container?.ownerDocument.defaultView;
+    if (container !== undefined && view?.getComputedStyle(container).position === 'static') {
+      container.style.position = 'relative';
+    }
+    (container ?? this.#layer.ownerDocument.body).append(this.#layer);
     const renderer = this.#renderer;
     this.#instances = origins.map((origin, i) => this.#create(renderer, origin, i));
   }
