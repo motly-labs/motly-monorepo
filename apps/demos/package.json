@@ -3,7 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "dependencies": {
-    "@motly/core": "workspace:*"
+    "@motly/core": "workspace:*",
+    "@motly/gsap": "workspace:*",
+    "gsap": "^3.15.0"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0"

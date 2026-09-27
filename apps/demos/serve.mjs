@@ -4,7 +4,7 @@ import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
 
 const root = import.meta.dirname;
-const types = { '.html': 'text/html', '.mjs': 'text/javascript' };
+const types = { '.html': 'text/html', '.mjs': 'text/javascript', '.js': 'text/javascript' };
 
 createServer(async (request, response) => {
   // Only the path is read from the URL, so any base will do.

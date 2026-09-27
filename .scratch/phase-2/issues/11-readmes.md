@@ -14,3 +14,6 @@
 ## Comments
 
 From ticket 04: besides `tl.kill()`, the cleanup rules should say that the burst's `onInterrupt` belongs in `vars`. Replacing it later with `tween.eventCallback('onInterrupt', fn)` drops the adapter's release, so a later `kill()` leaves the burst drawn, and reading it back returns the adapter's wrapper. See ticket 04's comments.
+
+From ticket 10: the adapter's reduced motion covers the bursts only. A page's own GSAP tweens around them keep moving; say so beside the reduced-motion section, and point at `gsap.matchMedia()`.
+

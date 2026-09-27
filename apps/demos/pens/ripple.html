@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Ripple — motly + GSAP</title>
+    <!-- CodePen settings, JS: gsap, then https://cdn.jsdelivr.net/npm/@motly/gsap@0.1 -->
+    <script src="../node_modules/gsap/dist/gsap.min.js"></script>
+    <script src="../node_modules/@motly/gsap/dist/motly.iife.js"></script>
+    <!-- CodePen CSS pane -->
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #f1f4f9;
+        font-family: system-ui, sans-serif;
+      }
+      .toggle {
+        width: 72px;
+        height: 72px;
+        border: 0;
+        border-radius: 50%;
+        background: #0f4c81;
+        color: white;
+        font-size: 40px;
+        line-height: 1;
+        cursor: pointer;
+      }
+      .toggle span { display: inline-block; }
+      main { text-align: center; }
+      p { opacity: 0.6; }
+    </style>
+  </head>
+  <body>
+    <!-- CodePen HTML pane -->
+    <main>
+      <button type="button" class="toggle" aria-label="Open" aria-expanded="false"><span>+</span></button>
+      <p>Reversing: click again mid-ripple and it runs back into the button.</p>
+    </main>
+
+    <!-- CodePen JS pane -->
+    <script>
+      const { each } = Motly;
+
+      const ripple = {
+        kind: 'burst',
+        count: 16,
+        radius: [0, 110],
+        stagger: { each: 0.04, easing: 'ease-in' },
+        restAt: 0.5,
+        children: {
+          kind: 'star',
+          points: 4,
+          innerRadius: 0.35,
+          radius: [14, 0],
+          angle: [0, 90],
+          fill: each(['#ef6f6c', '#f7b267']),
+          duration: 0.7,
+        },
+      };
+
+      const toggle = document.querySelector('.toggle');
+      const tl = gsap
+        .timeline({ paused: true })
+        .to('.toggle span', { rotate: 135, duration: 0.5, ease: 'back.out(2)' })
+        .burst(toggle, { spec: ripple }, 0);
+
+      toggle.addEventListener('click', () => {
+        const opening = tl.progress() === 0 || tl.reversed();
+        opening ? tl.play() : tl.reverse();
+        toggle.setAttribute('aria-expanded', String(opening));
+        toggle.setAttribute('aria-label', opening ? 'Close' : 'Open');
+      });
+    </script>
+  </body>
+</html>

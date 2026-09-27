@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Sparkle click — motly + GSAP</title>
+    <!-- CodePen settings, JS: gsap, then https://cdn.jsdelivr.net/npm/@motly/gsap@0.1 -->
+    <script src="../node_modules/gsap/dist/gsap.min.js"></script>
+    <script src="../node_modules/@motly/gsap/dist/motly.iife.js"></script>
+    <!-- CodePen CSS pane -->
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #0d1b2a;
+        color: #e0e1dd;
+        font-family: system-ui, sans-serif;
+        user-select: none;
+        cursor: crosshair;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- CodePen HTML pane -->
+    <p>Click anywhere: each click bursts from its point.</p>
+
+    <!-- CodePen JS pane -->
+    <script>
+      const { rand, each } = Motly;
+
+      const sparkle = {
+        kind: 'burst',
+        count: 9,
+        radius: [0, rand(40, 70)],
+        stagger: 0.02,
+        restAt: 0.4,
+        children: {
+          kind: 'star',
+          points: 4,
+          innerRadius: 0.3,
+          radius: [rand(6, 11), 0],
+          angle: [0, rand(-90, 90)],
+          fill: each(['#ffd60a', '#ffffff', '#90e0ef']),
+          duration: rand(0.4, 0.7),
+        },
+      };
+
+      // A point is { x, y } in viewport pixels, exactly what clientX and clientY give.
+      addEventListener('pointerdown', (event) => {
+        gsap.effects.burst({ x: event.clientX, y: event.clientY }, { spec: sparkle });
+      });
+    </script>
+  </body>
+</html>
