@@ -116,7 +116,7 @@ describe('container', () => {
     expect(container.children).toHaveLength(0);
   });
 
-  it('warns once for a container that matches nothing, and paints in the overlay instead', () => {
+  it('warns once for a container that matches nothing, and lasts the Spec drawing nothing', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const tween = gsap.effects.burst(button(100, 50), {
       spec,
@@ -125,10 +125,11 @@ describe('container', () => {
       paused: true,
     });
 
-    tween.progress(0.5);
     expect(warn).toHaveBeenCalledOnce();
-    expect(layer()?.parentElement).toBe(document.body);
-    expect(overlay()?.innerHTML).toBe(oracle({ x: 120, y: 60 }, 0.4));
+    expect(tween.duration()).toBeCloseTo(0.8);
+    for (const p of [0.5, 1, 0.5]) tween.progress(p);
+    expect(layer()).toBeNull();
+    expect(warn).toHaveBeenCalledOnce();
   });
 });
 

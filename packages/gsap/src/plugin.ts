@@ -43,10 +43,15 @@ function burst(core: GSAP, targets: (Anchor | Origin)[], vars: BurstVars): gsap.
   const onInterrupt = vars.onInterrupt ?? core.defaults().onInterrupt;
   // Resolved as GSAP resolves targets, so a selector is scoped by a gsap.context() it runs in.
   const [element] = container === undefined ? [] : core.utils.toArray<HTMLElement>(container);
-  if (container !== undefined && element === undefined) {
-    console.warn('motly: burst container not found, so it is drawn over the viewport.');
-  }
-  const drawing = new Drawing(spec, targets, { seed, container: element, rendererName: renderer });
+  // Nowhere to paint draws nothing, as nothing to burst from does: over the viewport it would be
+  // neither clipped nor scrolled as the container asked.
+  const lost = container !== undefined && element === undefined;
+  if (lost) console.warn('motly: burst container not found, so it draws nothing.');
+  const drawing = new Drawing(spec, lost ? [] : targets, {
+    seed,
+    container: element,
+    rendererName: renderer,
+  });
   return core.to(
     {},
     {

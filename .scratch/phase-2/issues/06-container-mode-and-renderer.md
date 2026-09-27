@@ -19,7 +19,7 @@ Resolved: each tween paints into one layer, built by `renderer`: an `<svg>` with
 
 Decisions not in the spec:
 
-- A `container` selector that matches nothing warns once and draws over the viewport, where targets' Origins already are.
+- A `container` selector that matches nothing warns once and returns a tween as long as the Spec that draws nothing, as targets that match nothing do (ticket 05). Drawing over the viewport instead was tried first and dropped: a burst neither clipped nor scrolled as the container asked is worse than none, and a container not yet mounted, as with a React ref, is the likely way to miss.
 - `container` is typed `HTMLElement | string`, not the spec's `Element | string`: the layer is appended to it and its `style.position` may be set, and AutoRenderer takes an `HTMLElement`. Ticket 08 owns the final types; `RendererName` is not exported yet either.
 
 Left as they are:
