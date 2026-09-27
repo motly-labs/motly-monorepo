@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createScope, type DrawList, type Renderer } from './index.js';
+import { createScope, type DrawList, isMotionReduced, type Renderer } from './index.js';
 import { manualDriver } from './testing/manual-driver.js';
 
 /** A Renderer keeping a copy of every Draw list it is handed. */
@@ -201,5 +201,65 @@ describe('reduced motion', () => {
     manual.advance(0.25);
 
     expect(drawn.map((list) => list[0]?.radius)).toEqual([50, 75]);
+  });
+
+  it('isMotionReduced: always and never force it, user reads the preference at each call', () => {
+    expect(isMotionReduced('user')).toBe(false);
+    prefers(true);
+    expect(isMotionReduced('always')).toBe(true);
+    expect(isMotionReduced('never')).toBe(false);
+    expect(isMotionReduced('user')).toBe(true);
+    prefers(false);
+    expect(isMotionReduced('always')).toBe(true);
+    expect(isMotionReduced('user')).toBe(false);
+  });
+
+  it("gives the Resting frame's Playhead in seconds: restAt × duration, or the duration without restAt", () => {
+    const { renderer } = recording();
+    const scope = createScope({ driver: manualDriver().driver });
+
+    const resting = scope.shape(
+      { kind: 'circle', restAt: 0.25, duration: 2 },
+      { renderer, origin },
+    );
+    const ending = scope.shape({ kind: 'circle', duration: 2 }, { renderer, origin });
+
+    expect(resting.restingPlayhead).toBe(0.5);
+    expect(ending.restingPlayhead).toBe(2);
+  });
+
+  it('agrees with what a reduced-motion Instance draws', async () => {
+    const { renderer, drawn } = recording();
+    const burst = createScope({ driver: manualDriver().driver }).burst(
+      {
+        kind: 'burst',
+        count: 3,
+        radius: [0, 50],
+        restAt: 0.4,
+        children: { kind: 'circle', radius: [10, 0], duration: 1, delay: 0.5 },
+      },
+      { renderer, origin, seed: 7, reducedMotion: 'always' },
+    );
+
+    await burst.play();
+
+    expect(burst.restingPlayhead).toBeCloseTo(0.6);
+    expect(drawn).toEqual([burst.sample(burst.restingPlayhead)]);
+  });
+
+  it('agrees with what a reduced-motion Timeline draws for each Instance on it', async () => {
+    const { renderer, drawn } = recording();
+    const timeline = createScope({ driver: manualDriver().driver }).timeline({
+      reducedMotion: 'always',
+    });
+    const shape = timeline.shape(
+      { kind: 'circle', radius: [0, 100], restAt: 0.3, duration: 2 },
+      { renderer, origin },
+    );
+
+    await timeline.play();
+
+    expect(shape.restingPlayhead).toBeCloseTo(0.6);
+    expect(drawn).toEqual([shape.sample(shape.restingPlayhead)]);
   });
 });

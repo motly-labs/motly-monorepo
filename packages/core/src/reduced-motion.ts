@@ -8,6 +8,8 @@ export type ReducedMotion = 'user' | 'always' | 'never';
 /**
  * Whether `setting` calls for the Resting frame now. `'user'` reads `matchMedia` from `globalThis`
  * on each call, never at import, and where there is none, as on a server, the preference is unset.
+ * Reach for it where something other than an Instance decides when to move, as an adapter whose
+ * host moves the Playhead does at each start, so it honours the same setting core does.
  */
 export function isMotionReduced(setting: ReducedMotion): boolean {
   if (setting !== 'user') return setting === 'always';

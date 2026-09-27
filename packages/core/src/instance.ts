@@ -65,6 +65,12 @@ export interface InstanceBinding {
 export interface Instance {
   /** Seconds from the first frame to the last. */
   readonly duration: number;
+  /**
+   * The Instance's own Playhead, in seconds, of its Resting frame: the Spec's `restAt` progress ×
+   * `duration`, or `duration` when `restAt` is left out. Reach for it to draw what reduced motion
+   * shows, as with `sample(restingPlayhead)`, in an adapter whose host moves the Playhead.
+   */
+  readonly restingPlayhead: number;
   /** The Draw list at Playhead `t` seconds. Pure: depends on nothing but `t`. */
   sample(t: number): DrawList;
   /**
@@ -180,6 +186,7 @@ export interface InstanceTarget extends DriverTarget {
 /** Any Spec bound to a Renderer, an Origin and a Driver. Shape and Burst are this, typed. */
 export class SpecInstance implements Instance {
   readonly duration: number;
+  readonly restingPlayhead: number;
   readonly #resolved: ResolvedTree;
   readonly #origin: Origin;
   readonly #renderer: Renderer;
@@ -214,9 +221,10 @@ export class SpecInstance implements Instance {
     this.#callbacks = binding;
     this.#reducedMotion = binding.reducedMotion ?? 'user';
     this.duration = this.#resolved.duration;
+    this.restingPlayhead = this.#resolved.restAt * this.duration;
     this.#target = {
       duration: this.duration,
-      rest: this.#resolved.restAt * this.duration,
+      rest: this.restingPlayhead,
       render: (t) => this.#render(t),
       finish: () => this.#finish(),
     };

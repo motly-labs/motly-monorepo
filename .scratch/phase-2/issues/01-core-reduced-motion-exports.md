@@ -4,10 +4,10 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] `isMotionReduced` is exported from core's public entry, with a doc comment saying when to reach for it.
-- [ ] Instance exposes the Resting frame's Playhead in seconds, read-only. It agrees with what a reduced-motion Instance draws: it is `restAt` × duration, and the duration when `restAt` is omitted.
-- [ ] Tested through core's public entry with the manual Driver; core stays at or above 85% coverage.
-- [ ] A changeset for `@motly/core`.
-- [ ] `pnpm lint && pnpm typecheck && pnpm test` green.
+- [x] `isMotionReduced` is exported from core's public entry, with a doc comment saying when to reach for it.
+- [x] Instance exposes the Resting frame's Playhead in seconds, read-only, as `restingPlayhead`. It agrees with what a reduced-motion Instance draws: it is `restAt` × duration, and the duration when `restAt` is omitted.
+- [x] Tested through core's public entry with the manual Driver; core stays at or above 85% coverage.
+- [x] A changeset for `@motly/core`.
+- [x] `pnpm lint && pnpm typecheck && pnpm test` green.
