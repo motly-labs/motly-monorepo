@@ -1,6 +1,6 @@
 {
   "name": "@motly/gsap",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "GSAP plugin: motly primitives as registered GSAP effects.",
   "license": "MIT",
   "repository": {
