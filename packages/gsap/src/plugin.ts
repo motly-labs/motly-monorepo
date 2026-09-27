@@ -1,12 +1,22 @@
-import type { BurstSpec, Origin, ReducedMotion } from '@motly/core';
-import type { gsap } from 'gsap';
+import type { BurstSpec, Origin, ReducedMotion, ShapeKind, ShapeSpec } from '@motly/core';
+// Aliased: `gsap` names GSAP's global namespace, which this file augments.
+import type { gsap as GSAPInstance } from 'gsap';
 import { type Anchor, Drawing, type RendererName } from './drawing.js';
 
-type GSAP = typeof gsap;
+type GSAP = typeof GSAPInstance;
 
-/** What `gsap.effects.burst()` and `tl.burst()` take: the Spec, and GSAP's own tween vars. */
-interface BurstVars extends gsap.TweenVars {
-  spec: BurstSpec;
+/**
+ * What a GSAP effect is called on, GSAP's `targets`: Anchors, as an element, a selector or a list
+ * of them, or Origins, as `{ x, y }` in viewport CSS pixels.
+ */
+type AnchorsOrOrigins = string | Anchor | Origin | ArrayLike<string | Anchor | Origin>;
+
+/**
+ * The vars every motly GSAP effect takes beside its Spec: four binding keys, and GSAP's own tween
+ * vars with GSAP's meaning, less the four a burst or a Shape cannot honour. Reach for it to type a
+ * helper that sets these keys for either effect, such as a project's default `renderer`.
+ */
+export interface MotlyVars extends gsap.TweenVars {
   /**
    * Give one when a burst must look the same on every page load, as in a test or a screenshot:
    * target `i` draws from `seed + i`. Without one, each effect call draws a random Seed.
@@ -30,6 +40,56 @@ interface BurstVars extends gsap.TweenVars {
    * Force `'always'` or `'never'` only in a demo or a test (ADR-0012).
    */
   reducedMotion?: ReducedMotion;
+  /** Rejected by the types, ignored at runtime: it would replace the burst's time with steps. */
+  keyframes?: never;
+  /** Rejected by the types, ignored at runtime: the tween has no property to start from. */
+  startAt?: never;
+  /** Rejected by the types, ignored at runtime: reverse the tween, or play it from its end. */
+  runBackwards?: never;
+  /** Rejected by the types, ignored at runtime: stagger with a loop or timeline positions. */
+  stagger?: never;
+}
+
+/**
+ * What `gsap.effects.burst()` and `tl.burst()` take: a Burst's Spec, as exported whole. Reach for
+ * it to type vars built apart from the call, as in a wrapper that fires the same burst everywhere.
+ */
+export interface BurstVars extends MotlyVars {
+  spec: BurstSpec;
+}
+
+/**
+ * What `gsap.effects.shape()` and `tl.shape()` take: one Element's Spec, of kind `K`. Reach for it
+ * to type vars built apart from the call; name `K` to keep that kind's parameters checked.
+ */
+export interface ShapeVars<K extends ShapeKind = ShapeKind> extends MotlyVars {
+  spec: ShapeSpec<K>;
+}
+
+declare global {
+  namespace gsap {
+    interface EffectsMap {
+      /**
+       * Throw a burst from each target: a tween as long as the Spec, which timelines, scrubbing and
+       * `gsap.context()` treat as any other. Needs `gsap.registerPlugin(Motly)` first.
+       */
+      burst(targets: AnchorsOrOrigins, vars: BurstVars): gsap.core.Tween;
+      /** Draw one Element from each target, as `burst` does: a ring, a star, a single spark. */
+      shape<K extends ShapeKind>(targets: AnchorsOrOrigins, vars: ShapeVars<K>): gsap.core.Tween;
+    }
+    namespace core {
+      interface Timeline {
+        /** Add a burst at `position`, as `gsap.effects.burst()` would draw it. */
+        burst(targets: AnchorsOrOrigins, vars: BurstVars, position?: gsap.Position): this;
+        /** Add a Shape at `position`, as `gsap.effects.shape()` would draw it. */
+        shape<K extends ShapeKind>(
+          targets: AnchorsOrOrigins,
+          vars: ShapeVars<K>,
+          position?: gsap.Position,
+        ): this;
+      }
+    }
+  }
 }
 
 /** What the plugin keeps per tween, between `init()` and each `render()`. */
@@ -41,10 +101,22 @@ interface PluginData {
 /** The plugin's key on the private proxy each burst tween animates. Not an API. */
 const KEY = 'motly';
 
-function burst(core: GSAP, targets: (Anchor | Origin)[], vars: BurstVars): gsap.core.Tween {
+/**
+ * GSAP's tween vars a burst cannot honour: each would reshape a tween whose time is the burst's.
+ * `stagger` across targets is a loop or timeline positions away.
+ */
+const UNSUPPORTED = ['keyframes', 'startAt', 'runBackwards', 'stagger'] as const;
+
+/** Draw `vars.spec` from `targets`, as the GSAP effect `name`, in a tween GSAP drives. */
+function draw(
+  core: GSAP,
+  name: 'burst' | 'shape',
+  targets: (Anchor | Origin)[],
+  vars: BurstVars | ShapeVars,
+): gsap.core.Tween {
   const { spec, seed, container, renderer = 'auto', reducedMotion = 'user', ...tweenVars } = vars;
   // As GSAP warns for a tween's own targets; GSAP has already resolved a selector into none here.
-  if (targets.length === 0) console.warn('motly: burst target not found, so it draws nothing.');
+  if (targets.length === 0) console.warn(`motly: ${name} target not found, so it draws nothing.`);
   // Given here, it takes the place of one set with gsap.defaults(), so that one is called instead.
   const onInterrupt = vars.onInterrupt ?? core.defaults().onInterrupt;
   // Resolved as GSAP resolves targets, so a selector is scoped by a gsap.context() it runs in.
@@ -52,7 +124,7 @@ function burst(core: GSAP, targets: (Anchor | Origin)[], vars: BurstVars): gsap.
   // Nowhere to paint draws nothing, as nothing to burst from does: over the viewport it would be
   // neither clipped nor scrolled as the container asked.
   const lost = container !== undefined && element === undefined;
-  if (lost) console.warn('motly: burst container not found, so it draws nothing.');
+  if (lost) console.warn(`motly: ${name} container not found, so it draws nothing.`);
   const drawing = new Drawing(spec, lost ? [] : targets, {
     seed,
     container: element,
@@ -89,11 +161,27 @@ export const Motly = {
   rawVars: true,
   /** Registers the effects on the copy of GSAP the host registered the plugin with. */
   register(core: GSAP): void {
-    core.registerEffect({
-      name: 'burst',
-      extendTimeline: true,
-      effect: (targets: (Anchor | Origin)[], vars: BurstVars) => burst(core, targets, vars),
-    });
+    // Per registration, never per module (Invariant 3): another copy of GSAP warns again.
+    let warned = false;
+    const supported = <V extends MotlyVars>(vars: V): V => {
+      const given = UNSUPPORTED.filter((key) => key in vars);
+      if (given.length === 0) return vars;
+      if (!warned) {
+        warned = true;
+        console.warn(`motly: ${UNSUPPORTED.join(', ')} are ignored on a burst or a shape.`);
+      }
+      const kept = { ...vars };
+      for (const key of given) delete kept[key];
+      return kept;
+    };
+    for (const name of ['burst', 'shape'] as const) {
+      core.registerEffect({
+        name,
+        extendTimeline: true,
+        effect: (targets: (Anchor | Origin)[], vars: BurstVars | ShapeVars) =>
+          draw(core, name, targets, supported(vars)),
+      });
+    }
   },
   init(this: Partial<PluginData>, _proxy: object, drawing: Drawing, tween: gsap.core.Tween): void {
     this.drawing = drawing;

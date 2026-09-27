@@ -8,6 +8,7 @@ import {
   type ReducedMotion,
   type Renderer,
   type Scope,
+  type ShapeSpec,
 } from '@motly/core';
 import { AutoRenderer } from '@motly/core/auto';
 import { CanvasRenderer } from '@motly/core/canvas';
@@ -35,7 +36,7 @@ function seekDriver(): Driver {
   };
 }
 
-/** The element a burst is read from, at its centre. */
+/** The element a burst or a Shape is read from, at its centre. */
 export type Anchor = Element;
 
 // By node type, not by `x` and `y`: an `<img>` has numeric ones of its own. Not `instanceof`,
@@ -51,7 +52,10 @@ function originOf(target: Anchor | Origin): Origin {
   return { x: box.left + box.width / 2, y: box.top + box.height / 2 };
 }
 
-/** Which Renderer paints a burst. `auto` picks SVG or canvas by its Element count (ADR-0015). */
+/**
+ * Which Renderer paints a burst or a Shape: `auto` picks SVG or canvas by its Element count
+ * (ADR-0015). Reach for it to type a setting passed on to `renderer` in the vars.
+ */
 export type RendererName = 'svg' | 'canvas' | 'auto';
 
 /** The GSAP effect's binding keys from `vars`, with `container` resolved to its element. */
@@ -125,7 +129,7 @@ const nowhere: Renderer = { draw: () => {}, release: () => {} };
 export class Drawing {
   /** The tween's length: the longest of its Instances' durations. */
   readonly duration: number;
-  readonly #spec: BurstSpec;
+  readonly #spec: BurstSpec | ShapeSpec;
   readonly #targets: readonly (Anchor | Origin)[];
   readonly #seed: number;
   readonly #scope: Scope = createScope({ driver: seekDriver() });
@@ -142,7 +146,7 @@ export class Drawing {
   #atStart = true;
 
   constructor(
-    spec: BurstSpec,
+    spec: BurstSpec | ShapeSpec,
     targets: readonly (Anchor | Origin)[],
     { seed, container, rendererName, reducedMotion }: DrawingOptions,
   ) {
@@ -222,6 +226,10 @@ export class Drawing {
   }
 
   #create(renderer: Renderer, origin: Origin, index: number): Instance {
-    return this.#scope.burst(this.#spec, { renderer, origin, seed: this.#seed + index });
+    const spec = this.#spec;
+    const binding = { renderer, origin, seed: this.#seed + index };
+    return spec.kind === 'burst'
+      ? this.#scope.burst(spec, binding)
+      : this.#scope.shape(spec, binding);
   }
 }

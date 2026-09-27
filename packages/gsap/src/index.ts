@@ -4,4 +4,5 @@
  */
 
 export { VERSION } from '@motly/core';
-export { Motly } from './plugin.js';
+export type { RendererName } from './drawing.js';
+export { type BurstVars, Motly, type MotlyVars, type ShapeVars } from './plugin.js';

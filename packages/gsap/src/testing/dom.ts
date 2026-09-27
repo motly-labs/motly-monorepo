@@ -1,4 +1,4 @@
-import { type BurstSpec, createScope, type Origin } from '@motly/core';
+import { type BurstSpec, createScope, type Origin, type ShapeSpec } from '@motly/core';
 import { SVGRenderer } from '@motly/core/svg';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -39,15 +39,19 @@ export function overlays(): NodeListOf<SVGSVGElement> {
   return document.querySelectorAll('svg');
 }
 
-/** What core paints for `burst` from `origin` at Playhead `t` seconds, under `seed` if given. */
-export function oracle(origin: Origin, t: number, burst: BurstSpec = spec, seed?: number): string {
+/** What core paints for `subject` from `origin` at Playhead `t` seconds, under `seed` if given. */
+export function oracle(
+  origin: Origin,
+  t: number,
+  subject: BurstSpec | ShapeSpec = spec,
+  seed?: number,
+): string {
   const svg = document.createElementNS(SVG_NS, 'svg');
   const renderer = new SVGRenderer(svg);
-  const instance = createScope().burst(burst, {
-    renderer,
-    origin,
-    ...(seed === undefined ? {} : { seed }),
-  });
+  const binding = { renderer, origin, ...(seed === undefined ? {} : { seed }) };
+  const scope = createScope();
+  const instance =
+    subject.kind === 'burst' ? scope.burst(subject, binding) : scope.shape(subject, binding);
   renderer.draw(instance, instance.sample(t));
   return svg.innerHTML;
 }
