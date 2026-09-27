@@ -29,6 +29,11 @@ export function overlay(): SVGSVGElement | null {
   return document.querySelector('svg');
 }
 
+/** Every burst overlay in the document. */
+export function overlays(): NodeListOf<SVGSVGElement> {
+  return document.querySelectorAll('svg');
+}
+
 /** What core paints for `burst` from `origin` at Playhead `t` seconds. */
 export function oracle(origin: Origin, t: number, burst: BurstSpec = spec): string {
   const svg = document.createElementNS(SVG_NS, 'svg');

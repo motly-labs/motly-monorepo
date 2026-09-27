@@ -20,8 +20,24 @@ const KEY = 'motly';
 
 function burst(core: GSAP, targets: object[], vars: BurstVars): gsap.core.Tween {
   const { spec, ...tweenVars } = vars;
+  // Given here, it takes the place of one set with gsap.defaults(), so that one is called instead.
+  const onInterrupt = vars.onInterrupt ?? core.defaults().onInterrupt;
   const drawing = new Drawing(spec, targets as Element[]);
-  return core.to({}, { ease: 'none', duration: drawing.duration, ...tweenVars, [KEY]: drawing });
+  return core.to(
+    {},
+    {
+      ease: 'none',
+      duration: drawing.duration,
+      ...tweenVars,
+      // kill() mid-flight reaches no render of the plugin, only this (ADR-0018): clear the burst,
+      // then hand over to the user's own, called as GSAP would have called it.
+      onInterrupt(this: unknown, ...args: unknown[]) {
+        drawing.release();
+        onInterrupt?.apply(this, args);
+      },
+      [KEY]: drawing,
+    },
+  );
 }
 
 /**

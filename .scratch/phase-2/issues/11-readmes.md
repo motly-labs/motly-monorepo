@@ -10,3 +10,7 @@
 - [ ] The `tl.kill()` gap is stated plainly, with kill or revert of the burst's own tween, or a context's revert, as the fix.
 - [ ] The vocabulary rule names `delay`/`spec.delay` and `ease`/`spec.easing`.
 - [ ] No competitor metrics quoted.
+
+## Comments
+
+From ticket 04: besides `tl.kill()`, the cleanup rules should say that the burst's `onInterrupt` belongs in `vars`. Replacing it later with `tween.eventCallback('onInterrupt', fn)` drops the adapter's release, so a later `kill()` leaves the burst drawn, and reading it back returns the adapter's wrapper. See ticket 04's comments.

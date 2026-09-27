@@ -4,10 +4,18 @@
 
 **Blocked by:** 02
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] One test per probe-table row, each mid-flight: `tween.kill()`, `tween.revert()`, `tl.revert()` and `gsap.context().revert()` leave nothing drawn.
-- [ ] `tl.kill()` mid-flight leaves the burst drawn (the documented gap).
-- [ ] The user's `onInterrupt` is still called, after the adapter's release.
-- [ ] A burst fired many times and left to finish leaves no overlay in the document.
-- [ ] `pnpm lint && pnpm typecheck && pnpm test` green.
+- [x] One test per probe-table row, each mid-flight: `tween.kill()`, `tween.revert()`, `tl.revert()` and `gsap.context().revert()` leave nothing drawn.
+- [x] `tl.kill()` mid-flight leaves the burst drawn (the documented gap).
+- [x] The user's `onInterrupt` is still called, after the adapter's release.
+- [x] A burst fired many times and left to finish leaves no overlay in the document.
+- [x] `pnpm lint && pnpm typecheck && pnpm test` green.
+
+## Comments
+
+Resolved: the revert rows needed no code; the plugin sees them at ratio 0, as ADR-0018 intends, and the tests pin it. `kill()` is covered by an `onInterrupt` the adapter puts on the tween: it releases the burst, then calls the user's own with GSAP's scope and params.
+
+An `onInterrupt` set with `gsap.defaults()` is called as on any tween, since the adapter's own would otherwise take its place.
+
+Known gap, for the README (ticket 11) alongside `tl.kill()`: replacing the callback later with `tween.eventCallback('onInterrupt', fn)` drops the adapter's release, so a `kill()` after that leaves the burst drawn; and reading it back, through `eventCallback('onInterrupt')` or `tween.vars`, returns the adapter's wrapper, not the function given. Pass `onInterrupt` in `vars` instead.
