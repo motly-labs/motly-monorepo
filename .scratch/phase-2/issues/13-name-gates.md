@@ -6,6 +6,10 @@
 
 **Status:** ready-for-human
 
-- [ ] The `@motly` npm org is claimed.
+- [x] The `@motly` npm org is claimed.
 - [ ] `motlyjs.dev` is registered.
 - [ ] A trademark search is done and its result noted on this ticket.
+
+## Comments
+
+The `@motly` npm org is claimed; `motly-labs` is a second npm org that matches the GitHub org and publishes nothing. On npm the org name is the scope, so `@motly/*` needs the `motly` org.

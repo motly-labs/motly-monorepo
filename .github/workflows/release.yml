@@ -1,9 +1,10 @@
 name: Release
 
-# Manual until the first npm publish: a push to main no longer runs it. Before switching it back
-# to `push: branches: [main]`, allow Actions to create pull requests in the repo settings.
+# Publishes through npm trusted publishing (OIDC): each package on npmjs.com names this repo and
+# `release.yml` as its trusted publisher, so no npm token is stored. Needs npm 11.5.1 or later.
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
 
 concurrency:
   group: release
@@ -25,8 +26,6 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
-          # Writes the .npmrc that NODE_AUTH_TOKEN authenticates against.
-          registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
 
@@ -38,5 +37,4 @@ jobs:
           commit-message: 'chore: version packages'
           pr-title: 'chore: version packages'
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
