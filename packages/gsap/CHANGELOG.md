@@ -1,5 +1,11 @@
 # @motly/gsap
 
+## 0.1.1
+
+### Patch Changes
+
+- 2007574: A static `container` is set back to its own `position` once the last burst drawn in it is cleared, at its end, on kill or on revert. It used to stay `relative` after the burst.
+
 ## 0.1.0
 
 ### Minor Changes
