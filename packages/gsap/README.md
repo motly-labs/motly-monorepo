@@ -108,8 +108,9 @@ clicks, and in the document only while the tween is between its ends.
 
 `container: '.card'`, an element or a selector, paints it inside that element instead, so it
 scrolls with it and is clipped by it: what a burst scrubbed by ScrollTrigger in a pinned section
-needs. The container must have a size; a static one is made relative. A selector that matches
-nothing warns and gives a tween as long as the Spec that draws nothing.
+needs. The container must have a size; a static one is made relative while a burst is drawn in it,
+and set back once the last one is cleared. A selector that matches nothing warns and gives a tween
+as long as the Spec that draws nothing.
 
 `renderer` is `'auto'` by default, which keeps bursts under 50 Elements in SVG and paints larger
 ones on a canvas. `'svg'` or `'canvas'` forces one.
