@@ -1,7 +1,6 @@
 import {
   type BurstSpec,
   createScope,
-  type Driver,
   type Instance,
   isMotionReduced,
   type Origin,
@@ -15,26 +14,6 @@ import { CanvasRenderer } from '@motly/core/canvas';
 import { SVGRenderer } from '@motly/core/svg';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-
-/**
- * A Driver that moves a Playhead only when seeked. GSAP's tween decides time and reaches the
- * Instances through the plugin's `render(ratio)`, so nothing here advances on its own.
- */
-function seekDriver(): Driver {
-  return {
-    attach(target) {
-      const idle = () => {};
-      return {
-        play: idle,
-        pause: idle,
-        resume: idle,
-        reverse: idle,
-        seek: (t) => target.render(Math.min(Math.max(t, 0), target.duration)),
-        stop: idle,
-      };
-    },
-  };
-}
 
 /** The element a burst or a Shape is read from, at its centre. */
 export type Anchor = Element;
@@ -132,7 +111,9 @@ export class Drawing {
   readonly #spec: BurstSpec | ShapeSpec;
   readonly #targets: readonly (Anchor | Origin)[];
   readonly #seed: number;
-  readonly #scope: Scope = createScope({ driver: seekDriver() });
+  // GSAP's tween decides time and reaches the Instances through the plugin's `render(ratio)`, which
+  // only seeks them. Core's rAF Driver draws a seek at once and starts no frame loop for it.
+  readonly #scope: Scope = createScope();
   readonly #container: HTMLElement | undefined;
   readonly #rendererName: RendererName;
   readonly #reducedMotion: ReducedMotion;
