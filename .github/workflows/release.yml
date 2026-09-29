@@ -30,11 +30,37 @@ jobs:
       - run: pnpm build
 
       - name: Create release PR or publish to npm
+        id: changesets
         uses: changesets/action@v2.1.2
         with:
           version-script: pnpm version-packages
           publish-script: pnpm release
           commit-message: 'chore: version packages'
           pr-title: 'chore: version packages'
+
+      # `changeset publish` runs `pnpm publish` with fixed flags, so `--provenance` cannot be
+      # passed, and pnpm 12 ignores NPM_CONFIG_PROVENANCE (0.1.0 went out without it). Under
+      # trusted publishing pnpm is expected to attach provenance on its own, as npm does; this step
+      # fails the run if a published version came out without it.
+      - name: Check every published version has provenance
+        if: steps.changesets.outputs.published == 'true'
         env:
-          NPM_CONFIG_PROVENANCE: true
+          PUBLISHED: ${{ steps.changesets.outputs.published-packages }}
+        run: |
+          missing=0
+          for spec in $(jq -r '.[] | "\(.name)@\(.version)"' <<< "$PUBLISHED"); do
+            found=''
+            # The registry can take a few seconds to serve a version it just accepted.
+            for _ in 1 2 3 4 5 6; do
+              found=$(npm view "$spec" dist.attestations.provenance.predicateType || true)
+              [ -n "$found" ] && break
+              sleep 10
+            done
+            if [ -n "$found" ]; then
+              echo "$spec: $found"
+            else
+              echo "::error::$spec was published without provenance"
+              missing=1
+            fi
+          done
+          exit "$missing"

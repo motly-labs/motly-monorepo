@@ -24,7 +24,7 @@ What it took, outside the repo:
 - The repo's Actions policy was `local_only`, which blocked every action the workflows use; it now allows all actions. "Allow GitHub Actions to create and approve pull requests" is on.
 - The first publish used a one-day granular token with "Bypass 2FA"; without it pnpm failed with `ERR_PNPM_OTP_NON_INTERACTIVE`. Trusted publishing cannot be set up for a package that does not exist yet, so one token publish was unavoidable.
 
-**Open: 0.1.0 has no provenance.** Its `dist` has no `attestations`. `changeset publish` runs `pnpm publish` without `--provenance`, and pnpm 12 did not act on `NPM_CONFIG_PROVENANCE`. Whether pnpm 12 does the OIDC exchange for trusted publishing is also unverified; the next release will show both.
+**Open: 0.1.0 has no provenance.** Its `dist` has no `attestations`. `changeset publish` runs `pnpm publish` without `--provenance`, and pnpm 12 did not act on `NPM_CONFIG_PROVENANCE`. Whether pnpm 12 does the OIDC exchange for trusted publishing is also unverified; the next release will show both. `changeset publish` calls `pnpm publish` with fixed flags, so `--provenance` cannot be passed through it. The release workflow now checks `dist.attestations` for every version it publishes and fails the run if any lacks provenance.
 
 The release workflow now authenticates through npm trusted publishing: `NODE_AUTH_TOKEN` and setup-node's `registry-url` (added in ticket 12) are gone, and the trigger is `push` to `main`. Still to do by hand:
 - [ ] Delete the npm token and the `NPM_TOKEN` repo secret.
