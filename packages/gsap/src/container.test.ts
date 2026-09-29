@@ -84,6 +84,42 @@ describe('container', () => {
     expect(style.height).toBe('100%');
   });
 
+  it('puts a static container back as it was at the end, on kill and on revert', () => {
+    const container = card();
+    container.style.position = 'static';
+    const before = container.outerHTML;
+    const fire = () => gsap.effects.burst(button(100, 50), { spec, container, paused: true });
+
+    const scrubbed = fire();
+    scrubbed.progress(0.5);
+    scrubbed.progress(1);
+    expect(container.outerHTML).toBe(before);
+
+    const killed = fire();
+    killed.progress(0.5);
+    killed.kill();
+    expect(container.outerHTML).toBe(before);
+
+    const reverted = fire();
+    reverted.progress(0.5);
+    reverted.revert();
+    expect(container.outerHTML).toBe(before);
+  });
+
+  it('keeps a static container relative while any burst is still drawn in it', () => {
+    const container = card();
+    container.style.position = 'static';
+    const first = gsap.effects.burst(button(100, 50), { spec, container, paused: true });
+    const second = gsap.effects.burst(button(100, 50), { spec, container, paused: true });
+
+    first.progress(0.5);
+    second.progress(0.5);
+    first.progress(1);
+    expect(container.style.position).toBe('relative');
+    second.progress(1);
+    expect(container.style.position).toBe('static');
+  });
+
   it('leaves a positioned container as it is', () => {
     const container = card();
     container.style.position = 'sticky';

@@ -14,6 +14,11 @@ import { CanvasRenderer } from '@motly/core/canvas';
 import { SVGRenderer } from '@motly/core/svg';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
+// Marks the layers the adapter mounts, so a container can tell whether any is left in it.
+const LAYER = 'data-motly-layer';
+// The inline `position` a static container had before the adapter made it relative. Kept on the
+// container, not in a Drawing, so every tween drawing in it shares it.
+const SAVED_POSITION = 'motlyPosition';
 
 /** The element a burst or a Shape is read from, at its centre. */
 export type Anchor = Element;
@@ -71,6 +76,7 @@ function createLayer(
     [layer, renderer] = [div, new AutoRenderer(div)];
   }
   layer.setAttribute('aria-hidden', 'true');
+  layer.setAttribute(LAYER, '');
   Object.assign(layer.style, {
     position: container === undefined ? 'fixed' : 'absolute',
     left: '0',
@@ -83,6 +89,27 @@ function createLayer(
     zIndex: container === undefined ? '2147483647' : '',
   });
   return [layer, renderer];
+}
+
+/** Make a static container relative, so a layer sits on it, as core's AutoRenderer does. */
+function claimPosition(container: HTMLElement): void {
+  if (container.dataset[SAVED_POSITION] !== undefined) return;
+  const view = container.ownerDocument.defaultView;
+  if (view?.getComputedStyle(container).position !== 'static') return;
+  container.dataset[SAVED_POSITION] = container.style.position;
+  container.style.position = 'relative';
+}
+
+/**
+ * Put back the `position` claimPosition() changed, once the last layer has left the container, so
+ * a released burst leaves the page as it found it.
+ */
+function releasePosition(container: HTMLElement): void {
+  const saved = container.dataset[SAVED_POSITION];
+  if (saved === undefined) return;
+  if (Array.from(container.children).some((child) => child.hasAttribute(LAYER))) return;
+  container.style.position = saved;
+  delete container.dataset[SAVED_POSITION];
 }
 
 /**
@@ -171,6 +198,7 @@ export class Drawing {
     for (const instance of this.#instances) instance.destroy();
     this.#instances = [];
     this.#layer?.remove();
+    if (this.#container !== undefined) releasePosition(this.#container);
   }
 
   #mount(): void {
@@ -196,11 +224,7 @@ export class Drawing {
         globalThis.document;
       [this.#layer, this.#renderer] = createLayer(document, this.#rendererName, container);
     }
-    // A static container is made relative, so the layer sits on it, as core's AutoRenderer does.
-    const view = container?.ownerDocument.defaultView;
-    if (container !== undefined && view?.getComputedStyle(container).position === 'static') {
-      container.style.position = 'relative';
-    }
+    if (container !== undefined) claimPosition(container);
     (container ?? this.#layer.ownerDocument.body).append(this.#layer);
     const renderer = this.#renderer;
     this.#instances = origins.map((origin, i) => this.#create(renderer, origin, i));
