@@ -23,7 +23,7 @@ Scroll through one night, from dusk to dawn. It reads best on its own page.
 - **An Anchor that moves.** The radiant climbs as you scroll. Each hour's Bursts start from wherever
   it has climbed to, because an Anchor's position is read when its burst starts.
 - **Seeds.** Each hour, and each replay within it, has its own Seed, so an hour always rains the
-  same meteors. The fireball at 23:40 is scrubbed with the scroll, and scrolling back runs it back
+  same meteors. The fireball at 02:30 is scrubbed with the scroll, and scrolling back runs it back
   exactly.
 - **Swirl and Bursts of Bursts.** The fireball breaks into fragments that curl as they fall, and the
   star field is three levels of Bursts.
@@ -32,19 +32,16 @@ Scroll through one night, from dusk to dawn. It reads best on its own page.
 
 ## Streaks that point outward
 
-A Burst's rays are spaced evenly clockwise from 12 o'clock, and a `line` runs from 12 o'clock to 6.
-So turning the Child on ray `i` by that ray's angle points it along the ray:
+A `line` runs from 12 o'clock to 6, whichever way it is thrown. `orient: true` on each hour's Burst
+turns every streak along its ray, so the meteors point away from the radiant, as real ones do.
 
-```js
-angle: each(Array.from({ length: count }, (_, i) => (360 * i) / count)),
-```
+The fireball is a Burst of one Child, aimed with `angle: -60`: up and to the left of the radiant,
+with `orient` laying the streak along the throw. See
+[aiming a Burst](../../reference/burst/#aiming-angle-and-spread).
 
-This works because a Spec is data: the angles are computed once, when the Spec is built. A Burst
-cannot rotate its rays, and `rand()` on its `radius` resolves once per Burst rather than per Child,
-so each hour is three Bursts with different counts, whose rays do not line up.
-
-The same limit places the fireball. A Burst of one Child throws it straight up, so the fireball
-comes at 23:40, while the radiant is low enough to leave it room in the sky.
+`rand()` on a Burst's `radius` resolves once per Burst, not per Child: it is the Emitter's
+distance. So each hour is three Bursts, near, mid and far, with different counts, whose rays do not
+line up.
 
 ## The model
 

@@ -6,7 +6,7 @@ description: The Burst Emitter throws count copies of a Child outward around its
 import Example from '../../../components/Example.astro';
 
 A Burst is an Emitter: it throws `count` copies of one Child outward around the Origin, spread
-evenly clockwise from 12 o'clock. It draws nothing of its own. It has no `duration`: a Burst lasts
+evenly clockwise from 12 o'clock unless you aim it. It draws nothing of its own. It has no `duration`: a Burst lasts
 as long as its longest-running Child.
 
 | Field | Takes | If left out |
@@ -18,6 +18,9 @@ as long as its longest-running Child.
 | `stagger` | a time between one Child's start and the next; see [Stagger](../time/#stagger) | `0` |
 | `delay` | a time to wait before the Burst starts: before any Child starts, and before it throws them | `0` |
 | `restAt` | the [Resting frame](../time/#the-resting-frame), a progress from 0 to 1 | the last frame |
+| `angle` | an angle: where the rays point, clockwise from 12 o'clock. One value, not Keyframes. | `0` |
+| `spread` | an angle from 0 to 360: the arc the rays cover, centred on `angle` | `360` |
+| `orient` | `true` to turn each Child to face its ray | off |
 
 The Burst's `radius` and each Child's own fields are separate. `radius: [10, 110]` on the Burst
 moves every Child from 10 to 110 pixels out, while `radius` on a circle Child is that circle's own
@@ -27,6 +30,37 @@ size.
 
 A Burst's last frame is usually empty, because its Children shrink or fade away, so give it a
 `restAt` where it still shows something.
+
+## Aiming: `angle` and `spread`
+
+`angle` turns the rays, and `spread` narrows them to an arc. The two rules differ on purpose:
+
+- At `spread: 360`, the default, the rays ring the Origin: the first at `angle`, the rest
+  360 / `count` apart, so the last does not land on the first.
+- Below 360, the arc is centred on `angle`, both edges included, `spread` / (`count` − 1) apart.
+  You aim a cone by its middle: `angle: 0, spread: 70` is a cannon pointing straight up.
+
+<Example name="ref-burst-cannon" height={300} />
+
+A single Child goes along `angle`, so `count: 1` with an `angle` is one aimed throw. `spread: 0`
+sends every Child along the same ray; with a `stagger` they leave one after another, as a jet.
+
+<Example name="ref-burst-jet" height={300} />
+
+`angle` takes `rand()`, so each Instance can be turned differently, and `each()`, so each Burst in a
+Burst of Bursts can point its own way.
+
+## Facing the throw: `orient`
+
+A Child's `angle` is its own: a `line` runs from 12 o'clock to 6 whichever way it is thrown.
+`orient: true` turns each Child to face its ray, with its own `angle` added on top, so streaks,
+sparks and arrows point outward.
+
+<Example name="ref-burst-orient" height={280} />
+
+A Burst Child turns its rays with it, so a fan inside a ring points outward. The Child a
+[Swirl](../swirl/) wraps faces the ray, not the Swirl's curve. The turn is worked out once, when
+the Spec is resolved, so orienting costs nothing per frame.
 
 ## Different Children
 

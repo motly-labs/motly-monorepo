@@ -223,8 +223,9 @@ const riser = (level) => ({
     child: { kind: 'circle', radius: [u(2 + level * 3), 0], fill: '#ffffff', duration: 0.35 },
   },
 });
-// Confetti in clumps: 20 bursts of 8, so the pieces scatter instead of forming one ring.
-const confetti = (color) => {
+// Confetti in clumps: 20 bursts of 8, so the pieces scatter instead of forming one ring. A cannon
+// fans its clumps over 80°, aimed with `angle`; left out, they ring the Origin.
+const confetti = (color, aim) => {
   // Each piece holds its size for most of its fall, then shrinks away.
   const piece = {
     fill: each([color, '#ffffff', '#fbbf24', '#22d3ee']),
@@ -235,6 +236,7 @@ const confetti = (color) => {
   return {
     kind: 'burst',
     count: 20,
+    ...(aim === undefined ? {} : { angle: aim, spread: 80 }),
     radius: [0, u(260)],
     easing: 'ease-out',
     restAt: 0.3,
@@ -323,8 +325,9 @@ for (const event of score) {
   if (event.type === 'stab') fire('.booth', stab(event.chord.color), t);
   if (event.type === 'roll') fire('.booth', riser(event.level), t);
   if (event.type === 'crash') {
-    fire('.speaker.left', confetti(chordAt(t).color), t, { renderer: 'canvas' });
-    fire('.speaker.right', confetti(chordAt(t).color), t, { renderer: 'canvas' });
+    // Two cannons, each aimed up and in towards the stage.
+    fire('.speaker.left', confetti(chordAt(t).color, 25), t, { renderer: 'canvas' });
+    fire('.speaker.right', confetti(chordAt(t).color, -25), t, { renderer: 'canvas' });
     fire(sky(), shell(chordAt(t).color), t + beat);
   }
   if (event.type === 'finale') {

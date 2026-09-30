@@ -30,3 +30,5 @@ Built 2026-09-30 as `apps/docs/src/examples/perseids` on the page `examples/pers
 Checked in headless Chrome 154 at 1280×800: no errors; frame times at 21:18, 23:44, 00:30, 01:30, 03:36 and 04:48 all had a median of 16.7 ms and a worst of 16.8 ms, with and without reduced motion; the clock, count, captions and bar chart follow the scroll; every tile draws; scrubbing back to 23:44 redraws the same fireball.
 
 Found while building: `rand(...) * scale` is `NaN`, since `rand()` returns a Descriptor, not a number; scale goes inside `rand()`.
+
+2026-09-30, after ticket 30 (ADR-0019): the streaks use `orient: true` in place of the `angle: each([...])` workaround, and the fireball moved back to 02:30, aimed with `angle: -60`.

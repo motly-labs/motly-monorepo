@@ -21,8 +21,8 @@ Children with their own `delay`, as above, or all of them in turn with `stagger`
 
 ## Stagger
 
-`stagger` on a Burst starts each Child a fixed time after the one before it, clockwise from 12
-o'clock. Each Child is thrown from the Origin when it starts, so the burst ripples out instead of
+`stagger` on a Burst starts each Child a fixed time after the one before it, in ray order: from
+the first ray, clockwise. Each Child is thrown from the Origin when it starts, so the burst ripples out instead of
 popping.
 
 <Example name="time-stagger" height={280} />
