@@ -1,0 +1,122 @@
+---
+title: Values
+description: What a Spec field can hold - Keyframes, rand and each, units, colors and Curves.
+---
+
+import Example from '../../../components/Example.astro';
+
+Every field on the [Shapes](../shapes/), [Burst](../burst/) and [Swirl](../swirl/) pages takes one
+of the values on this page. A Spec stays plain JSON whatever it holds: `JSON.stringify` it, store
+it, and pass it back in, and it draws the same thing.
+
+## Keyframes
+
+An array is Keyframes: successive values spread evenly over the Element's duration. Two values move
+from the first to the second; four values reach the second a third of the way through, and so on.
+
+<Example name="val-keyframes" height={260} />
+
+Every animated field takes Keyframes: lengths, angles, numbers and colors. A field that holds still
+for the Element's whole life, such as a polygon's `points` or a path's `d`, does not. There is no
+`{ from: to }` syntax: write `[from, to]`.
+
+An array always means Keyframes, as it does in GSAP and Motion. To give each Child of a Burst a
+different value, use `each()`, below.
+
+## Descriptors
+
+`rand()` and `each()` are Descriptors: small tagged objects that stay JSON inside the Spec and are
+resolved only when the Spec is drawn. Both are exported from `@motly/core` and `@motly/gsap`, and
+with script tags they are `Motly.rand` and `Motly.each`.
+
+### `rand(min, max)`
+
+A number drawn between `min` and `max`, separately for each Instance and each Child. Use it
+wherever a number should vary from one Child to the next: sizes, spins, durations, delays, a
+Burst's `radius`. Inside Keyframes each `rand()` draws its own number, so `[rand(4, 14), 0]` gives
+each Child its own starting size. `count`, `points` and `restAt` take a plain number only.
+
+<Example name="val-rand" height={280} />
+
+In JSON, `rand(4, 14)` is `{ "__motly": "rand", "min": 4, "max": 14 }`, which a design tool can
+write too.
+
+### The Seed
+
+Every `rand()` resolves from the Instance's Seed. With the same Spec and the same Seed, motly
+draws exactly the same thing, on every run and every machine. Pass `seed` to get that:
+
+- In `@motly/gsap`, `seed` in `vars`. The element or point at index `i` draws from `seed + i`.
+- In `@motly/core`, `seed` beside `renderer` in the second argument.
+
+Without a Seed, each tween or Instance draws a random one and keeps it: a repeat, a restart and a
+scrub all show the same burst. The [GSAP guide](../../guides/gsap/#where-a-burst-comes-from) shows
+seeded and random bursts side by side.
+
+### `each([...])`
+
+Hands values to a Burst's Children in turn: the first value to the first Child, the second to the
+second, and round again when the values run out. It works on any field of a Child, including
+`points`, and on `children` itself, to mix kinds of Child.
+
+<Example name="val-each" height={280} />
+
+`each()` picks a value first, then any `rand()` in that value draws, so
+`each([rand(2, 4), rand(8, 12)])` alternates small and large Children of random sizes.
+
+## Units
+
+A plain number is pixels for a length, degrees for an angle, and seconds for a time. A string with
+a unit says otherwise:
+
+| Kind of value | Plain number | Strings |
+| --- | --- | --- |
+| Length (`radius`, `strokeWidth`, `amplitude`) | pixels | `'40px'` |
+| Angle (`angle`, a Swirl's `size`) | degrees | `'90deg'`, `'1.5rad'`, `'0.5turn'` |
+| Time (`duration`, `delay`, `stagger`) | seconds | `'0.4s'`, `'400ms'` |
+
+`scale`, `opacity`, a star's `innerRadius` and `restAt` are plain numbers.
+
+<Example name="val-units" height={260} />
+
+## Colors
+
+A color that holds still can be any CSS color, including `var(--brand)` with the SVG Renderer.
+Keyframes of colors are named colors, hex, `rgb()` or `rgba()`, since motly has to mix them: it
+moves the red, green, blue and alpha from one Keyframe to the next together.
+
+<Example name="val-colors" height={260} />
+
+`'none'` means no fill or no stroke. It cannot be a Keyframe, because there is nothing to mix it
+with; fade with `opacity` instead.
+
+The canvas Renderer only understands colors a canvas does, so no `var()` there.
+
+## Curves
+
+`easing` says how a property moves between its Keyframes. It is linear when left out. A Curve is
+one of three things, all of them data:
+
+- a CSS keyword: `'linear'`, `'ease'`, `'ease-in'`, `'ease-out'`, `'ease-in-out'`;
+- a cubic-bezier, as four numbers: `[0.7, -0.4, 0.3, 1.4]`, which may overshoot;
+- an SVG path in a 100×100 box, as copied from a design tool, for a curve with more than one
+  bend: x is progress from 0 to 100 and y runs down, so it starts at `M0,100` and ends at `100,0`.
+
+The named curves are constants you import that hold one of these:
+`sine`, `quad`, `cubic`, `quart`, `quint`, `expo`, `circ` and `back` as cubic-beziers, and
+`bounce` and `elastic` as paths, each as `In`, `Out` and `InOut`, such as `cubicOut` or
+`bounceInOut`.
+
+<Example name="val-curves" height={280} />
+
+A Burst's `easing` moves its own `radius`, which is how the dots above travel. On a Shape,
+`easing` is one Curve for every property, or one per property with `default` for the rest:
+
+```js
+easing: { radius: bounceOut, opacity: 'ease-in', default: 'linear' }
+```
+
+<Example name="val-easing-map" height={260} />
+
+Under `@motly/gsap`, `ease` in `vars` is different: it warps the whole tween's time on top of
+every `easing` in the Spec. See the [vocabulary rule](../../guides/gsap/#the-vocabulary-rule).
