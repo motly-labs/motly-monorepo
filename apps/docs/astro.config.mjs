@@ -30,6 +30,7 @@ export default defineConfig({
             { label: 'Pens and small ideas', slug: 'examples' },
             { label: 'Real-world examples', slug: 'examples/real-world' },
             { label: 'A night of the Perseids', slug: 'examples/perseids' },
+            { label: 'Party night, on the beat', slug: 'examples/party-night' },
           ],
         },
         {

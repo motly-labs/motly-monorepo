@@ -1,0 +1,58 @@
+---
+title: Party night, on the beat
+description: An 85-second house set, synthesized in the browser, with a burst on every kick, clap, hat and chord - kept in time by the audio clock, not the frame loop.
+---
+
+import Example from '../../../components/Example.astro';
+
+A small stage, a crowd, and an 85-second house set at 124 beats a minute. Every kick sends a ring
+out from the booth, every clap throws stars from a speaker, the hats spark on the lighting rig, and
+each drop fires confetti from both sides. Press play, with sound on.
+
+<Example name="party-night" height={560} full />
+
+## One score, two outputs
+
+There is no audio file. The set is a list of events, such as a kick at 15.48 seconds or a clap at
+15.97, and the same list feeds two things:
+
+- **The synth.** The Web Audio API makes each event from oscillators and filtered noise a quarter
+  of a second before it is due: sine kicks, noise claps and hats, a sawtooth bass, chord stabs and
+  a riser. Seeking moves where that scheduling starts, so playback can begin from any point at once.
+- **The show.** A paused GSAP timeline gets one motly burst per event, at the event's time. Specs
+  are built from the event: the stab's color comes from its chord, and the build's roll grows
+  step by step, with more Children, further out, as the drop nears.
+
+So the bursts cannot drift from the music: they come from the same numbers.
+
+## The audio clock owns time
+
+The timeline never plays by itself. On each frame, it is moved to where the music is:
+
+```js
+gsap.ticker.add(() => {
+  if (playing) show.time(context.currentTime - startedAt + offset - context.outputLatency);
+});
+```
+
+Pause the music and the show stops; drag the slider and both jump together. (Rendering the whole
+set into a buffer first would make seeking simpler, but it took about 12 seconds before anything
+could play.) The audio's output
+latency is taken off, so what you see matches what reaches the speakers, not what has only been
+scheduled.
+
+A burst under `@motly/gsap` is in the document only while its tween is between its ends, so a
+timeline of about 700 bursts costs only the few that are playing. With `@motly/core`, a custom
+Driver could follow the audio clock as well, but a core Timeline holds every Instance at its first
+frame before it starts and draws it every frame. That suits a short sequence, not hundreds of
+beats.
+
+## Reduced motion and flashing
+
+Bursts on every sixteenth note would flicker even as still frames. Under reduced motion the set
+still plays, the stage colors still follow the chords, but the beat bursts and swinging beams are
+left out: each section shows one still burst for its whole length instead.
+
+At any setting, nothing flashes the whole stage. The kick rings, the largest thing on the beat,
+come about twice a second, under the three flashes a second that WCAG 2.3.1 allows, and the faster
+hat sparks are a few pixels across.

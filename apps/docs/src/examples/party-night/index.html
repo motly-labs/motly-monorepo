@@ -1,0 +1,152 @@
+<section class="stage" aria-label="A party night, bursting on the beat">
+  <div class="truss">
+    <i class="fixture"></i><i class="fixture"></i><i class="fixture"></i>
+    <i class="fixture"></i><i class="fixture"></i><i class="fixture"></i>
+  </div>
+  <div class="beams">
+    <i class="beam"></i><i class="beam"></i><i class="beam"></i>
+    <i class="beam"></i><i class="beam"></i><i class="beam"></i>
+  </div>
+  <div class="speaker left"></div>
+  <div class="speaker right"></div>
+  <div class="booth"><span>DJ</span></div>
+  <svg class="crowd" viewBox="0 0 1000 140" preserveAspectRatio="none" aria-hidden="true">
+    <path
+      d="M0 140V96c18-22 38-22 52 0 8-40 30-44 40-2 16-20 36-18 48 4 10-30 34-30 44 0 14-50 30-52 38-4 14-20 38-20 50 2 12-26 32-28 44-2 18-18 34-16 46 6 8-44 28-48 38-4 16-22 36-22 50 0 12-30 32-30 44 0 14-18 32-18 46 2 10-52 28-54 38-6 16-20 34-20 48 2 12-28 32-28 44-2 14-22 36-22 50 2 8-40 28-42 38-2 16-20 36-18 48 4 10-26 32-28 44 0 12-18 30-18 42 4 8-46 30-48 40-4 14-20 30-18 40 2V140Z"
+    />
+  </svg>
+
+  <div class="hud">
+    <p class="section">Press play</p>
+    <p class="position">bar 1 · beat 1</p>
+  </div>
+  <div class="controls">
+    <button type="button" class="play" aria-pressed="false">Play</button>
+    <input class="seek" type="range" min="0" max="1" step="0.01" value="0" aria-label="Position in the set" />
+  </div>
+</section>
+
+<style>
+  body {
+    display: block;
+    place-items: normal;
+    background: #07030d;
+  }
+  .stage {
+    --tone: #ff4d8d;
+    position: relative;
+    height: 100vh;
+    overflow: hidden;
+    background: radial-gradient(ellipse at 50% 100%, #2a1240, #07030d 70%);
+  }
+  .truss {
+    position: absolute;
+    top: 8%;
+    left: 10%;
+    right: 10%;
+    display: flex;
+    justify-content: space-between;
+    height: 4px;
+    background: #2b2536;
+  }
+  .fixture {
+    width: 14px;
+    height: 14px;
+    margin-top: -5px;
+    border-radius: 50%;
+    background: var(--tone);
+    box-shadow: 0 0 12px var(--tone);
+  }
+  .beams {
+    position: absolute;
+    top: 8%;
+    left: 10%;
+    right: 10%;
+    display: flex;
+    justify-content: space-between;
+  }
+  .beam {
+    width: 14px;
+    height: 80vh;
+    transform-origin: 50% 0;
+    background: linear-gradient(color-mix(in srgb, var(--tone) 40%, transparent), transparent 80%);
+    filter: blur(6px);
+    opacity: 0.5;
+  }
+  .speaker {
+    position: absolute;
+    bottom: 22%;
+    width: 7%;
+    min-width: 36px;
+    aspect-ratio: 2 / 3;
+    border-radius: 6px;
+    background: radial-gradient(circle at 50% 35%, #3a3346 18%, #16121f 20%);
+  }
+  .left {
+    left: 6%;
+  }
+  .right {
+    right: 6%;
+  }
+  .booth {
+    position: absolute;
+    bottom: 20%;
+    left: 50%;
+    display: grid;
+    place-items: center;
+    width: 22%;
+    min-width: 110px;
+    height: 12%;
+    translate: -50% 0;
+    border-radius: 8px 8px 0 0;
+    background: #16121f;
+    color: #ffffff55;
+    font: 600 0.8rem ui-monospace, monospace;
+  }
+  .crowd {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 22%;
+    fill: #030106;
+  }
+  .hud {
+    position: absolute;
+    top: 13%;
+    left: 1.5rem;
+    color: #f2e9ff;
+  }
+  .hud p {
+    margin: 0;
+  }
+  .section {
+    font: 700 1.6rem system-ui, sans-serif;
+  }
+  .position {
+    font: 0.85rem ui-monospace, monospace;
+    opacity: 0.6;
+  }
+  .controls {
+    position: absolute;
+    right: 1.5rem;
+    bottom: 1.25rem;
+    left: 1.5rem;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+  .play {
+    min-width: 7.5rem;
+    padding: 0.55rem 1rem;
+    border: 0;
+    border-radius: 999px;
+    background: var(--tone);
+    color: #07030d;
+    font: 700 0.95rem system-ui, sans-serif;
+    cursor: pointer;
+  }
+  .seek {
+    flex: 1;
+    accent-color: var(--tone);
+  }
+</style>
