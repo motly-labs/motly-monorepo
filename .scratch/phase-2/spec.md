@@ -93,6 +93,7 @@ The release ships an IIFE build that self-registers on a CodePen page, five Code
 61. As a developer arriving from a launch post, I want a docs site that takes me from install to a first burst with either package, so that I can try motly without reading its source.
 62. As a developer, I want every Spec field documented with a live example beside its code, so that I can see what a field does before I use it.
 63. As a developer, I want an examples page with the five pens and small examples of one idea each, so that I can copy a working starting point.
+64. As a developer deciding whether motly fits my product, I want a few complete real-world examples, so that I can see bursts doing a job in an interface like mine rather than as a demo on their own.
 
 ### Maintaining
 
@@ -181,7 +182,7 @@ Decisions come from the Phase 2 grilling, recorded question by question in the e
 - Five CodePens: Heart burst, Confetti, Firework, Sparkle click, Ripple. Each shows one thing core alone does not: timeline sequencing, scrubbing with ScrollTrigger, bursting at a click point, placement with `tl.burst`'s position, reversing. Their sources live in `apps/demos` and build against the workspace; they are pasted into CodePen at launch. The ScrollTrigger pen uses container mode; Sparkle click uses point targets.
 - READMEs for `@motly/core` and `@motly/gsap`: install, a first burst, the vocabulary rule, the cleanup rules including the `tl.kill()` case, reduced motion.
 - A docs site in `apps/docs`, on Astro Starlight (ADR-0002), private like every app. It is deployed from `main` to GitHub Pages by a workflow, until `motlyjs.dev` is registered (ticket 13). It ships no npm release: it is live before the launch posts, and v0.1.0 is already on npm.
-- Its pages: getting started for `@motly/gsap` and for `@motly/core`, grown from the READMEs; a Spec reference covering every field of every Element kind, Emitter and Modifier, and the values they take (Keyframes, Descriptors, colors, units, Curves), and time (delay, Stagger, Timeline, Playback, reduced motion); an examples page with the five pens and small examples of one idea each.
+- Its pages: getting started for `@motly/gsap` and for `@motly/core`, grown from the READMEs; a Spec reference covering every field of every Element kind, Emitter and Modifier, and the values they take (Keyframes, Descriptors, colors, units, Curves), and time (delay, Stagger, Timeline, Playback, reduced motion); an examples page with the five pens and small examples of one idea each; and three real-world examples, each a small working product UI rather than a single effect.
 - A live example is an `index.html` and a `main.js` in `apps/docs/src/examples/<name>/`. The page shows both and runs them in an iframe of their own, so the code on the page is the code that ran, and `document.querySelector` in an example finds only that example's markup. Examples import the workspace packages, so the site documents what `main` builds; a feature can appear on the site before its release reaches npm.
 
 ### Launch and the signal
