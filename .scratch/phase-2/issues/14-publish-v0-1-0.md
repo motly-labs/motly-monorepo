@@ -29,5 +29,9 @@ What it took, outside the repo:
 The release workflow now authenticates through npm trusted publishing: `NODE_AUTH_TOKEN` and setup-node's `registry-url` (added in ticket 12) are gone, and the trigger is `push` to `main`. Still to do by hand:
 - [ ] Delete the npm token and the `NPM_TOKEN` repo secret.
 - [x] Add `motly-labs/motly-monorepo` + `release.yml` as trusted publisher on both packages (`npm trust github @motly/<pkg> --repo motly-labs/motly-monorepo --file release.yml --allow-publish`).
-- [ ] Set both packages to "Require 2FA and disallow tokens".
-- [ ] The next release publishes through OIDC with provenance.
+- [x] Set both packages to "Require 2FA and disallow tokens".
+- [x] The next release publishes through OIDC with provenance.
+
+`@motly/gsap@0.1.1` went out through OIDC with provenance (run 36694486157, second attempt), so pnpm 12 does the trusted-publishing exchange and attaches provenance on its own. The first attempt failed with `403 "OIDC permission denied for this action"`: the `npm trust` command above gave the trusted publisher only the "npm stage publish" permission, and "npm publish" had to be added on npmjs.com. The provenance check then failed a good publish, because the version was not visible yet after its 60-second wait. pnpm is now at 12.8.2 with `publishWaitTimeout: 600000` in `pnpm-workspace.yaml`, so `pnpm publish` waits for each version to be installable, and the check reads each version once. pnpm waits on install metadata while `npm view` reads the full packument; if the check ever 404s, add a short retry back. Untested until the next release.
+
+`@motly/core@0.1.0` still has no provenance; its next release will add it. Both packages' trusted publishers now have "npm publish", and both require 2FA and disallow tokens.

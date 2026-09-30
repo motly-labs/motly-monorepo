@@ -40,8 +40,9 @@ jobs:
 
       # `changeset publish` runs `pnpm publish` with fixed flags, so `--provenance` cannot be
       # passed, and pnpm 12 ignores NPM_CONFIG_PROVENANCE (0.1.0 went out without it). Under
-      # trusted publishing pnpm is expected to attach provenance on its own, as npm does; this step
-      # fails the run if a published version came out without it.
+      # trusted publishing pnpm attaches provenance on its own (0.1.1 has it); this step fails the
+      # run if a published version came out without it. pnpm has already waited for each version to
+      # be installable (`publishWaitTimeout` in pnpm-workspace.yaml), so one read is enough.
       - name: Check every published version has provenance
         if: steps.changesets.outputs.published == 'true'
         env:
@@ -49,13 +50,7 @@ jobs:
         run: |
           missing=0
           for spec in $(jq -r '.[] | "\(.name)@\(.version)"' <<< "$PUBLISHED"); do
-            found=''
-            # The registry can take a few seconds to serve a version it just accepted.
-            for _ in 1 2 3 4 5 6; do
-              found=$(npm view "$spec" dist.attestations.provenance.predicateType || true)
-              [ -n "$found" ] && break
-              sleep 10
-            done
+            found=$(npm view "$spec" dist.attestations.provenance.predicateType || true)
             if [ -n "$found" ]; then
               echo "$spec: $found"
             else
