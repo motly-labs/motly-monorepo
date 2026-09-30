@@ -8,3 +8,7 @@ engineStrict: true
 # `pnpm publish` waits up to 10 minutes for each version it publishes to be installable, so the
 # release workflow's provenance check can read it at once.
 publishWaitTimeout: 600000
+
+# Install scripts that may run. esbuild's only checks its binary, which it also finds without it.
+allowBuilds:
+  esbuild: false

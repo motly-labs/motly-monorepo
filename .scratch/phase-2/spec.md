@@ -182,7 +182,7 @@ Decisions come from the Phase 2 grilling, recorded question by question in the e
 - READMEs for `@motly/core` and `@motly/gsap`: install, a first burst, the vocabulary rule, the cleanup rules including the `tl.kill()` case, reduced motion.
 - A docs site in `apps/docs`, on Astro Starlight (ADR-0002), private like every app. It is deployed from `main` to GitHub Pages by a workflow, until `motlyjs.dev` is registered (ticket 13). It ships no npm release: it is live before the launch posts, and v0.1.0 is already on npm.
 - Its pages: getting started for `@motly/gsap` and for `@motly/core`, grown from the READMEs; a Spec reference covering every field of every Element kind, Emitter and Modifier, and the values they take (Keyframes, Descriptors, colors, units, Curves), and time (delay, Stagger, Timeline, Playback, reduced motion); an examples page with the five pens and small examples of one idea each.
-- Every live example is one source file that the page both shows and runs, so the code on the page is the code that ran. Examples import the workspace packages, so the site documents what `main` builds; a feature can appear on the site before its release reaches npm.
+- A live example is an `index.html` and a `main.js` in `apps/docs/src/examples/<name>/`. The page shows both and runs them in an iframe of their own, so the code on the page is the code that ran, and `document.querySelector` in an example finds only that example's markup. Examples import the workspace packages, so the site documents what `main` builds; a feature can appear on the site before its release reaches npm.
 
 ### Launch and the signal
 

@@ -1,0 +1,52 @@
+---
+/**
+ * The page a live example runs in: the example's HTML, then its `main.js`, alone on a dark stage.
+ * Each example gets its own document, so `document.querySelector` finds only its own markup.
+ */
+export function getStaticPaths() {
+  const pages = import.meta.glob<string>('../../examples/*/index.html', {
+    query: '?raw',
+    import: 'default',
+    eager: true,
+  });
+  return Object.entries(pages).map(([path, html]) => ({
+    params: { name: path.split('/').at(-2) },
+    props: { html },
+  }));
+}
+
+const { name } = Astro.params;
+const { html } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>{name} — motly example</title>
+  </head>
+  <body data-example={name} data-pagefind-ignore="all">
+    <Fragment set:html={html} />
+    <script>
+      const examples = import.meta.glob('../../examples/*/main.js');
+      examples[`../../examples/${document.body.dataset.example}/main.js`]?.();
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  html {
+    color-scheme: dark;
+  }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background: #1b1025;
+    color: #f5e9ff;
+    font-family: system-ui, sans-serif;
+  }
+</style>
