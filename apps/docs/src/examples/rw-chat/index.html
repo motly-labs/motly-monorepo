@@ -1,0 +1,57 @@
+<div id="app"></div>
+
+<style>
+  .chat {
+    display: grid;
+    gap: 0.75rem;
+    width: min(28rem, 100vw - 2rem);
+  }
+  .message {
+    padding: 0.75rem 1rem;
+    border-radius: 1rem;
+    background: #2d1b3d;
+  }
+  .meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    opacity: 0.6;
+  }
+  .meta button {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+  .message p {
+    margin: 0.35rem 0 0.6rem;
+  }
+  .reactions {
+    display: flex;
+    gap: 0.4rem;
+  }
+  .reactions button {
+    padding: 0.2rem 0.55rem;
+    border: 1px solid #ffffff26;
+    border-radius: 999px;
+    background: #ffffff0d;
+    color: inherit;
+    font: 0.9rem system-ui, sans-serif;
+    cursor: pointer;
+  }
+  .reactions button[aria-pressed='true'] {
+    border-color: #ffd166;
+    background: #ffd16626;
+  }
+  .restore {
+    justify-self: center;
+    padding: 0.4rem 0.9rem;
+    border: 1px solid #ffffff44;
+    border-radius: 999px;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+  }
+</style>

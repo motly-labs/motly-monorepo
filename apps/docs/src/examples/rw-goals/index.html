@@ -1,0 +1,104 @@
+<section class="goals">
+  <header>
+    <div class="progress">
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <circle class="track" cx="50" cy="50" r="42" />
+        <circle class="value" cx="50" cy="50" r="42" />
+      </svg>
+      <span class="count">0/6</span>
+    </div>
+    <div>
+      <h1>Today</h1>
+      <p class="status">Six small things.</p>
+    </div>
+  </header>
+
+  <ul>
+    <li><label><input type="checkbox" /> Drink a glass of water</label></li>
+    <li><label><input type="checkbox" /> Stretch for five minutes</label></li>
+    <li><label><input type="checkbox" /> Reply to one old message</label></li>
+    <li><label><input type="checkbox" /> Walk around the block</label></li>
+    <li><label><input type="checkbox" /> Read ten pages</label></li>
+    <li><label><input type="checkbox" /> Plan tomorrow</label></li>
+  </ul>
+
+  <label class="still"><input type="checkbox" /> Still frames (reduced motion)</label>
+</section>
+
+<style>
+  .goals {
+    width: min(24rem, 100vw - 2rem);
+    padding: 1.5rem;
+    border-radius: 1rem;
+    background: #2d1b3d;
+  }
+  header {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+  .progress {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 4.5rem;
+    height: 4.5rem;
+  }
+  .progress svg {
+    position: absolute;
+    inset: 0;
+    rotate: -90deg;
+  }
+  circle {
+    fill: none;
+    stroke-width: 10;
+  }
+  .track {
+    stroke: #ffffff1a;
+  }
+  .value {
+    stroke: #ffd166;
+    stroke-linecap: round;
+    stroke-dasharray: 264;
+    stroke-dashoffset: 264;
+  }
+  .count {
+    font-weight: 700;
+  }
+  h1 {
+    margin: 0;
+    font-size: 1.4rem;
+  }
+  .status {
+    margin: 0.2rem 0 0;
+    opacity: 0.7;
+  }
+  ul {
+    margin: 1.25rem 0;
+    padding: 0;
+    list-style: none;
+  }
+  li label {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.5rem 0;
+    cursor: pointer;
+  }
+  input {
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: #06d6a0;
+  }
+  li:has(input:checked) label {
+    opacity: 0.55;
+    text-decoration: line-through;
+  }
+  .still {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    font-size: 0.85rem;
+    opacity: 0.7;
+  }
+</style>
