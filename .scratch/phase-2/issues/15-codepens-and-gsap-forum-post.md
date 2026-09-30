@@ -25,4 +25,4 @@ Prep done 2026-09-30, for the human steps above:
 - Reversible ripple toggle: https://codepen.io/realdreamer/pen/01a0f2b7-a4b9-73ea-a610-47e1627e7d1e
 - The forum post is drafted in `.scratch/phase-2/gsap-forum-post.md`, with a placeholder per pen link.
 
-Hand check, 2026-09-30, on macOS: Safari 26.6.2 (21624.5.1.11.3), Firefox 157.0 (aarch64), and Chrome 154.0.8037.92 (the installed version; the version used was not stated).
+Hand check, 2026-09-30, on macOS: Safari 26.6.2 (21624.5.1.11.3), Firefox 157.0 (aarch64), and Chrome 154.0.8037.57 (arm64).
