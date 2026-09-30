@@ -2,7 +2,7 @@
 
 **What to build:** Every way into motly leads to the docs site. Spec: `.scratch/phase-2/spec.md`, "Demos and docs", "Launch and the signal".
 
-**Blocked by:** 22, 23, 24, 25, 26
+**Blocked by:** 22, 23, 24, 25, 26, 28
 
 **Status:** ready-for-agent
 
