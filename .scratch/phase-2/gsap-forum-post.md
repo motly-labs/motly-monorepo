@@ -27,6 +27,9 @@ Five pens, each showing something that needs GSAP to drive it (all in one collec
 - **Click sparkles**: a burst at the pointer, from `{ x: clientX, y: clientY }`. https://codepen.io/realdreamer/pen/01a0f2b2-4955-7f79-8b31-5c6483dcb099
 - **Reversible ripple toggle**: a paused timeline toggled with `play()` and `reverse()`; the burst runs backwards too. https://codepen.io/realdreamer/pen/01a0f2b7-a4b9-73ea-a610-47e1627e7d1e
 
+The docs have every Spec field with a live example, and four real-world examples (add to cart,
+a goals checklist, a scroll-told year in review, chat reactions in React): https://motly-labs.github.io/motly-monorepo/
+
 Try it with two script tags, GSAP first:
 
 ```html
@@ -49,7 +52,6 @@ A few things that might matter to you:
 
 It's 0.1, so I'd really value feedback from people who use GSAP daily: what feels wrong next to
 the rest of the API, what you'd want a burst to do that it can't. Issues are open on GitHub:
-https://github.com/motly-labs/motly-monorepo, and the README is at
-https://www.npmjs.com/package/@motly/gsap.
+https://github.com/motly-labs/motly-monorepo.
 
 Thanks for GSAP, and for taking a look.

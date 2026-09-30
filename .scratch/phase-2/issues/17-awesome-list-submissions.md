@@ -49,8 +49,9 @@ Adds [motly](https://github.com/motly-labs/motly-monorepo) to Common, in both `r
 
 motly generates the thing being animated. You describe a burst as a JSON spec, and motly generates the shapes and draws them. `@motly/gsap` registers bursts as GSAP effects, so each one is an ordinary tween: it sits in a timeline, scrubs, reverses, and can be driven by ScrollTrigger. `@motly/core` runs without GSAP.
 
+- Docs, with live examples: https://motly-labs.github.io/motly-monorepo/
 - npm: https://www.npmjs.com/package/@motly/gsap
-- Demos: <CodePen collection from ticket 15>
+- Demos: https://codepen.io/collection/kkrLNz
 - License: MIT
 
 The `bundleData` entry points at `@motly/gsap`'s script build, which bundles core.

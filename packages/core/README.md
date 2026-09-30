@@ -7,6 +7,8 @@ Renderers, in their own entries, do that.
 Using GSAP? Install [`@motly/gsap`](https://www.npmjs.com/package/@motly/gsap) instead: it puts
 these bursts in GSAP's timelines, scrubbing and cleanup.
 
+The [docs](https://motly-labs.github.io/motly-monorepo/) have every Spec field with a live example.
+
 ## Install
 
 ```sh
