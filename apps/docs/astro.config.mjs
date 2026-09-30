@@ -21,6 +21,7 @@ export default defineConfig({
           ],
         },
         { label: 'Guides', items: [{ label: 'Using motly with GSAP', slug: 'guides/gsap' }] },
+        { label: 'Examples', items: [{ label: 'Pens and small ideas', slug: 'examples' }] },
         {
           label: 'Spec reference',
           items: [

@@ -1,0 +1,29 @@
+<main>
+  <button type="button" class="toggle" aria-label="Open" aria-expanded="false"><span>+</span></button>
+  <p>Reversing: click again mid-ripple and it runs back into the button.</p>
+</main>
+
+<style>
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background: #f1f4f9;
+    font-family: system-ui, sans-serif;
+  }
+  .toggle {
+    width: 72px;
+    height: 72px;
+    border: 0;
+    border-radius: 50%;
+    background: #0f4c81;
+    color: white;
+    font-size: 40px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .toggle span { display: inline-block; }
+  main { text-align: center; }
+  p { opacity: 0.6; }
+</style>
