@@ -4,7 +4,7 @@
 
 **Blocked by:** None.
 
-**Status:** needs-triage
+**Status:** resolved
 
 Questions for triage:
 - Where it lives: a Burst field (such as `orient: true`), or a Child field.
@@ -12,3 +12,12 @@ Questions for triage:
 - How it combines with a Swirl, whose throw turns: face the ray, or the path's tangent.
 - Whether it is v1 at all, or post-v1 (ADR-0007). It is a core API change and needs a changeset.
 - A related gap from the same example: a Burst cannot rotate its rays. They always start at 12 o'clock, so a Burst of one always throws straight up, and ticket 29's fireball had to be timed for when that direction had room. A start angle on the Burst would cover it; triage the two together.
+
+## Answer
+
+Decided and built on 2026-09-30 (ADR-0019): a Burst takes `angle`, `spread` and `orient`.
+- `angle` turns the rays: one value, `rand()` and `each()` allowed, not Keyframes.
+- `spread` is the arc, 0–360. A full circle starts at `angle`; a narrower arc is centred on it, both edges included; 0 is a jet.
+- `orient: true` adds each ray's angle to its Child's `angle`, and to a Burst Child's rays, at resolve time, so it costs nothing per frame. Under a Swirl a Child faces the ray, not the curve (deferred: it would cost per frame).
+- Defaults reproduce the old arithmetic exactly. It is core API, so `@motly/core` takes a minor changeset and `@motly/gsap` a patch for its script build.
+- A per-Child throw distance was considered and left out: a Burst's `radius` stays the Emitter's.

@@ -175,7 +175,7 @@ export interface BurstSpec {
   /** How many Children to spawn. */
   count?: number;
   /**
-   * Time between one Child's start and the next, in order clockwise from 12 o'clock. Each Child is
+   * Time between one Child's start and the next, in ray order: clockwise from the first ray. Each Child is
    * thrown from the Origin when it starts. Reach for it to make a burst ripple out instead of pop.
    * With an `easing`, the starts keep the same span, `each` × (`count` − 1), but spread along the
    * curve, so a burst can land unevenly on purpose. A start the curve puts before 0 is held at 0.
@@ -193,6 +193,25 @@ export interface BurstSpec {
   radius?: NumericProperty<LengthUnit>;
   /** How the Burst's own `radius` moves. Its Children take their own `easing`. */
   easing?: Easing<'radius'>;
+  /**
+   * Where the rays point, clockwise from 12 o'clock: the first ray of a full circle, or the middle
+   * of an arc. Reach for it to aim a Burst, such as a single throw or a cannon. One value, held
+   * for the Burst's life: `rand()` turns each Instance differently, and `each()` each inner Burst.
+   */
+  angle?: Distributable<NumericValue<AngleUnit>>;
+  /**
+   * The arc the rays cover, 0 to 360 degrees, centred on `angle`. At 360, the default, the rays
+   * ring the Origin, spaced 360 / `count` from `angle`; below it they fan out with both edges
+   * included, spaced `spread` / (`count` − 1). Reach for 60–120 for a cannon or a party popper,
+   * and 0 to throw every Child along one ray, as a jet.
+   */
+  spread?: Distributable<NumericValue<AngleUnit>>;
+  /**
+   * Turn each Child to face the ray it is thrown along, its own `angle` added on top. Reach for it
+   * whenever a Child has a direction: streaks, sparks, arrows. A Burst Child turns its rays with
+   * it; a Swirl's Child faces the ray, not the Swirl's curve. Off if left out.
+   */
+  orient?: boolean;
   /**
    * The Child spawned `count` times: an Element, another Emitter, or a Modifier around either. Hand
    * different Children out in turn with `each([...])`, such as circles and stars in one Burst.

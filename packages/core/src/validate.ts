@@ -172,6 +172,32 @@ function wholeFrom(min: number): Check {
   };
 }
 
+/** One angle, held for a Burst's life: `what` names it in error messages. */
+function oneAngle(what: string): Check {
+  return (value, path) => {
+    if (Array.isArray(value)) fail(path, value, `A ${what} is one value, not Keyframes.`);
+    numberIn(ANGLE)(value, path);
+  };
+}
+
+/** A Burst's arc: one angle from 0 to 360 degrees, a `rand()` included at both ends. */
+const spread = distributable((value, path) => {
+  oneAngle('spread')(value, path);
+  const ends =
+    typeof value === 'number'
+      ? [value]
+      : typeof value === 'string'
+        ? [toNumber(value, ANGLE) as number]
+        : [(value as { min: number }).min, (value as { max: number }).max];
+  if (ends.some((end) => end < 0 || end > 360)) {
+    fail(path, value, 'Use an angle from 0 to 360 degrees.');
+  }
+});
+
+const orient: Check = (value, path) => {
+  if (typeof value !== 'boolean') fail(path, value, 'Use true or false.');
+};
+
 const direction = distributable((value, path) => {
   if (value !== 1 && value !== -1)
     fail(path, value, 'Use 1 for clockwise or -1 for counterclockwise.');
@@ -249,6 +275,9 @@ const FIELDS = {
     stagger,
     radius: numeric(LENGTH),
     easing: easing(['radius']),
+    angle: distributable(oneAngle('Burst angle')),
+    spread,
+    orient,
     children: distributable((value, path) => validate(value, path)),
   },
   swirl: {
