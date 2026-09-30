@@ -1,0 +1,37 @@
+<main>
+  <svg aria-hidden="true" width="300" height="200"></svg>
+  <div class="controls">
+    <button type="button" data-action="play">play()</button>
+    <button type="button" data-action="pause">pause()</button>
+    <button type="button" data-action="resume">resume()</button>
+    <button type="button" data-action="reverse">reverse()</button>
+  </div>
+  <label>setProgress() <input type="range" min="0" max="1" step="0.01" value="0.4" /></label>
+</main>
+
+<style>
+  main {
+    display: grid;
+    justify-items: center;
+    gap: 0.75rem;
+  }
+  .controls {
+    display: flex;
+    gap: 0.5rem;
+  }
+  button {
+    padding: 0.35rem 0.75rem;
+    border: 1px solid #ffffff44;
+    border-radius: 999px;
+    background: none;
+    color: inherit;
+    font: 0.85rem ui-monospace, monospace;
+    cursor: pointer;
+  }
+  label {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    font: 0.85rem ui-monospace, monospace;
+  }
+</style>

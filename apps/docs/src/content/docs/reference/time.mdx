@@ -1,0 +1,113 @@
+---
+title: Time
+description: How a Spec unfolds in time - duration and delay, Stagger, Playback, Timelines, Drivers and the Resting frame.
+---
+
+import Example from '../../../components/Example.astro';
+
+## Duration and delay
+
+An Element's `duration` is how long it takes from its first frame to its last, 1 second if left
+out. Its `delay` is how long it waits before its first frame, holding that frame until then.
+
+A Burst has no `duration` of its own: it lasts until its latest Child ends, counting each Child's
+[stagger](#stagger) offset, `delay` and `duration`, all the way down through nested Bursts. So
+changing one Child's `duration` changes the Burst's, and under `@motly/gsap` the tween's.
+
+<Example name="time-delay" height={280} />
+
+A Burst's own `delay` holds back the whole Burst: nothing is thrown until it has passed. Offset
+Children with their own `delay`, as above, or all of them in turn with `stagger`.
+
+## Stagger
+
+`stagger` on a Burst starts each Child a fixed time after the one before it, clockwise from 12
+o'clock. Each Child is thrown from the Origin when it starts, so the burst ripples out instead of
+popping.
+
+<Example name="time-stagger" height={280} />
+
+`{ each, easing }` keeps the same span of starts, `each` × (`count` − 1), but spreads them along a
+[Curve](../values/#curves), so a burst can land unevenly on purpose. A start the Curve puts before 0
+is held at 0.
+
+<Example name="time-stagger-curve" height={280} />
+
+Under `@motly/gsap`, `stagger` in `vars` is not this: GSAP's `stagger` across targets is ignored
+with a warning. `spec.stagger` staggers the Children of each burst.
+
+## Playback
+
+In `@motly/core`, an Instance plays itself: `play()` starts from the beginning and returns a
+promise that settles the first time the Playhead reaches the end moving forward. It never rejects:
+`destroy()` before the end settles it too.
+
+| Method | What it does |
+| --- | --- |
+| `play()` | Move the Playhead to 0 and play forward. |
+| `pause()` | Stop the Playhead where it is. |
+| `resume()` | Carry on from where `pause()` left it, in the direction it was moving. |
+| `reverse()` | Play backward from where it is, stopping at 0. Reaching 0 settles nothing. |
+| `seek(t)` | Move the Playhead to `t` seconds and draw there now, playing or paused as before. |
+| `setProgress(p)` | `seek()` by progress, 0 to 1: for a slider or a scroll position. |
+| `destroy()` | Stop, and remove everything drawn. |
+
+<Example name="time-playback" height={330} />
+
+An Instance is drawn only from its Playhead, never from a clock, so the same Playhead always draws
+the same frame: scrubbing back and forth never changes what you see.
+
+Under `@motly/gsap` there are no such methods to call: the effect returns a GSAP tween, and the
+tween's own `play()`, `reverse()`, `progress()` and the rest move the burst.
+
+## Timelines
+
+A Timeline sequences several Instances on one Playhead, so one `play()`, `seek()` or `reverse()`
+moves them all. Create it from a Scope, and create its Instances with its own `shape()` and
+`burst()`. Leave out the last argument, `at`, to place an Instance after everything on the Timeline
+so far; pass it, in seconds, to overlap.
+
+<Example name="time-timeline" height={260} />
+
+An Instance on a Timeline follows the Timeline only: its own playback methods do nothing, though
+awaiting its `play()` still settles when the Timeline carries it past its end. Before its start it
+holds its first frame, and after its end its last.
+
+A Scope owns what it creates: `scope.destroy()` removes every Instance and Timeline in it at once.
+Under `@motly/gsap`, use a GSAP timeline and `tl.burst()` instead.
+
+## Drivers
+
+What moves the Playhead is a Driver. Standalone, core's own `requestAnimationFrame` loop does.
+When something in your app already decides time, pass your own Driver to a Scope, and every
+Instance in it follows that instead:
+
+```js
+import { createScope } from '@motly/core';
+
+const scope = createScope({ driver: myDriver });
+```
+
+A Driver has one method, `attach(target)`. It takes charge of the target's Playhead and returns
+the Playback controls above; the target gives its `duration`, draws with `render(t)`, and settles
+its `play()` with `finish()`. `@motly/gsap` does the same job without one: GSAP's ticker decides
+time, and the tween seeks each burst's Playhead as it renders.
+
+## The Resting frame
+
+A viewer who prefers reduced motion sees one still frame instead of the motion: the Resting frame,
+at `restAt`, a progress from 0 to 1. Left out, it is the last frame, which for a Burst is usually
+empty, so give every Burst a `restAt` where it still shows something. `restAt` is read from the Spec
+you create the Instance from, not from a Child's.
+
+<Example name="core-reduced-motion" height={320} />
+
+In `@motly/core`, `reducedMotion` in the second argument is `'user'` by default, which follows the
+viewer's setting, read at each `play()`. `'always'` and `'never'` force it, for a demo or a test.
+Under reduced motion, `play()` draws the Resting frame and settles at once, `resume()` does nothing,
+and `reverse()` jumps to the first frame. A Timeline takes `reducedMotion` too, in
+`scope.timeline({ reducedMotion })`, and decides for every Instance on it.
+
+Under `@motly/gsap`, the Resting frame is shown for the tween's full length, so everything after it
+in a timeline keeps its timing. See [reduced motion](../../guides/gsap/#reduced-motion) in the GSAP
+guide.
