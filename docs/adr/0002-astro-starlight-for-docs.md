@@ -8,4 +8,4 @@
 
 ## Consequences
 
-Not scaffolded yet. `apps/docs` stays a placeholder until Phase 3 funds it; the create command is in `apps/docs/README.md`.
+Not scaffolded yet. Amended 2026-09-30: the site is built in Phase 2, before the launch posts, not in Phase 3 (Phase 2 spec, "Demos and docs").

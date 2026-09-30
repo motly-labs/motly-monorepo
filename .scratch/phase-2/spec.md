@@ -12,7 +12,7 @@ A developer who already builds motion with GSAP, and wants a procedural burst in
 
 A GSAP plugin, `@motly/gsap`, published with `@motly/core` as v0.1.0. After `gsap.registerPlugin(Motly)`, a developer writes `gsap.effects.burst(button, { spec })` or `tl.burst(button, { spec }, '<')` and gets an ordinary GSAP tween: it sits in timelines, scrubs, reverses, repeats, stretches with `duration`, warps with `ease`, is driven by ScrollTrigger and is cleaned up by `gsap.context()` and `useGSAP`. The burst is drawn in an overlay the plugin owns, from the element's centre or from a point such as a click; it can be painted into a container instead. The developer describes the burst as a JSON Spec and never touches the DOM it draws.
 
-The release ships an IIFE build that self-registers on a CodePen page, five CodePen demos, READMEs for both packages, and a launch whose result is measured four weeks later against a success signal set before launch.
+The release ships an IIFE build that self-registers on a CodePen page, five CodePen demos, READMEs for both packages, a docs site with a Spec reference and live examples, and a launch whose result is measured four weeks later against a success signal set before launch. The launch posts wait for the docs site.
 
 ## User Stories
 
@@ -90,6 +90,9 @@ The release ships an IIFE build that self-registers on a CodePen page, five Code
 52. As a developer, I want a README for `@motly/core`, so that I can use motly standalone.
 53. As a developer, I want both packages at v0.1.0 on npm with a readable first changelog entry, so that the release history starts clean.
 54. As a mojs user, I want a question asked where I already am about what would make me move, so that the project learns whether I am an audience.
+61. As a developer arriving from a launch post, I want a docs site that takes me from install to a first burst with either package, so that I can try motly without reading its source.
+62. As a developer, I want every Spec field documented with a live example beside its code, so that I can see what a field does before I use it.
+63. As a developer, I want an examples page with the five pens and small examples of one idea each, so that I can copy a working starting point.
 
 ### Maintaining
 
@@ -176,12 +179,16 @@ Decisions come from the Phase 2 grilling, recorded question by question in the e
 ### Demos and docs
 
 - Five CodePens: Heart burst, Confetti, Firework, Sparkle click, Ripple. Each shows one thing core alone does not: timeline sequencing, scrubbing with ScrollTrigger, bursting at a click point, placement with `tl.burst`'s position, reversing. Their sources live in `apps/demos` and build against the workspace; they are pasted into CodePen at launch. The ScrollTrigger pen uses container mode; Sparkle click uses point targets.
-- READMEs for `@motly/core` and `@motly/gsap`: install, a first burst, the vocabulary rule, the cleanup rules including the `tl.kill()` case, reduced motion. No docs site in v0.1.0.
+- READMEs for `@motly/core` and `@motly/gsap`: install, a first burst, the vocabulary rule, the cleanup rules including the `tl.kill()` case, reduced motion.
+- A docs site in `apps/docs`, on Astro Starlight (ADR-0002), private like every app. It is deployed from `main` to GitHub Pages by a workflow, until `motlyjs.dev` is registered (ticket 13). It ships no npm release: it is live before the launch posts, and v0.1.0 is already on npm.
+- Its pages: getting started for `@motly/gsap` and for `@motly/core`, grown from the READMEs; a Spec reference covering every field of every Element kind, Emitter and Modifier, and the values they take (Keyframes, Descriptors, colors, units, Curves), and time (delay, Stagger, Timeline, Playback, reduced motion); an examples page with the five pens and small examples of one idea each.
+- Every live example is one source file that the page both shows and runs, so the code on the page is the code that ran. Examples import the workspace packages, so the site documents what `main` builds; a feature can appear on the site before its release reaches npm.
 
 ### Launch and the signal
 
 - Launch tasks are `ready-for-human` tickets with a checklist each: GSAP forum post, Twitter and Bluesky thread, `awesome-gsap` and `awesome-web-animation` submissions, the mojs Discussions question.
-- The signal, measured four weeks after publish: 100+ GitHub stars, 500+ weekly downloads of `@motly/gsap`, 3+ issues opened by someone other than the author. All three met: Phase 3 goes ahead. One or two: a written review decides. None: post-v1 work stops. The result is recorded in this spec's ticket, not a `DECISIONS.md`.
+- The GSAP forum post, the thread and the `awesome-web-animation` submission link to the docs site, and wait until it is live.
+- The signal, measured four weeks after the GSAP forum post, the first launch post: 100+ GitHub stars, 500+ weekly downloads of `@motly/gsap`, 3+ issues opened by someone other than the author. All three met: Phase 3 goes ahead. One or two: a written review decides. None: post-v1 work stops. The result is recorded in this spec's ticket, not a `DECISIONS.md`.
 
 ## Testing Decisions
 
@@ -221,7 +228,8 @@ Playwright snapshots stay on the canonical bursts in `apps/demos`. The five pens
 
 ## Out of Scope
 
-- A docs site; `apps/docs` stays a placeholder until 0.1.x.
+- A custom domain for the docs site before `motlyjs.dev` is registered.
+- An API reference generated from the type declarations.
 - A `swirl` effect.
 - GSAP's `stagger` across targets; staggered bursts are a loop or timeline positions away.
 - A new Seed per repeat (GSAP's `repeatRefresh`).
@@ -237,9 +245,10 @@ Playwright snapshots stay on the canonical bursts in `apps/demos`. The five pens
 
 ## Further Notes
 
-- Deviations from `product.md` §4 Phase 2, recorded here as the plan asks: no `swirl` effect; no docs site in v0.1.0; no `DECISIONS.md`; the effect takes `targets` and a nested `spec` rather than `burst(origin, vars)`; a property plugin is used internally.
+- Deviations from `product.md` §4 Phase 2, recorded here as the plan asks: no `swirl` effect; the docs site after v0.1.0 rather than with it; no `DECISIONS.md`; the effect takes `targets` and a nested `spec` rather than `burst(origin, vars)`; a property plugin is used internally.
 - ADR-0018 was amended in place during the grilling, before any code relied on it, to record the proxy target and the property-plugin drawing path.
 - The glossary gained **Anchor** and **GSAP effect**. "Effect" alone stays avoided for motly concepts.
 - Invariant 6 still has one adapter to test against. The two core additions are shaped by what GSAP needed; a Motion adapter should reuse them rather than grow its own.
 - `product.md` budgets four weeks. The likely overruns are the overlay and cleanup edge cases, which the probe mapped but did not build, and the release prerequisites (name checks, npm org, workflow switch), which are small but serial and partly outside the repo.
 - The success-signal thresholds are the plan's own; they were not re-derived from comparable launches.
+- 2026-09-30: the docs site moved ahead of the launch posts, and the signal's four weeks now count from the GSAP forum post instead of from publish. Q7 had the site follow as 0.1.x because "a site is not needed to judge the 4-week signal". By the time the launch was ready, the READMEs documented a first burst and little else of the Spec. A developer who cannot learn the Spec does not star, install or file issues, so a missed signal would have measured the docs, not the demand. 0.1.0 reached npm on 2026-09-28 with no launch post, so counting from publish would also have spent part of the window on no launch at all.

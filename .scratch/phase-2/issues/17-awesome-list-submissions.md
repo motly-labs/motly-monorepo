@@ -2,7 +2,7 @@
 
 **What to build:** motly listed where people browse for GSAP and web-animation tools. Spec: `.scratch/phase-2/spec.md`, "Launch and the signal".
 
-**Blocked by:** 15
+**Blocked by:** 15, 27
 
 **Status:** ready-for-human
 
