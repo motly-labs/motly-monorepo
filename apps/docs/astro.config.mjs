@@ -28,6 +28,7 @@ export default defineConfig({
             { label: 'Burst', slug: 'reference/burst' },
             { label: 'Swirl', slug: 'reference/swirl' },
             { label: 'Values', slug: 'reference/values' },
+            { label: 'Time', slug: 'reference/time' },
           ],
         },
       ],
