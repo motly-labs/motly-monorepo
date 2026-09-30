@@ -23,3 +23,4 @@ Left as they are:
 - Under reduced motion every GSAP tick redraws the same Resting frame, so a canvas repaints it each frame. Cheap for a burst; skip the redraw if a large one shows it.
 - Invariant 6: core's Timeline already decides reduced motion at its start and draws `restingPlayhead`; the adapter repeats that small rule. Move it into core if the Motion adapter needs it too.
 
+Decided 2026-09-30: a burst with `repeat: -1` keeps the preference it started with until it is restarted or reverted, as core's Timeline does and as the README already says. Recorded in the spec's "Reduced motion".

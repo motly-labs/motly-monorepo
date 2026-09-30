@@ -27,7 +27,7 @@ What it took, outside the repo:
 **Open: 0.1.0 has no provenance.** Its `dist` has no `attestations`. `changeset publish` runs `pnpm publish` without `--provenance`, and pnpm 12 did not act on `NPM_CONFIG_PROVENANCE`. Whether pnpm 12 does the OIDC exchange for trusted publishing is also unverified; the next release will show both. `changeset publish` calls `pnpm publish` with fixed flags, so `--provenance` cannot be passed through it. The release workflow now checks `dist.attestations` for every version it publishes and fails the run if any lacks provenance.
 
 The release workflow now authenticates through npm trusted publishing: `NODE_AUTH_TOKEN` and setup-node's `registry-url` (added in ticket 12) are gone, and the trigger is `push` to `main`. Still to do by hand:
-- [ ] Delete the npm token and the `NPM_TOKEN` repo secret.
+- [x] Delete the npm token and the `NPM_TOKEN` repo secret.
 - [x] Add `motly-labs/motly-monorepo` + `release.yml` as trusted publisher on both packages (`npm trust github @motly/<pkg> --repo motly-labs/motly-monorepo --file release.yml --allow-publish`).
 - [x] Set both packages to "Require 2FA and disallow tokens".
 - [x] The next release publishes through OIDC with provenance.

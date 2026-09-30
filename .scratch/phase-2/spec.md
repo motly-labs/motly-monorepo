@@ -108,7 +108,7 @@ Decisions come from the Phase 2 grilling, recorded question by question in the e
 
 - `@motly/gsap` exports one object, `Motly`. It is a GSAP property plugin, and its `register(core)` hook calls `core.registerEffect()` for `burst` and `shape`, both with `extendTimeline: true`. It sets `headless: true`, so it registers in Node. Nothing else is registered: `swirl` is not an effect, because a Swirl is a Modifier with nothing to draw alone; it is reached through a Burst's `children`.
 - The property plugin is internal. Its key works in any tween, undocumented and outside the API.
-- `Motly` carries `rand`, `each` and the curves as properties; the same helpers are also named exports.
+- `rand`, `each` and the curves are named exports. Only the script build's global `Motly` also carries them as properties, since a page with script tags has no imports. The `Motly` the package exports does not: spreading them into it would keep every curve in any bundle that registers the plugin, against "every export must be droppable" (ticket 09).
 - `gsap` stays a peer dependency, `>=3.13.0`. `headless` exists from 3.13.0 at the latest.
 
 ### The effect call
@@ -122,7 +122,7 @@ Decisions come from the Phase 2 grilling, recorded question by question in the e
   interface BurstVars extends TweenVarsWithoutUnsupported {
     spec: BurstSpec;             // ShapeSpec<K> for the shape effect
     seed?: number;
-    container?: Element | string;
+    container?: HTMLElement | string;
     renderer?: 'svg' | 'canvas' | 'auto'; // default 'auto'
     reducedMotion?: ReducedMotion;        // default 'user'
   }
@@ -131,18 +131,18 @@ Decisions come from the Phase 2 grilling, recorded question by question in the e
 - The vocabulary rule: top-level keys mean what GSAP means; motly's words appear only inside `spec`. So `delay` delays the whole tween and `spec.delay` offsets Children; `ease` warps the Playhead and `spec.easing` gives each property its Curve; the callbacks are GSAP's, called as GSAP calls them.
 - `ease` is `'none'` unless given. `duration`, when given, is the tween's length and stretches time; otherwise the tween lasts the Instance's computed duration (ADR-0016).
 - `keyframes`, `startAt`, `runBackwards` and `stagger` are excluded from the type and, at runtime, stripped with one `console.warn` per registration. The warned-once state lives in the `register()` closure, never at module level (Invariant 3).
-- Targets that match nothing: one `console.warn`, and a tween of the Spec's duration that draws nothing.
+- Targets that match nothing: one `console.warn`, and a tween of the Spec's duration that draws nothing. A `container` selector that matches nothing does the same (ticket 06).
 
 ### Instances, Seeds and the Driver
 
-- One Instance per target, all driven by the one tween. The adapter creates them through core's public `createScope({ driver })` with a Driver of its own, written against the public Driver port as core's test manual Driver is.
+- One Instance per target, all driven by the one tween. The adapter creates them through core's public `createScope()` with its default rAF Driver: the adapter only seeks Instances, and that Driver draws a seek at once without starting a frame loop. An adapter Driver that only moved when seeked was removed after the 2026-09-28 review, as a copy of core's (Invariant 6).
 - Seeds: with `seed` given, target `i` gets `seed + i`; without, one random Seed is drawn at the effect call and used the same way. Seeds are fixed for the tween's life, across repeats, restarts and scrubbing.
 - The tween animates a private proxy object, never the targets. The property plugin's `render(ratio)` moves every Instance's Playhead to `ratio` × its duration. Because `ratio` already carries `ease`, `duration`, `repeat` and `yoyo`, none of them needs code of its own.
 
 ### Overlay and lifecycle
 
 - Anchor and point mode paint into one overlay per tween: `position: fixed`, the size of the viewport, `pointer-events: none`, shared by the tween's Instances, with a Renderer chosen by `renderer`.
-- Container mode paints into the given element under core's Renderer rules (it must have a size; a static container is made relative).
+- Container mode paints into the given element under core's Renderer rules: it must have a size, and a static container is made relative while a burst is drawn in it. Its inline `position` is put back once the last adapter layer in it is released, so reverting returns the page to how it was (user story 44). `container` is an `HTMLElement`, not any `Element`: the layer is appended to it and its `style.position` may be set.
 - The overlay mounts on the first draw strictly between the ends, and is released when the Playhead reaches 0 or the end, and on interrupt. A later draw between the ends mounts it again.
 - The Anchor's position is read at each start from 0 moving forward, not per frame. A page scrolled mid-burst leaves an overlay burst where it started.
 - Cleanup follows from where GSAP reaches the tween: revert of any kind renders the plugin at ratio 0, which releases; `kill()` mid-flight reaches `onInterrupt`, which the adapter chains before the user's own and uses to release. `tl.kill()` on a parent timeline reaches neither and leaves a mid-flight burst drawn; this is documented, not worked around.
@@ -150,24 +150,28 @@ Decisions come from the Phase 2 grilling, recorded question by question in the e
 
 ### Reduced motion (ADR-0012)
 
-- Under reduced motion the tween keeps its full duration and every draw shows the Resting frame. The preference is read at each forward start. `vars.reducedMotion` overrides it.
+- Under reduced motion the tween keeps its full duration and every draw shows the Resting frame. The preference is read at each forward start from 0. `vars.reducedMotion` overrides it.
+- A repeat is not a start: a burst with `repeat: -1` keeps the preference it started with until it is restarted or reverted, as core's Timeline decides once at its start. User story 48 holds from the next start.
 - Core gains two public exports so the adapter uses no internals (Invariants 6 and 7): `isMotionReduced(setting)`, and the Resting frame's Playhead in seconds as a read-only property of Instance, named so it cannot be confused with the Spec's `restAt` progress. Both ship in core with a changeset.
 
 ### Types (Invariant 9)
 
 - The adapter augments GSAP's loosely typed effects map and timeline interfaces so the four entry points take the typed vars above. `burst` takes a `BurstSpec`, `shape` a `ShapeSpec<K>`.
+- `BurstVars`, `ShapeVars`, `MotlyVars` and `RendererName` are exported, for vars built apart from the call (ticket 08).
 
 ### Builds and packaging
 
 - `@motly/gsap` builds ESM, CJS and an IIFE. The IIFE bundles core, assigns `Motly` to the global, and registers itself when a global `gsap` exists, as GSAP's own script-tag plugins do. The ESM and CJS builds have no side effects. No IIFE for core in this phase.
 - `@motly/motion`, `@motly/react` and `@motly/presets` are marked private.
 - The fifteen pending Phase 1 changesets are replaced by one "Initial release" changeset for core; `@motly/gsap` gets its own. Both publish as 0.1.0.
-- Publishing only through the release workflow, after the prerequisites its header lists: placeholders private, `registry-url` on setup-node, Actions allowed to open pull requests.
+- Core's `VERSION` export is removed (ticket 12): it was a hard-coded `'0.0.0'` the version bump would not change, and nothing used it.
+- Publishing only through the release workflow, after the prerequisites its header lists: placeholders private, Actions allowed to open pull requests.
+- The workflow publishes by npm trusted publishing (OIDC), with no stored token and no `registry-url` on setup-node. Each package names this repo and `release.yml` as its trusted publisher, with the "npm publish" permission. Under OIDC pnpm attaches provenance without `--provenance`, which `changeset publish` cannot pass; the workflow fails a run whose published version lacks it. The first publish used a token, since a trusted publisher needs the package to exist (ticket 14).
 
 ### Release gates
 
 - The name stays `motly`. Before publishing: the `@motly` npm org claimed, `motlyjs.dev` registered (`motly.dev` belongs to someone else), a trademark search done.
-- Phase 1 ticket 16 (the check by hand in Safari, Chrome and Firefox) gates the npm publish, not the start of this phase.
+- Phase 1 ticket 16 (the check by hand in Safari, Chrome and Firefox) gates the npm publish, not the start of this phase. 0.1.0 was published before that check ran (ticket 14); it stays open on Phase 1 ticket 16.
 
 ### Demos and docs
 
