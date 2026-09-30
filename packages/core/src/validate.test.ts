@@ -93,11 +93,24 @@ describe('a JSON Spec is validated in full when the Instance is created', () => 
     expect(create(spec)).toThrow(/easing\.opacity/);
   });
 
+  it.each([
+    ['Keyframes for angle', { angle: [0, 90] }, /angle.*one value, not Keyframes/],
+    ['a spread over a full turn', { spread: 400 }, /spread.*400.*0 to 360/],
+    ['a negative spread', { spread: '-10deg' }, /spread.*'-10deg'/],
+    ['a spread rand() that can pass 360', { spread: rand(300, 420) }, /spread/],
+    ['an orient that is not a boolean', { orient: 'yes' }, /orient.*'yes'.*true or false/],
+  ])('rejects a Burst with %s', (_label, fields, error) => {
+    expect(create({ kind: 'burst', children: { kind: 'circle' }, ...fields })).toThrow(error);
+  });
+
   it('accepts everything the types allow', () => {
     const spec = {
       kind: 'burst',
       count: 0,
       radius: [0, '40px', rand(1, 2)],
+      angle: rand(-45, 45),
+      spread: each(90, '0.5turn', 360),
+      orient: true,
       easing: each({ default: 'ease', radius: [0.4, 0, 0.2, 1] }, 'linear'),
       children: {
         kind: 'circle',

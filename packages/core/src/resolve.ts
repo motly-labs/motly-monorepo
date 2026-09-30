@@ -119,7 +119,7 @@ export function resolve(spec: ChildSpec, seed: number): ResolvedTree {
   validate(spec);
   const tree = { elements: [], emitters: [] };
   const root = seed >>> 0;
-  const duration = walk(spec, root, 0, delayOf(spec, root, 0), [], tree);
+  const duration = walk(spec, root, 0, delayOf(spec, root, 0), [], 0, tree);
   const restAt = spec.kind === 'swirl' ? 1 : (spec.restAt ?? 1);
   return { duration, restAt, ...tree };
 }
@@ -155,7 +155,9 @@ function delayOf(spec: ChildSpec, seed: number, index: number): number {
 
 /**
  * Append `spec`'s Elements and Emitters to `out` and return the latest end among them. `start` is
- * when `spec` starts, in seconds from the Instance's start, its own delay included.
+ * when `spec` starts, in seconds from the Instance's start, its own delay included. `turn` is how
+ * far, in degrees clockwise, an orienting Burst around it turns it: added to a Shape's `angle`, and
+ * to a Burst's rays. It is fixed for the Child's life, so it costs nothing per frame.
  */
 function walk(
   spec: ChildSpec,
@@ -163,6 +165,7 @@ function walk(
   index: number,
   start: number,
   placements: readonly Placement[],
+  turn: number,
   out: { elements: ResolvedElement[]; emitters: ResolvedEmitter[] },
 ): number {
   const numbers = (name: string, property: NumericProperty<string>, units: Units) =>
@@ -170,7 +173,7 @@ function walk(
   if (spec.kind === 'swirl') {
     const bending = placements.at(-1);
     // With no throw around it, a Swirl has nothing to bend.
-    if (bending === undefined) return walk(spec.child, seed, index, start, placements, out);
+    if (bending === undefined) return walk(spec.child, seed, index, start, placements, turn, out);
     // Each Swirl on one throw draws its own values from a Seed of its own, so nested Swirls draw
     // apart. Its Child keeps this Seed and index, so wrapping it leaves every value it draws, other
     // than its position, unchanged.
@@ -189,7 +192,7 @@ function walk(
       rate: 2 * Math.PI * (frequency as number),
     };
     const bent = { ...bending, swirls: [...bending.swirls, swirl] };
-    return walk(spec.child, seed, index, start, [...placements.slice(0, -1), bent], out);
+    return walk(spec.child, seed, index, start, [...placements.slice(0, -1), bent], turn, out);
   }
   const ease = easings(resolveValue(spec.easing ?? 'linear', index));
   const numeric = (name: string, property: NumericProperty<string>, units: Units) =>
@@ -207,7 +210,7 @@ function walk(
       start,
       duration,
       radius,
-      angle: numeric('angle', spec.angle ?? 0, ANGLE),
+      angle: turned(numeric('angle', spec.angle ?? 0, ANGLE), turn),
       scale: numeric('scale', spec.scale ?? 1, UNITLESS),
       opacity: numeric('opacity', spec.opacity ?? 1, UNITLESS),
       strokeWidth: numeric(
@@ -230,6 +233,9 @@ function walk(
   const emitterIndex = out.emitters.push(emitter) - 1;
   const count = spec.count ?? DEFAULT_COUNT;
   const offset = staggerOffsets(spec, seed, index, count);
+  // Neither holds Keyframes, so each resolves to a number, in degrees.
+  const aim = (numbers('angle', spec.angle ?? 0, ANGLE) as number) + turn;
+  const ray = rays(count, aim, numbers('spread', spec.spread ?? 360, ANGLE) as number);
   let end = start;
   for (let index = 0; index < count; index++) {
     // Each Child's Seed comes from this one and its index, so raising `count` leaves the Seeds of
@@ -238,7 +244,7 @@ function walk(
     const child = resolveValue(spec.children, index);
     const childStart = start + offset(index) + delayOf(child, childSeed, index);
     // Clockwise from 12 o'clock in a y-down space.
-    const angle = (2 * Math.PI * index) / count;
+    const angle = ray(index);
     const placement: Placement = {
       emitter: emitterIndex,
       start: childStart,
@@ -246,7 +252,9 @@ function walk(
       dy: -Math.cos(angle),
       swirls: STRAIGHT,
     };
-    const childEnd = walk(child, childSeed, index, childStart, [...placements, placement], out);
+    const facing = spec.orient === true ? (angle * 180) / Math.PI : 0;
+    const within = [...placements, placement];
+    const childEnd = walk(child, childSeed, index, childStart, within, facing, out);
     emitter.duration = Math.max(emitter.duration, childEnd - childStart);
     end = Math.max(end, childEnd);
   }
@@ -297,6 +305,28 @@ function kindParameters(
 function scaled(property: ResolvedNumeric, factor: number, ease: Ease): ResolvedNumeric {
   if (typeof property === 'number') return property * factor;
   return { frames: property.frames.map((frame) => frame * factor), ease };
+}
+
+/**
+ * The ray, in radians clockwise from 12 o'clock, of each of `count` Children aimed at `aim` degrees
+ * over an arc of `spread` degrees. A full circle starts at `aim` and spaces the rays 360 / `count`,
+ * so the last does not land on the first; a narrower arc is centred on `aim`, both edges included.
+ * With `aim` 0 and a full circle it is the same expression as before either existed, so a Spec
+ * that sets neither draws exactly what it drew.
+ */
+function rays(count: number, aim: number, spread: number): (child: number) => number {
+  const from = (aim * Math.PI) / 180;
+  if (spread >= 360) return (child) => from + (2 * Math.PI * child) / count;
+  if (count < 2) return () => from;
+  const arc = (spread * Math.PI) / 180;
+  return (child) => from - arc / 2 + (arc * child) / (count - 1);
+}
+
+/** `angle` in degrees, turned `turn` degrees further: every Keyframe, if it has them. */
+function turned(angle: ResolvedNumeric, turn: number): ResolvedNumeric {
+  if (turn === 0) return angle;
+  if (typeof angle === 'number') return angle + turn;
+  return { frames: angle.frames.map((frame) => frame + turn), ease: angle.ease };
 }
 
 /**

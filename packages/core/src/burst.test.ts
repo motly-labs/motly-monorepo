@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { Burst, type BurstSpec, createScope, type DrawList, type Renderer } from './index.js';
+import {
+  Burst,
+  type BurstSpec,
+  createScope,
+  type DrawList,
+  each,
+  type Renderer,
+  rand,
+} from './index.js';
 import { manualDriver } from './testing/manual-driver.js';
 
 const renderer: Renderer = { draw() {}, release() {} };
@@ -160,6 +168,183 @@ describe('a Burst', () => {
       .sample(0.3);
 
     expect(copy).toEqual(original);
+  });
+});
+
+describe('aiming a Burst', () => {
+  const circles = (spec: Partial<BurstSpec>, count = 4): DrawList =>
+    createScope()
+      .burst(
+        { kind: 'burst', count, radius: 100, children: { kind: 'circle' }, ...spec },
+        { renderer, origin: { x: 0, y: 0 } },
+      )
+      .sample(0);
+
+  it('turns its whole ring of rays clockwise by angle, first ray first', () => {
+    expect(positions(circles({ angle: 90 }))).toEqual([
+      [100, 0],
+      [0, 100],
+      [-100, 0],
+      [0, -100],
+    ]);
+    expect(positions(circles({ angle: '0.5turn' }, 1))).toEqual([[0, 100]]);
+  });
+
+  it('keeps the full circle when spread is 360 or left out, whatever the count', () => {
+    expect(positions(circles({ spread: 360 }))).toEqual(positions(circles({})));
+  });
+
+  it('fans the rays over an arc of spread degrees centred on angle, both edges included', () => {
+    expect(positions(circles({ spread: 90 }, 3))).toEqual([
+      [round(-100 * Math.SQRT1_2), round(-100 * Math.SQRT1_2)],
+      [0, -100],
+      [round(100 * Math.SQRT1_2), round(-100 * Math.SQRT1_2)],
+    ]);
+    expect(positions(circles({ angle: 90, spread: 180 }, 3))).toEqual([
+      [0, -100],
+      [100, 0],
+      [0, 100],
+    ]);
+  });
+
+  it('throws a single Child along angle, and every Child along one ray when spread is 0', () => {
+    expect(positions(circles({ angle: 90, spread: 60 }, 1))).toEqual([[100, 0]]);
+    expect(positions(circles({ angle: 180, spread: 0 }, 3))).toEqual([
+      [0, 100],
+      [0, 100],
+      [0, 100],
+    ]);
+  });
+
+  it('draws a random angle from the Seed, the same on every run', () => {
+    const spec: BurstSpec = {
+      kind: 'burst',
+      count: 3,
+      radius: 50,
+      angle: rand(0, 360),
+      children: { kind: 'circle' },
+    };
+    const draw = (seed: number) =>
+      positions(
+        createScope()
+          .burst(spec, { renderer, origin: { x: 0, y: 0 }, seed })
+          .sample(0),
+      );
+
+    expect(draw(7)).toEqual(draw(7));
+    expect(draw(7)).not.toEqual(draw(8));
+  });
+
+  it('hands a different angle to each inner Burst with each()', () => {
+    const burst = createScope().burst(
+      {
+        kind: 'burst',
+        count: 2,
+        radius: 0,
+        children: {
+          kind: 'burst',
+          count: 1,
+          radius: 10,
+          angle: each([0, 90]),
+          children: { kind: 'circle' },
+        },
+      },
+      { renderer, origin: { x: 0, y: 0 } },
+    );
+
+    expect(positions(burst.sample(0))).toEqual([
+      [0, -10],
+      [10, 0],
+    ]);
+  });
+});
+
+describe('orienting a Burst’s Children', () => {
+  const angles = (list: DrawList) => list.map((record) => round(record.angle));
+
+  it('leaves each Child at its own angle by default', () => {
+    const burst = createScope().burst(
+      { kind: 'burst', count: 4, radius: 50, children: { kind: 'line', angle: 10 } },
+      { renderer, origin: { x: 0, y: 0 } },
+    );
+
+    expect(angles(burst.sample(0))).toEqual([10, 10, 10, 10]);
+  });
+
+  it('turns each Child to face its ray with orient, its own angle added on top', () => {
+    const burst = createScope().burst(
+      {
+        kind: 'burst',
+        count: 4,
+        radius: 50,
+        orient: true,
+        angle: 45,
+        children: { kind: 'line', angle: [0, 30], duration: 1 },
+      },
+      { renderer, origin: { x: 0, y: 0 } },
+    );
+
+    expect(angles(burst.sample(0))).toEqual([45, 135, 225, 315]);
+    expect(angles(burst.sample(1))).toEqual([75, 165, 255, 345]);
+  });
+
+  it('turns an inner Burst’s rays with its ray, so a fan in a ring points outward', () => {
+    const burst = createScope().burst(
+      {
+        kind: 'burst',
+        count: 2,
+        radius: 0,
+        orient: true,
+        children: {
+          kind: 'burst',
+          count: 1,
+          radius: 10,
+          orient: true,
+          children: { kind: 'line' },
+        },
+      },
+      { renderer, origin: { x: 0, y: 0 } },
+    );
+    const list = burst.sample(0);
+
+    expect(positions(list)).toEqual([
+      [0, -10],
+      [0, 10],
+    ]);
+    expect(angles(list)).toEqual([0, 180]);
+  });
+
+  it('turns the Child a Swirl wraps to face the ray, not the Swirl’s curve', () => {
+    const burst = createScope().burst(
+      {
+        kind: 'burst',
+        count: 2,
+        radius: [0, 100],
+        orient: true,
+        children: { kind: 'swirl', size: 40, child: { kind: 'line', duration: 1 } },
+      },
+      { renderer, origin: { x: 0, y: 0 } },
+    );
+
+    expect(angles(burst.sample(0.5))).toEqual([0, 180]);
+  });
+
+  it('survives a JSON round trip unchanged', () => {
+    const spec: BurstSpec = {
+      kind: 'burst',
+      count: 5,
+      radius: [0, 80],
+      angle: rand(-30, 30),
+      spread: '0.25turn',
+      orient: true,
+      children: { kind: 'line', duration: 0.5 },
+    };
+    const sample = (value: BurstSpec) =>
+      createScope()
+        .burst(value, { renderer, origin: { x: 0, y: 0 }, seed: 3 })
+        .sample(0.25);
+
+    expect(sample(JSON.parse(JSON.stringify(spec)))).toEqual(sample(spec));
   });
 });
 
