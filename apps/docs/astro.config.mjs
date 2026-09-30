@@ -21,6 +21,14 @@ export default defineConfig({
           ],
         },
         { label: 'Guides', items: [{ label: 'Using motly with GSAP', slug: 'guides/gsap' }] },
+        {
+          label: 'Spec reference',
+          items: [
+            { label: 'Shapes', slug: 'reference/shapes' },
+            { label: 'Burst', slug: 'reference/burst' },
+            { label: 'Swirl', slug: 'reference/swirl' },
+          ],
+        },
       ],
     }),
   ],

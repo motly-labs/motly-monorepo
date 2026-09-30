@@ -11,3 +11,4 @@
 - [ ] Timeline and Playback in core: play, pause, seek, reverse; the Driver, and when to pass a manual one.
 - [ ] The Resting frame and reduced motion (ADR-0012), standalone and through `vars.reducedMotion`.
 - [ ] A live example for each; the Playback example has controls.
+- [ ] The anchors the Shapes and Burst pages already link to exist: `#stagger` and `#the-resting-frame`.

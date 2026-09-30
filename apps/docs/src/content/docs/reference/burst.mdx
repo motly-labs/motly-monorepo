@@ -1,0 +1,46 @@
+---
+title: Burst
+description: The Burst Emitter throws count copies of a Child outward around its Origin.
+---
+
+import Example from '../../../components/Example.astro';
+
+A Burst is an Emitter: it throws `count` copies of one Child outward around the Origin, spread
+evenly clockwise from 12 o'clock. It draws nothing of its own. It has no `duration`: a Burst lasts
+as long as its longest-running Child.
+
+| Field | Takes | If left out |
+| --- | --- | --- |
+| `children` | the Child spawned `count` times: a [Shape](../shapes/), another Burst, or a [Swirl](../swirl/) around either | required |
+| `count` | how many Children | `5` |
+| `radius` | a length: the distance from the Origin to each Child, animated over the Burst's duration | `[0, 50]` |
+| `easing` | a [Curve](../values/#curves) for the Burst's own `radius`. Its Children take their own `easing`. | linear |
+| `stagger` | a time between one Child's start and the next; see [Stagger](../time/#stagger) | `0` |
+| `delay` | a time to wait before the Burst starts: before any Child starts, and before it throws them | `0` |
+| `restAt` | the [Resting frame](../time/#the-resting-frame), a progress from 0 to 1 | the last frame |
+
+The Burst's `radius` and each Child's own fields are separate. `radius: [10, 110]` on the Burst
+moves every Child from 10 to 110 pixels out, while `radius` on a circle Child is that circle's own
+size.
+
+<Example name="ref-burst" height={300} />
+
+A Burst's last frame is usually empty, because its Children shrink or fade away, so give it a
+`restAt` where it still shows something.
+
+## Different Children
+
+`children` takes `each([...])` to hand different Children out in turn: the first Child gets the
+first Spec, the second the second, and so on, starting over at the end.
+
+<Example name="ref-burst-mixed" height={300} />
+
+## A Burst of Bursts
+
+A Child can itself be a Burst. Each inner Burst is thrown by the outer one and opens where it was
+thrown, which is how fireworks are built.
+
+<Example name="ref-burst-nested" height={300} />
+
+`rand()` in an inner Burst resolves separately for each copy, so no two inner Bursts are the same
+unless you want them to be.
