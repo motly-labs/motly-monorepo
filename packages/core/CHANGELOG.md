@@ -1,5 +1,11 @@
 # @motly/core
 
+## 0.1.1
+
+### Patch Changes
+
+- 52f42ba: Link the docs site, with a live example for every Spec field, from the README and `homepage`.
+
 ## 0.1.0
 
 ### Minor Changes
