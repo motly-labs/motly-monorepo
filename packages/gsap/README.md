@@ -5,6 +5,9 @@ ordinary tween, so a burst sits in a timeline, scrubs, reverses, repeats, is dri
 ScrollTrigger and is cleaned up by `gsap.context()` and `useGSAP`. You describe the burst as a JSON
 Spec; motly generates the shapes and draws them.
 
+The [docs](https://motly-labs.github.io/motly-monorepo/) have every Spec field with a live example,
+and real-world examples to copy.
+
 ## Install
 
 With a bundler:

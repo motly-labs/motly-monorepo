@@ -18,7 +18,7 @@ gsap.context() and useGSAP. Each pen shows one thing GSAP adds.
 Try it with two script tags, GSAP first, then https://cdn.jsdelivr.net/npm/@motly/gsap@0.1
 or npm install @motly/gsap gsap.
 
-Docs: https://www.npmjs.com/package/@motly/gsap
+Docs: https://motly-labs.github.io/motly-monorepo/
 Source and issues: https://github.com/motly-labs/motly-monorepo
 
 ## heart
@@ -35,7 +35,7 @@ revert() clears a burst mid-flight and puts the scale back.
 The bursts are JSON Specs; rand() and each() vary every spark.
 
 Made with @motly/gsap 0.1, procedural bursts as GSAP tweens.
-Docs: https://www.npmjs.com/package/@motly/gsap
+Docs: https://motly-labs.github.io/motly-monorepo/
 Source: https://github.com/motly-labs/motly-monorepo
 
 ## confetti
@@ -50,7 +50,7 @@ tl.burst() calls placed with '<', '<0.25' and '<'. Stars, squares, dots and stre
 one Spec with each(); the side bursts start from { x, y } points in viewport pixels.
 
 Made with @motly/gsap 0.1, procedural bursts as GSAP tweens.
-Docs: https://www.npmjs.com/package/@motly/gsap
+Docs: https://motly-labs.github.io/motly-monorepo/
 Source: https://github.com/motly-labs/motly-monorepo
 
 ## firework
@@ -66,7 +66,7 @@ up. container: '.sky' paints the bursts inside the section, so they scroll with 
 clipped by it. Bursts this large switch to canvas on their own.
 
 Made with @motly/gsap 0.1, procedural bursts as GSAP tweens.
-Docs: https://www.npmjs.com/package/@motly/gsap
+Docs: https://motly-labs.github.io/motly-monorepo/
 Source: https://github.com/motly-labs/motly-monorepo
 
 ## sparkle
@@ -81,7 +81,7 @@ from a point instead of an element. Every burst is its own tween and cleans itse
 ends, so clicking fast leaves nothing behind.
 
 Made with @motly/gsap 0.1, procedural bursts as GSAP tweens.
-Docs: https://www.npmjs.com/package/@motly/gsap
+Docs: https://motly-labs.github.io/motly-monorepo/
 Source: https://github.com/motly-labs/motly-monorepo
 
 ## ripple
@@ -96,5 +96,5 @@ icon's turn and a motly burst; play() runs it forward and reverse() runs the bur
 button, frame by frame, because a burst is an ordinary tween.
 
 Made with @motly/gsap 0.1, procedural bursts as GSAP tweens.
-Docs: https://www.npmjs.com/package/@motly/gsap
+Docs: https://motly-labs.github.io/motly-monorepo/
 Source: https://github.com/motly-labs/motly-monorepo
