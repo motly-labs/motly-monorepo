@@ -24,3 +24,5 @@ Built 2026-09-30 as `apps/docs/src/examples/party-night` on the page `examples/p
 Checked in headless Chrome 154 with audio playing: no errors; frame times at the build, drop, break and last drop had a median of 16.7 ms and a worst of 16.8 ms, with and without reduced motion; the section and bar counter follow the music; pausing freezes the show; seeking moves music and show together; the drop fires confetti from both speakers and a shell overhead; the set ends on "Play again".
 
 Left by hand: listen to it (headless checks cannot), and check Safari and Firefox. A seek into the middle of the build skips the rest of its riser sweep, since that one sound starts at the build's first bar.
+
+2026-09-30, after ticket 30 (ADR-0019): the drop's cannons are aimed fans (`angle: ±25, spread: 80`) instead of full circles, so no confetti is thrown into the floor.

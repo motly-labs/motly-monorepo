@@ -97,7 +97,8 @@ For streaks and rays. A line runs from 12 o'clock to 6; turn it with `angle`.
 | --- | --- | --- |
 | `radius` | a length, from the centre to each end | `50` |
 
-A line in a Burst is not turned to face outward: its `angle` is its own, like every Child's.
+In a Burst, give the Burst [`orient: true`](../burst/#facing-the-throw-orient) to turn each line
+along its throw; otherwise its `angle` is its own, like every Child's.
 
 <Example name="ref-line" height={240} />
 

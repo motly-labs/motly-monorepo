@@ -34,18 +34,17 @@ const place = ({ altitude, azimuth }) => ({
 
 /**
  * `count` meteors thrown from the radiant between `from` and `to` pixels out, arriving at random
- * through about 2 seconds: an hour, sped up. A Burst's rays are evenly spaced from 12 o'clock and
- * a line runs from 12 to 6, so turning the ith streak by the ith ray's angle points it along its
- * ray. `scale` sizes the distances; `size`, the streaks themselves.
+ * through about 2 seconds: an hour, sped up. `orient` turns each streak along its ray, so it points
+ * away from the radiant. `scale` sizes the distances; `size`, the streaks themselves.
  */
 const streaks = (count, from, to, length, scale = unit, size = scale) => ({
   kind: 'burst',
   count,
   radius: [from * scale, to * scale],
+  orient: true,
   restAt: 0.5,
   children: {
     kind: 'line',
-    angle: each(Array.from({ length: count }, (_, i) => (360 * i) / count)),
     radius: [2 * size, rand(length * 0.6 * size, length * size), 0],
     stroke: ['#ffffff', '#bfe3ff'],
     strokeWidth: [0.6 * size, rand(1.4 * size, 2.6 * size), 0],
@@ -129,14 +128,18 @@ function rainFor(index, loop = 0) {
   });
 }
 
-// A fireball at 23:40, scrubbed with the story: it flies up from the radiant, flashes and
-// breaks apart where it ends, and scrolling back runs it back exactly. A Burst of one throws
-// straight up, so it comes while the radiant is still low enough to leave it room.
+// A fireball at 02:30, scrubbed with the story: it flies from the radiant up and to the left,
+// flashes and breaks apart where it ends, and scrolling back runs it back exactly. A Burst of one
+// throws along its `angle`; `orient` lays the streak along that throw.
+const aim = -60;
+const reach = 250 * unit;
 const tail = 34 * unit;
 const fireball = {
   kind: 'burst',
   count: 1,
-  radius: [40 * unit, 250 * unit - tail],
+  angle: aim,
+  orient: true,
+  radius: [40 * unit, reach - tail],
   restAt: 0.8,
   children: {
     kind: 'line',
@@ -150,7 +153,7 @@ const fireball = {
 // Its head: the same throw, a tail's length further out, so it leads the streak.
 const head = {
   ...fireball,
-  radius: [40 * unit + tail, 250 * unit],
+  radius: [40 * unit + tail, reach],
   children: {
     kind: 'circle',
     radius: [1.5 * unit, 4 * unit, 3 * unit],
@@ -186,7 +189,9 @@ const fragments = {
     },
   },
 };
-flash.style.setProperty('--throw', `${250 * unit}px`);
+// The flash rides on the radiant, where the throw ends.
+flash.style.left = `${Math.sin((aim * Math.PI) / 180) * reach}px`;
+flash.style.top = `${-Math.cos((aim * Math.PI) / 180) * reach}px`;
 
 // The story: one timeline, one unit per hour, scrubbed by scrolling through the pinned sky.
 const story = gsap.timeline({
@@ -199,16 +204,16 @@ story
   .to(radiant, { keyframes: hours.slice(1).map((hour) => ({ ...place(hour), duration: 1 })) }, 0)
   .to('.night', { opacity: 1, duration: 1.2 }, 0)
   .fromTo('.stars', { opacity: 0.15 }, { opacity: 1, duration: 1.2 }, 0)
-  .burst(radiant, { spec: fireball, container: '.rain', seed: 812, duration: 0.25 }, 2.6)
-  .burst(radiant, { spec: head, container: '.rain', seed: 812, duration: 0.25 }, 2.6)
-  .shape(flash, { spec: burn, container: '.rain', duration: 0.3 }, 2.85)
-  .burst(flash, { spec: fragments, container: '.rain', seed: 813, duration: 0.5 }, 2.85)
+  .burst(radiant, { spec: fireball, container: '.rain', seed: 812, duration: 0.25 }, 5.5)
+  .burst(radiant, { spec: head, container: '.rain', seed: 812, duration: 0.25 }, 5.5)
+  .shape(flash, { spec: burn, container: '.rain', duration: 0.3 }, 5.75)
+  .burst(flash, { spec: fragments, container: '.rain', seed: 813, duration: 0.5 }, 5.75)
   .to('.dawn', { opacity: 1, duration: 1 }, 7)
   .to('.stars', { opacity: 0, duration: 0.8 }, 7.2)
   .to('.rain', { opacity: 0.3, duration: 0.8 }, 7.2);
 
 // Each caption fades in at its beat and out before the next.
-const beats = [0, 1.1, 2.5, 3.4, 6.4, 7.5];
+const beats = [0, 1.1, 3, 5.4, 6.4, 7.5];
 gsap.utils.toArray('.captions p').forEach((caption, i) => {
   story.fromTo(caption, { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: 0.2 }, beats[i]);
   if (i < beats.length - 1) story.to(caption, { autoAlpha: 0, duration: 0.2 }, beats[i + 1] - 0.3);
