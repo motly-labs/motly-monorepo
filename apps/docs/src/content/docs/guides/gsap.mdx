@@ -1,0 +1,117 @@
+---
+title: Using motly with GSAP
+description: The vocabulary rule, where a burst comes from and where it is painted, cleanup, reduced motion and types.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+import Example from '../../../components/Example.astro';
+
+## The vocabulary rule
+
+Beside `spec`, `vars` takes four keys of motly's: `seed`, `container`, `renderer` and
+`reducedMotion`, described below. Every other key means what it means in any GSAP tween, and
+motly's own words for the burst live only in `spec`:
+
+- `delay` holds back the whole tween. `spec.delay` is a wait at the start of the burst, inside the
+  tween's length, as it is when the Spec plays without GSAP.
+- `ease` warps the burst's time; `spec.easing` gives each property its curve. `ease` is `'none'`
+  unless you give one, so a Spec runs at its own pace rather than under GSAP's default ease.
+- `duration` stretches or squeezes the whole burst. Without it, the tween lasts as long as the
+  Spec.
+- `repeat`, `yoyo`, `paused`, `onStart`, `onUpdate`, `onComplete` and `scrollTrigger` work as on
+  any tween.
+
+<Example name="gsap-vars" />
+
+`keyframes`, `startAt`, `runBackwards` and `stagger` do not apply to a burst: the types reject
+them, and if you pass them anyway they are ignored with a warning. To stagger bursts, use a loop or
+timeline positions.
+
+## Where a burst comes from
+
+An element, a selector or a list gives one burst from each element's centre. The centre is read
+when the tween starts from 0 moving forward, not on every frame, so a burst stays where it began if
+the page scrolls.
+
+A point, `{ x, y }` in viewport pixels as `clientX` and `clientY` give, bursts from that point:
+
+<Example name="gsap-point" />
+
+Each element or point gets its own Seed, so a row of icons does not show the same burst copied.
+`seed: 7` draws the same bursts on every page load: the element or point at index `i` draws from
+`seed + i`. Without `seed`, each call draws a random Seed, which a repeat, a restart and a scrub all
+keep.
+
+<Example name="gsap-seed" />
+
+A selector or list that matches nothing warns, and gives a tween as long as the Spec that draws
+nothing, so a timeline keeps its timing.
+
+## Where a burst is painted
+
+By default, a burst is painted in an overlay the tween owns: fixed over the viewport, above the
+page, catching no clicks, and in the document only while the tween is between its ends.
+
+`container`, an element or a selector, paints it inside that element instead, so it scrolls with it
+and is clipped by it. A burst scrubbed by ScrollTrigger in a pinned section needs this.
+
+<Example name="gsap-container" />
+
+The container must have a size. A static container is made relative while a burst is drawn in it,
+and set back once the last one is cleared. A selector that matches nothing warns and gives a tween
+as long as the Spec that draws nothing.
+
+`renderer` is `'auto'` by default, which keeps bursts under 50 Elements in SVG and paints larger
+ones on a canvas. `'svg'` or `'canvas'` forces one.
+
+## Cleanup
+
+A burst never outlives its tween, wherever GSAP reaches the tween:
+
+- At either end, nothing is left drawn.
+- `tween.kill()`, `tween.revert()`, `tl.revert()` and `gsap.context().revert()` clear a burst
+  mid-flight. So does `useGSAP` when its component unmounts:
+
+```jsx
+useGSAP(
+  () => {
+    gsap.effects.burst(buttonRef.current, { spec });
+  },
+  { scope: containerRef },
+);
+```
+
+<Aside type="caution" title="tl.kill() leaves a burst drawn">
+GSAP does not tell a killed timeline's children, so a burst mid-flight stays drawn after `tl.kill()`
+on its timeline. Revert the timeline or its context instead, or kill the burst's own tween.
+</Aside>
+
+Give `onInterrupt` in `vars`. motly chains its own clear-up before yours there. Replacing it later
+with `tween.eventCallback('onInterrupt', fn)` drops the clear-up, so a later `kill()` leaves the
+burst drawn. For the same reason, reading it back, through `eventCallback()` or `tween.vars`, gives
+motly's wrapper rather than your function.
+
+## Reduced motion
+
+A viewer who prefers reduced motion sees the Spec's still Resting frame, at `spec.restAt`, for the
+tween's full length, so everything after it in a timeline keeps its timing. The preference is read
+each time the tween starts from 0, so changing it needs no reload; a `repeat` keeps the one it
+started with. `reducedMotion: 'always'` or `'never'` in `vars` forces either, for a demo or a test:
+
+<Example name="gsap-reduced-motion" />
+
+This covers the bursts only. Your own tweens around them keep moving; wrap those in
+`gsap.matchMedia()` with `(prefers-reduced-motion: reduce)`.
+
+## Types
+
+Importing the package types `gsap.effects.burst`, `gsap.effects.shape`, `tl.burst` and `tl.shape`:
+`spec` must be a Spec of the right kind. `BurstVars`, `ShapeVars`, `MotlyVars` and `RendererName`
+are exported for vars built apart from the call:
+
+```ts
+import type { BurstVars } from '@motly/gsap';
+
+const vars: BurstVars = { spec: { kind: 'burst', children: { kind: 'circle' } }, seed: 7 };
+gsap.effects.burst('.icon', vars);
+```

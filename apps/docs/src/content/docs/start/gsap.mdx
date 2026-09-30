@@ -1,0 +1,67 @@
+---
+title: Start with GSAP
+description: Install @motly/gsap, register it, and fire a first burst as a GSAP effect.
+---
+
+import Example from '../../../components/Example.astro';
+
+`@motly/gsap` puts motly's bursts in GSAP. `gsap.effects.burst(button, { spec })` returns an
+ordinary tween, so a burst sits in a timeline, scrubs, reverses, repeats, is driven by
+ScrollTrigger and is cleaned up by `gsap.context()` and `useGSAP`.
+
+## Install
+
+With a bundler:
+
+```sh
+npm install @motly/gsap gsap
+```
+
+```js
+import { gsap } from 'gsap';
+import { Motly } from '@motly/gsap';
+
+gsap.registerPlugin(Motly);
+```
+
+Importing registers nothing; `registerPlugin` does.
+
+With script tags, as on CodePen, load GSAP first. The script build then registers itself and makes
+`Motly` a global:
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@motly/gsap@0.1"></script>
+```
+
+Loaded before GSAP, it only defines `Motly`; call `gsap.registerPlugin(Motly)` yourself. With
+script tags there are no imports, so `rand`, `each` and the named curves are `Motly.rand`,
+`Motly.each` and so on.
+
+## A first burst
+
+Click the button, or press Replay to see the timeline version that plays as the page loads.
+
+<Example name="first-burst" />
+
+`spec` is the whole burst: plain JSON, so a Spec exported from an editor is passed as it is.
+
+- `kind: 'burst'` makes an Emitter: `count` Children, spread evenly around a circle.
+- An array is Keyframes: `radius: [0, 90]` moves the Children from the centre out to 90 pixels.
+- `rand(4, 9)` is a Descriptor. It stays JSON, and each Child resolves it to its own number.
+- `restAt: 0.4` is the Resting frame, which a viewer who prefers reduced motion sees instead of
+  the motion.
+
+`tl.burst(button, { spec }, '<')` is the same effect placed in a timeline with GSAP's position
+parameter.
+
+## A single shape
+
+`gsap.effects.shape()` and `tl.shape()` draw one Element instead of a burst, from a Shape's Spec:
+
+<Example name="shape-star" />
+
+## Next
+
+- [Using motly with GSAP](../../guides/gsap/): which `vars` keys are GSAP's and which are motly's,
+  where a burst comes from and where it is painted, cleanup and reduced motion.
