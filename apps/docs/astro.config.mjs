@@ -12,6 +12,16 @@ export default defineConfig({
       social: [
         { icon: 'github', label: 'GitHub', href: 'https://github.com/motly-labs/motly-monorepo' },
       ],
+      sidebar: [
+        {
+          label: 'Start here',
+          items: [
+            { label: 'With GSAP', slug: 'start/gsap' },
+            { label: 'Without GSAP', slug: 'start/core' },
+          ],
+        },
+        { label: 'Guides', items: [{ label: 'Using motly with GSAP', slug: 'guides/gsap' }] },
+      ],
     }),
   ],
 });

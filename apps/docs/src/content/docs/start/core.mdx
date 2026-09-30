@@ -1,0 +1,63 @@
+---
+title: Start without GSAP
+description: Use @motly/core on its own, with a Renderer you choose.
+---
+
+import Example from '../../../components/Example.astro';
+
+`@motly/core` is the engine: bursts, shapes and swirls you describe as JSON, which motly
+generates, samples and paints. It has no runtime dependencies and never touches the DOM itself;
+Renderers, in their own entries, do that.
+
+Using GSAP? [Start with GSAP](../gsap/) instead: `@motly/gsap` puts these bursts in GSAP's
+timelines, scrubbing and cleanup.
+
+## Install
+
+```sh
+npm install @motly/core
+```
+
+## A first burst
+
+<Example name="core-first-burst" height={340} />
+
+The first argument is the Spec: plain JSON. An array is Keyframes, so `radius: [0, 100]` moves
+from 0 to 100 over the burst, and `fill: ['deeppink', 'gold']` fades from one color to the other.
+A burst lasts as long as its longest-running Child, so changing a Child's `duration` changes the
+burst's.
+
+`rand(4, 9)` is a Descriptor, not a number: it survives `JSON.stringify` and resolves from the
+Instance's Seed, so passing `seed: 7` beside `renderer` draws the same burst every time.
+`each([...])`, also from `@motly/core`, hands values out to the Children in turn.
+
+The second argument binds the Spec to a Renderer and an Origin, in the Renderer's CSS pixels.
+`play()` returns a promise that settles when the burst reaches its end, and leaves the last frame
+drawn. Call `burst.destroy()` when you are done with it, to remove what it drew.
+
+## Renderers
+
+Each Renderer paints into an element you own, and one Renderer can host any number of Instances.
+
+- `SVGRenderer`, from `@motly/core/svg`, draws into an `<svg>`. Its output can be inspected, and
+  it handles up to a few hundred Elements.
+- `CanvasRenderer`, from `@motly/core/canvas`, paints onto a `<canvas>`, for thousands.
+- `AutoRenderer`, from `@motly/core/auto`, layers a container element you give it, and picks one
+  of the two for each Instance by its Element count.
+
+A burst of bursts, 288 Elements, on a canvas:
+
+<Example name="core-canvas" height={340} />
+
+## Reduced motion
+
+A viewer who prefers reduced motion sees the Spec's still Resting frame instead of motion: the
+frame at `restAt`, a progress from 0 to 1, or the last frame when it is left out. A burst's last
+frame is usually empty, so set `restAt` where it still shows something.
+
+`reducedMotion: 'always'` or `'never'` in the second argument forces either, for a demo or a test:
+
+<Example name="core-reduced-motion" height={320} />
+
+Under reduced motion `play()` draws that frame and settles at once, so destroying the burst as soon
+as `play()` settles would take the frame away with it.

@@ -1,0 +1,25 @@
+<main>
+  <figure>
+    <svg id="moving" aria-hidden="true" width="220" height="220"></svg>
+    <figcaption>reducedMotion: 'never'</figcaption>
+  </figure>
+  <figure>
+    <svg id="resting" aria-hidden="true" width="220" height="220"></svg>
+    <figcaption>reducedMotion: 'always'</figcaption>
+  </figure>
+</main>
+
+<style>
+  main {
+    display: flex;
+    gap: 2rem;
+  }
+  figure {
+    margin: 0;
+    text-align: center;
+  }
+  figcaption {
+    opacity: 0.6;
+    font: 0.9rem ui-monospace, monospace;
+  }
+</style>

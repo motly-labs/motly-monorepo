@@ -3,6 +3,7 @@ title: motly
 description: Procedural motion graphics for the web. Describe a burst as a JSON Spec; motly generates the shapes and draws them.
 ---
 
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 import Example from '../../components/Example.astro';
 
 GSAP, Motion and anime.js animate elements that already exist. motly generates the thing being
@@ -13,6 +14,7 @@ repeats, is driven by ScrollTrigger and is cleaned up by `gsap.context()` and `u
 
 <Example name="first-burst" />
 
-```sh
-npm install @motly/gsap gsap
-```
+<CardGrid>
+  <LinkCard title="Start with GSAP" description="npm install @motly/gsap gsap" href="start/gsap/" />
+  <LinkCard title="Start without GSAP" description="npm install @motly/core" href="start/core/" />
+</CardGrid>
