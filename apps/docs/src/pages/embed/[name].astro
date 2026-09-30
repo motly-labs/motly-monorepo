@@ -31,8 +31,9 @@ const { html } = Astro.props;
   <body data-example={name} data-pagefind-ignore="all">
     <Fragment set:html={html} />
     <script>
-      const examples = import.meta.glob('../../examples/*/main.js');
-      examples[`../../examples/${document.body.dataset.example}/main.js`]?.();
+      const examples = import.meta.glob('../../examples/*/main.{js,jsx}');
+      const path = `../../examples/${document.body.dataset.example}/main`;
+      (examples[`${path}.jsx`] ?? examples[`${path}.js`])?.();
     </script>
   </body>
 </html>

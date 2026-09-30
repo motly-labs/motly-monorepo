@@ -1,7 +1,7 @@
 ---
 /**
- * A live example: `src/examples/<name>/index.html` and `main.js`, shown as code and run in an
- * iframe from `/embed/<name>/`. The code on the page is the code that ran.
+ * A live example: `src/examples/<name>/index.html` and `main.js` (or `main.jsx`), shown as code and
+ * run in an iframe from `/embed/<name>/`. The code on the page is the code that ran.
  */
 import { Code, TabItem, Tabs } from '@astrojs/starlight/components';
 
@@ -9,17 +9,20 @@ interface Props {
   name: string;
   /** Stage height in CSS pixels. */
   height?: number;
+  /** Add a link that opens the example on its own page, for one that wants more room. */
+  full?: boolean;
 }
 
-const { name, height = 280 } = Astro.props;
+const { name, height = 280, full = false } = Astro.props;
 
-const sources = import.meta.glob<string>('../examples/*/{index.html,main.js}', {
+const sources = import.meta.glob<string>('../examples/*/{index.html,main.js,main.jsx}', {
   query: '?raw',
   import: 'default',
   eager: true,
 });
 const html = sources[`../examples/${name}/index.html`];
-const js = sources[`../examples/${name}/main.js`];
+const jsx = sources[`../examples/${name}/main.jsx`];
+const js = jsx ?? sources[`../examples/${name}/main.js`];
 if (html === undefined || js === undefined) {
   throw new Error(`Example "${name}" needs src/examples/${name}/index.html and main.js.`);
 }
@@ -31,9 +34,12 @@ const src = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/embed/${name}/`;
   <iframe src={src} title={`Live example: ${name}`} loading="lazy" style={`height: ${height}px`}
   ></iframe>
   <button type="button" data-replay>Replay</button>
+  {full && <a href={src} target="_blank">Open full page ↗</a>}
 </figure>
 <Tabs>
-  <TabItem label="JavaScript"><Code code={js} lang="js" /></TabItem>
+  <TabItem label={jsx === undefined ? 'JavaScript' : 'JSX'}>
+    <Code code={js} lang={jsx === undefined ? 'js' : 'jsx'} />
+  </TabItem>
   <TabItem label="HTML"><Code code={html} lang="html" /></TabItem>
 </Tabs>
 
@@ -72,5 +78,10 @@ const src = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/embed/${name}/`;
   }
   button:hover {
     background: #ffffff29;
+  }
+  a {
+    display: inline-block;
+    margin-top: 0.5rem;
+    font-size: var(--sl-text-sm);
   }
 </style>

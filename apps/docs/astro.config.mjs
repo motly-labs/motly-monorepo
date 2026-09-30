@@ -1,3 +1,4 @@
+import react from '@astrojs/react';
 import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
 
@@ -6,6 +7,8 @@ export default defineConfig({
   site: 'https://motly-labs.github.io',
   base: '/motly-monorepo',
   integrations: [
+    // Only for the React example; no page renders a React component itself.
+    react(),
     starlight({
       title: 'motly',
       description: 'Procedural motion graphics for the web: bursts generated from a JSON Spec.',
@@ -21,7 +24,13 @@ export default defineConfig({
           ],
         },
         { label: 'Guides', items: [{ label: 'Using motly with GSAP', slug: 'guides/gsap' }] },
-        { label: 'Examples', items: [{ label: 'Pens and small ideas', slug: 'examples' }] },
+        {
+          label: 'Examples',
+          items: [
+            { label: 'Pens and small ideas', slug: 'examples' },
+            { label: 'Real-world examples', slug: 'examples/real-world' },
+          ],
+        },
         {
           label: 'Spec reference',
           items: [

@@ -1,0 +1,67 @@
+---
+title: Real-world examples
+description: Four small product interfaces where bursts do a job - add to cart, daily goals, a scroll-told year in review, and chat reactions in React.
+---
+
+import Example from '../../../components/Example.astro';
+
+Four small but complete interfaces, each the kind of screen people ship. Each one combines several
+things the [small examples](../) show one at a time. Open one on its own page for more room.
+
+## Add to cart
+
+A product image flies to the cart along an arc, a ring and a pop of confetti in the product's color
+land on the cart, and the count bumps. It is one GSAP timeline across three elements:
+
+- `tl.shape()` and `tl.burst()` sit in the timeline after the flight, placed with GSAP's position
+  parameter.
+- The cart is an Anchor, and its position is read when its burst starts, not when the timeline is
+  built, so resizing the page mid-flight still lands the burst on the cart.
+- The pop is a Spec built by a function, `pop(tone)`, from the product's color.
+- Under reduced motion the flight is skipped and the bursts show their Resting frame.
+
+<Example name="rw-cart" height={460} full />
+
+## Daily goals
+
+A checklist with a progress ring. Each task bursts from its checkbox when done, and unchecking it
+plays that burst backward into the checkbox. The ring bursts at a third, two thirds and all done,
+bigger each time.
+
+- Each milestone's Spec is built from the progress in code: more Children, further out, and stars
+  at the end. A Spec is plain data.
+- `tween.reverse()` on a finished burst runs it back, as it would any GSAP tween.
+- The switch at the bottom passes `reducedMotion: 'always'`, to show what a viewer who prefers
+  reduced motion sees: each burst's Resting frame, for as long as the burst would have played.
+
+<Example name="rw-goals" height={560} full />
+
+## Year in review
+
+A scroll story in the style of a yearly recap. As each stat scrolls in, its number counts up and
+fireworks open behind it; scroll back and both run backward, exactly.
+
+- ScrollTrigger scrubs each section's timeline: the scroll position is the Playhead.
+- `container: section` paints each burst inside its section, so it scrolls with it and is clipped
+  by it.
+- A fixed `seed` per section means the fireworks are the same on every visit. Within one tween they
+  never change anyway, however often they are scrubbed.
+
+<Example name="rw-wrapped" height={480} full />
+
+## Chat reactions, in React
+
+A chat thread where each reaction sends a burst of its own: hearts, confetti or a thumbs-up pop.
+Delete a message while its burst is still flying, and the burst goes with it.
+
+- `useGSAP()` gives each message a GSAP context, and `contextSafe()` puts every burst the message
+  creates in it. When the message unmounts, the context is reverted and its bursts are cleared.
+- The Specs live outside the components: they are data, not state.
+
+<Example name="rw-chat" height={440} full />
+
+It uses `@gsap/react` for `useGSAP()`:
+
+```sh
+npm install @motly/gsap gsap @gsap/react
+```
