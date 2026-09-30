@@ -2,7 +2,7 @@
 
 **What to build:** The launch where GSAP developers already are. The five pens from ticket 10 are created on CodePen against the published IIFE, checked by hand, and linked from a GSAP forum post. Spec: `.scratch/phase-2/spec.md`, "Demos and docs", "Launch and the signal".
 
-**Blocked by:** 10, 14
+**Blocked by:** 10, 14, 27
 
 **Status:** ready-for-human
 
