@@ -1,0 +1,18 @@
+---
+title: motly
+description: Procedural motion graphics for the web. Describe a burst as a JSON Spec; motly generates the shapes and draws them.
+---
+
+import Example from '../../components/Example.astro';
+
+GSAP, Motion and anime.js animate elements that already exist. motly generates the thing being
+animated: you describe a burst as a JSON Spec, and motly generates the shapes and draws them.
+
+With `@motly/gsap`, a burst is an ordinary GSAP tween. It sits in a timeline, scrubs, reverses,
+repeats, is driven by ScrollTrigger and is cleaned up by `gsap.context()` and `useGSAP`.
+
+<Example name="first-burst" />
+
+```sh
+npm install @motly/gsap gsap
+```
