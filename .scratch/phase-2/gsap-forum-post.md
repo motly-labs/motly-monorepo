@@ -1,6 +1,6 @@
 # GSAP forum post — draft
 
-Draft for ticket 15. Fill the five `PEN_URL` placeholders once the pens are saved, then post.
+Draft for ticket 15. Pen links filled in; post once the hand check is done.
 Pick the forum category on gsap.com/community when posting; this draft does not assume one.
 
 ---
@@ -21,11 +21,11 @@ gsap.timeline().to(button, { scale: 0.9 }).burst(button, { spec }, '<');  // in 
 
 Five pens, each showing something that needs GSAP to drive it (all in one collection: https://codepen.io/collection/kkrLNz):
 
-- **Heart like burst**: timeline sequencing: a squash, a ring, an elastic pop and sparks, one timeline. PEN_URL
-- **Confetti cannon**: `tl.burst()` with the position parameter: the button, then both sides `'<0.25'` later. PEN_URL
-- **Scroll-scrubbed fireworks**: ScrollTrigger scrubbing a pinned section; bursts paint inside the section (`container`) and scrub both ways. PEN_URL
-- **Click sparkles**: a burst at the pointer, from `{ x: clientX, y: clientY }`. PEN_URL
-- **Reversible ripple toggle**: a paused timeline toggled with `play()` and `reverse()`; the burst runs backwards too. PEN_URL
+- **Heart like burst**: timeline sequencing: a squash, a ring, an elastic pop and sparks, one timeline. https://codepen.io/editor/realdreamer/pen/01a0f289-4ec7-7fcd-ae21-06a37c3c4e83
+- **Confetti cannon**: `tl.burst()` with the position parameter: the button, then both sides `'<0.25'` later. https://codepen.io/editor/realdreamer/pen/01a0f2aa-ce1a-7cdf-820c-86e1bac0b437
+- **Scroll-scrubbed fireworks**: ScrollTrigger scrubbing a pinned section; bursts paint inside the section (`container`) and scrub both ways. https://codepen.io/editor/realdreamer/pen/01a0f2af-63a4-70e2-aeeb-53aa7f193ecd
+- **Click sparkles**: a burst at the pointer, from `{ x: clientX, y: clientY }`. https://codepen.io/editor/realdreamer/pen/01a0f2b2-4955-7f79-8b31-5c6483dcb099
+- **Reversible ripple toggle**: a paused timeline toggled with `play()` and `reverse()`; the burst runs backwards too. https://codepen.io/editor/realdreamer/pen/01a0f2b7-a4b9-73ea-a610-47e1627e7d1e
 
 Try it with two script tags, GSAP first:
 
