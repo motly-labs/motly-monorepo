@@ -1,6 +1,6 @@
 # GSAP forum post — draft
 
-Draft for ticket 15. Fill the five `PEN_URL` placeholders once the pens are saved, then post.
+Draft for ticket 15. Fill `COLLECTION_URL` and the five `PEN_URL` placeholders once the pens are saved, then post.
 Pick the forum category on gsap.com/community when posting; this draft does not assume one.
 
 ---
@@ -19,13 +19,13 @@ gsap.effects.burst(button, { spec });                          // one-off
 gsap.timeline().to(button, { scale: 0.9 }).burst(button, { spec }, '<');  // in a timeline
 ```
 
-Five pens, each showing something that needs GSAP to drive it:
+Five pens, each showing something that needs GSAP to drive it (all in one collection: COLLECTION_URL):
 
-- **Heart burst**: timeline sequencing: a squash, a ring, an elastic pop and sparks, one timeline. PEN_URL
-- **Confetti**: `tl.burst()` with the position parameter: the button, then both sides `'<0.25'` later. PEN_URL
-- **Firework**: ScrollTrigger scrubbing a pinned section; bursts paint inside the section (`container`) and scrub both ways. PEN_URL
-- **Sparkle click**: a burst at the pointer, from `{ x: clientX, y: clientY }`. PEN_URL
-- **Ripple**: a paused timeline toggled with `play()` and `reverse()`; the burst runs backwards too. PEN_URL
+- **Heart like burst**: timeline sequencing: a squash, a ring, an elastic pop and sparks, one timeline. PEN_URL
+- **Confetti cannon**: `tl.burst()` with the position parameter: the button, then both sides `'<0.25'` later. PEN_URL
+- **Scroll-scrubbed fireworks**: ScrollTrigger scrubbing a pinned section; bursts paint inside the section (`container`) and scrub both ways. PEN_URL
+- **Click sparkles**: a burst at the pointer, from `{ x: clientX, y: clientY }`. PEN_URL
+- **Reversible ripple toggle**: a paused timeline toggled with `play()` and `reverse()`; the burst runs backwards too. PEN_URL
 
 Try it with two script tags, GSAP first:
 
