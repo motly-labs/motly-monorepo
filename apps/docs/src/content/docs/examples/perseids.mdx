@@ -1,0 +1,68 @@
+---
+title: A night of the Perseids
+description: A scroll story on canvas - one night of the Perseid meteor shower, from 21:00 to dawn, with hundreds of Elements, rates from a model, and a still version for reduced motion.
+---
+
+import Example from '../../../components/Example.astro';
+
+Every August, Earth crosses the dust trail of comet 109P/Swift–Tuttle, and the grains burn up as
+the Perseid meteor shower. All of its meteors appear to fly away from one point in the sky, the
+radiant, in the constellation Perseus. That makes a shower one of the few subjects where a radial
+Burst is not a metaphor but the real geometry.
+
+Scroll through one night, from dusk to dawn. It reads best on its own page.
+
+<Example name="perseids" height={620} full />
+
+## What motly does in it
+
+- **Hundreds of Elements on canvas.** About 560 twinkling stars, and up to about 100 meteor
+  streaks at once, are painted on canvas with `renderer: 'canvas'`.
+- **Specs built from data.** Each hour's meteors come from the rate the model gives for that hour:
+  one streak per meteor, split into near, mid and far Bursts.
+- **An Anchor that moves.** The radiant climbs as you scroll. Each hour's Bursts start from wherever
+  it has climbed to, because an Anchor's position is read when its burst starts.
+- **Seeds.** Each hour, and each replay within it, has its own Seed, so an hour always rains the
+  same meteors. The fireball at 23:40 is scrubbed with the scroll, and scrolling back runs it back
+  exactly.
+- **Swirl and Bursts of Bursts.** The fireball breaks into fragments that curl as they fall, and the
+  star field is three levels of Bursts.
+- **Reduced motion.** A reader who prefers it sees each hour's Resting frame instead of the rain. The
+  tiles at the end are those frames, drawn by `@motly/core` alone from the same Specs and Seeds.
+
+## Streaks that point outward
+
+A Burst's rays are spaced evenly clockwise from 12 o'clock, and a `line` runs from 12 o'clock to 6.
+So turning the Child on ray `i` by that ray's angle points it along the ray:
+
+```js
+angle: each(Array.from({ length: count }, (_, i) => (360 * i) / count)),
+```
+
+This works because a Spec is data: the angles are computed once, when the Spec is built. A Burst
+cannot rotate its rays, and `rand()` on its `radius` resolves once per Burst rather than per Child,
+so each hour is three Bursts with different counts, whose rays do not line up.
+
+The same limit places the fireball. A Burst of one Child throws it straight up, so the fireball
+comes at 23:40, while the radiant is low enough to leave it room in the sky.
+
+## The model
+
+The rates are a model, not a night's counts. The International Meteor Organization gives the
+Perseids a zenithal hourly rate (ZHR) of 100 at their peak, with the radiant at right ascension 48°
+and declination +58°. The ZHR is what an ideal observer would see with the radiant overhead, so the
+rate the story uses is ZHR × sin(radiant altitude), for a dark site at 50° N on the peak night, in
+local solar time. It leaves out twilight and the Moon, which both cut real counts.
+
+| Time | Radiant altitude | Meteors an hour |
+| --- | --- | --- |
+| 21:00 | 25° | 42 |
+| 22:00 | 30° | 50 |
+| 23:00 | 36° | 58 |
+| 00:00 | 42° | 67 |
+| 01:00 | 49° | 76 |
+| 02:00 | 57° | 84 |
+| 03:00 | 65° | 91 |
+| 04:00 | 73° | 95 |
+
+Source: the IMO 2024 Meteor Shower Calendar, Perseids (007 PER).
