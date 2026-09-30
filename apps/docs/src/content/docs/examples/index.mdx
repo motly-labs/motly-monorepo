@@ -1,0 +1,88 @@
+---
+title: Examples
+description: The five launch pens and small examples of one idea each, ready to copy.
+---
+
+import Example from '../../../components/Example.astro';
+
+Each example below is complete: copy its JavaScript and its HTML with the buttons on the code, and
+it runs with `@motly/gsap` and `gsap` installed. With script tags instead, drop the imports and use
+`Motly.rand` and `Motly.each`; the script build registers itself.
+
+## The pens
+
+Five examples that each show something only a GSAP plugin can do. They are also on
+[CodePen](https://codepen.io/collection/kkrLNz), loading everything from a CDN.
+
+### Heart like burst
+
+Timeline sequencing: the heart squashes, then a ring, a pop and sparks, each placed with GSAP's
+position parameter. Unliking mid-burst reverts the timeline, which clears it.
+[Open on CodePen](https://codepen.io/realdreamer/pen/01a0f289-4ec7-7fcd-ae21-06a37c3c4e83).
+
+<Example name="pen-heart" height={320} />
+
+### Confetti cannon
+
+Three bursts in one timeline: from the button, then from both sides of the screen at once.
+[Open on CodePen](https://codepen.io/realdreamer/pen/01a0f2aa-ce1a-7cdf-820c-86e1bac0b437).
+
+<Example name="pen-confetti" height={360} />
+
+### Scroll-scrubbed fireworks
+
+ScrollTrigger scrubs a timeline of rockets and shells, back and forth. The shells are painted in
+the pinned section, so they scroll with it. Scroll inside the example.
+[Open on CodePen](https://codepen.io/realdreamer/pen/01a0f2af-63a4-70e2-aeeb-53aa7f193ecd).
+
+<Example name="pen-firework" height={420} />
+
+### Click sparkles
+
+Every click bursts from its own point.
+[Open on CodePen](https://codepen.io/realdreamer/pen/01a0f2b2-4955-7f79-8b31-5c6483dcb099).
+
+<Example name="pen-sparkle" height={300} />
+
+### Reversible ripple toggle
+
+Clicking again mid-ripple reverses the timeline, and the ripple runs back into the button.
+[Open on CodePen](https://codepen.io/realdreamer/pen/01a0f2b7-a4b9-73ea-a610-47e1627e7d1e).
+
+<Example name="pen-ripple" height={320} />
+
+## Small ideas
+
+### Sparkle on hover
+
+A burst around a card as the pointer enters it. Reverting the last one first keeps quick hovers
+from piling up.
+
+<Example name="ex-hover" height={280} />
+
+### Copied
+
+A ring and a few dots confirm a click, and the label changes back once the timeline reaches 1.5
+seconds.
+
+<Example name="ex-copy" height={240} />
+
+### Unread ping
+
+A ring that repeats until the notification is read. `revert()` stops it and clears it mid-flight.
+
+<Example name="ex-ping" height={280} />
+
+### Jelly pop
+
+A [path Curve](../reference/values/#curves) copied from a design tool: it overshoots to 120%, falls
+back to 90% and settles.
+
+<Example name="ex-jelly" height={260} />
+
+### Swirling confetti
+
+Mixed pieces, each wrapped in a [Swirl](../reference/swirl/) so it wriggles outward, with
+neighbours curling opposite ways.
+
+<Example name="ex-swirl-confetti" height={380} />
