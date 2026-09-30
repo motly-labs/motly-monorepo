@@ -1,0 +1,32 @@
+---
+title: Swirl
+description: The Swirl Modifier bends the path of the Child it wraps, so a Burst's Children wriggle outward.
+---
+
+import Example from '../../../components/Example.astro';
+
+A Swirl is a Modifier: it wraps one Child and bends the path a Burst throws that Child along. It
+draws nothing and adds no time: a Swirl lasts as long as its Child. Reach for it to make a Burst's
+Children wriggle outward instead of flying straight.
+
+| Field | Takes | If left out |
+| --- | --- | --- |
+| `child` | the Child whose path it bends: a [Shape](../shapes/), a [Burst](../burst/), or another Swirl | required |
+| `size` | an angle: how far the path turns at the crest of a wave. The sideways reach grows with distance. | `10` |
+| `frequency` | how many waves over the whole throw | `1` |
+| `direction` | which way the first wave turns: `1` clockwise, `-1` counterclockwise | `1` |
+
+<Example name="ref-swirl" height={300} />
+
+`each([1, -1])` on `direction`, as above, alternates the Children, so neighbours curl away from
+each other.
+
+## Where a Swirl goes
+
+A Swirl only bends a throw, so it belongs in a Burst's `children`, around the Child it bends. With
+no Burst around it there is no throw to bend, and its Child is drawn unchanged. For the same reason
+`@motly/gsap` has no `swirl` effect: a Swirl is reached through a Burst.
+
+The waves follow the throw rather than the clock. Progress along the throw runs from 0 to 1 as the
+Burst's `radius` eases, so the waves sit at the same places on the path whatever the Burst's
+`easing`.

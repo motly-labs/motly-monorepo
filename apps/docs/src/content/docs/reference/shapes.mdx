@@ -1,0 +1,128 @@
+---
+title: Shapes
+description: The seven Element kinds a Spec can draw, and the fields every one of them takes.
+---
+
+import Example from '../../../components/Example.astro';
+
+A Shape is one Element: the smallest thing motly draws. Its Spec is plain JSON with a `kind` and
+that kind's fields. Draw one alone with `gsap.effects.shape()` or core's `Shape`, or put it in a
+[Burst](../burst/)'s `children` to draw many.
+
+Every kind is drawn centred on its position and, at `angle` 0, pointing at 12 o'clock. The examples
+on this page repeat forever with GSAP's `repeat: -1`, so you can watch them without clicking.
+
+Each field takes a single value or [Keyframes](../values/#keyframes), an array that moves from one
+value to the next over the Element's duration, and either can be handed out across a Burst's
+Children with [`each()`](../values/#descriptors). The types say where: a circle's Spec rejects
+`points`, and a star's requires it.
+
+## Fields every kind takes
+
+| Field | Takes | If left out |
+| --- | --- | --- |
+| `duration` | a time: seconds, or a string such as `'400ms'` | `1` |
+| `delay` | a time to wait before the first frame | `0` |
+| `restAt` | a progress from 0 to 1 | the last frame |
+| `angle` | an angle, clockwise: degrees, or a string such as `'0.5turn'` | `0` |
+| `scale` | a number | `1` |
+| `opacity` | a number from 0 to 1 | `1` |
+| `fill` | a [color](../values/#colors) | deeppink; none on a cross, line or zigzag |
+| `stroke` | a color | none; deeppink on a cross, line or zigzag |
+| `strokeWidth` | a length: pixels, as a number or a string such as `'4px'` | `0`; `2` on a cross, line or zigzag |
+| `easing` | a [Curve](../values/#curves), or one per property | linear |
+
+A cross, a line and a zigzag enclose nothing, so they are stroked rather than filled unless you say
+otherwise. Each style field you leave out takes its kind's default, whatever the others say.
+
+`restAt` is the [Resting frame](../time/#the-resting-frame): the one still frame a viewer who
+prefers reduced motion sees instead of the motion. It is read from the Spec you create the Instance
+from, not from a Child's. `duration` and `delay` are covered on the [time](../time/) page.
+
+<Example name="ref-common" height={240} />
+
+## `circle`
+
+For dots, rings (with `fill: 'none'` and a stroke) and ripples.
+
+| Field | Takes | If left out |
+| --- | --- | --- |
+| `radius` | a length | `50` |
+
+<Example name="ref-circle" height={240} />
+
+## `polygon`
+
+For triangles, squares and hexagons: any regular shape with straight sides.
+
+| Field | Takes | If left out |
+| --- | --- | --- |
+| `points` | how many corners, 3 or more. The first is at 12 o'clock. | required |
+| `radius` | a length, from the centre to each corner | `50` |
+
+`points` holds still for the Element's whole life: it can be handed out with `each()`, but it is
+not Keyframes.
+
+<Example name="ref-polygon" height={240} />
+
+## `star`
+
+For sparkles and celebration bursts.
+
+| Field | Takes | If left out |
+| --- | --- | --- |
+| `points` | how many tips, 2 or more. The first is at 12 o'clock. | required |
+| `radius` | a length, from the centre to each tip | `50` |
+| `innerRadius` | how far in the notches sit, as a fraction of `radius`: 0 is spikes, 1 a polygon with twice the corners | `0.5` |
+
+As a fraction, `innerRadius` keeps a star's shape while its `radius` animates.
+
+<Example name="ref-star" height={240} />
+
+## `cross`
+
+For a plus sign, or an x when turned 45°.
+
+| Field | Takes | If left out |
+| --- | --- | --- |
+| `radius` | a length, from the centre to the end of each arm | `50` |
+
+<Example name="ref-cross" height={240} />
+
+## `line`
+
+For streaks and rays. A line runs from 12 o'clock to 6; turn it with `angle`.
+
+| Field | Takes | If left out |
+| --- | --- | --- |
+| `radius` | a length, from the centre to each end | `50` |
+
+A line in a Burst is not turned to face outward: its `angle` is its own, like every Child's.
+
+<Example name="ref-line" height={240} />
+
+## `zigzag`
+
+For sparks and squiggles. A zigzag runs from 12 o'clock to 6.
+
+| Field | Takes | If left out |
+| --- | --- | --- |
+| `points` | how many corners, ends included, 2 or more, evenly spaced along the length | required |
+| `radius` | a length, from the centre to each end | `50` |
+| `amplitude` | a length: how far each corner between the ends swings to either side | a quarter of `radius` |
+
+<Example name="ref-zigzag" height={240} />
+
+## `path`
+
+For any outline the other kinds do not draw, such as a heart.
+
+| Field | Takes | If left out |
+| --- | --- | --- |
+| `d` | an SVG path, drawn in a 100×100 box centred on (50, 50), as copied out of a design tool | required |
+| `radius` | a length: half the width of that box once drawn, so `50` draws the path at the size it was written | `50` |
+
+Like `points`, `d` holds still: hand different paths out with `each()`, but do not animate one
+path into another.
+
+<Example name="ref-path" height={240} />

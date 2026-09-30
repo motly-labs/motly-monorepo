@@ -11,3 +11,4 @@
 - [ ] Units and colors: which fields take which units, and every accepted color form.
 - [ ] Curves: the named curves, cubic-bezier, SVG path curves, and `easing` per property.
 - [ ] A live example for each, with a fixed `seed` where the example uses `rand`.
+- [ ] The anchors the Shapes and Burst pages already link to exist: `#keyframes`, `#descriptors`, `#colors` and `#curves`.
