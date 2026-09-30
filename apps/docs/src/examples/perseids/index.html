@@ -1,0 +1,185 @@
+<section class="sky" aria-label="A night of the Perseids, from 21:00 to dawn">
+  <div class="glow dusk"></div>
+  <div class="glow night"></div>
+  <div class="glow dawn"></div>
+  <div class="layer stars"></div>
+  <div class="layer rain"></div>
+
+  <div class="radiant">
+    <span>radiant · Perseus</span>
+    <i class="flash"></i>
+  </div>
+
+  <svg class="horizon" viewBox="0 0 1000 120" preserveAspectRatio="none" aria-hidden="true">
+    <path
+      d="M0 120V72C60 62 120 80 190 68S320 76 400 64S540 72 620 60S780 68 860 58S970 62 1000 56V120Z"
+    />
+  </svg>
+
+  <div class="hud">
+    <p class="clock">21:00</p>
+    <p class="count"><strong>0</strong> meteors so far</p>
+  </div>
+  <ol class="rates" aria-label="Meteors per hour"></ol>
+
+  <div class="captions">
+    <p>Mid-August. Earth is crossing the dust trail of comet 109P/Swift–Tuttle.</p>
+    <p>The radiant, in Perseus, is still low: meteors skim the sky above the horizon.</p>
+    <p>A fireball: a larger grain, burning up at 59 km a second.</p>
+    <p>As Perseus climbs, more of the stream reaches you: about 67 an hour by midnight.</p>
+    <p>With the radiant high, the rate nears its peak of about 95 an hour.</p>
+    <p>Dawn washes out all but the brightest. The show is over.</p>
+  </div>
+</section>
+
+<section class="epilogue">
+  <h2>The night, hour by hour</h2>
+  <p>
+    Each tile is one hour's Resting frame: what a reader who prefers reduced motion sees, drawn by
+    <code>@motly/core</code> from the same Spec and Seed as the sky above.
+  </p>
+  <div class="tiles"></div>
+  <p class="source">
+    Rates are a model, not a night's counts: ZHR 100 × sin(radiant altitude), for a dark site at
+    50° N on the peak night, in local solar time, leaving out twilight and the Moon. Radiant and
+    ZHR from the IMO 2024 Meteor Shower Calendar.
+  </p>
+</section>
+
+<style>
+  body {
+    display: block;
+    place-items: normal;
+    background: #01020a;
+    color: #dfe6ff;
+  }
+  .sky {
+    position: relative;
+    height: 100vh;
+    overflow: hidden;
+  }
+  .glow,
+  .layer {
+    position: absolute;
+    inset: 0;
+  }
+  .dusk {
+    background: linear-gradient(#0b1030, #33285a 62%, #b8664a);
+  }
+  .night {
+    opacity: 0;
+    background: linear-gradient(#01020a, #060a20 70%, #0c1331);
+  }
+  .dawn {
+    opacity: 0;
+    background: linear-gradient(#0b1c44, #2d4d7d 62%, #d9a57a);
+  }
+  .radiant {
+    position: absolute;
+    width: 0;
+    height: 0;
+  }
+  .radiant span {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    white-space: nowrap;
+    font: 0.7rem ui-monospace, monospace;
+    opacity: 0.45;
+  }
+  .radiant::before {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border: 1px solid #dfe6ff55;
+    border-radius: 50%;
+  }
+  .flash {
+    position: absolute;
+    left: 0;
+    top: calc(var(--throw, 300px) * -1);
+  }
+  .horizon {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 18%;
+    fill: #010207;
+  }
+  .hud {
+    position: absolute;
+    top: 1.25rem;
+    left: 1.5rem;
+  }
+  .hud p {
+    margin: 0;
+  }
+  .clock {
+    font: 600 2rem ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+  .count {
+    opacity: 0.7;
+  }
+  .rates {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    display: flex;
+    gap: 4px;
+    align-items: flex-end;
+    height: 48px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .rates li {
+    width: 10px;
+    height: calc(var(--rate) * 0.5px);
+    border-radius: 2px;
+    background: #dfe6ff33;
+  }
+  .rates li.now {
+    background: #ffd166;
+  }
+  .captions p {
+    position: absolute;
+    bottom: 22%;
+    left: 1.5rem;
+    max-width: 22rem;
+    margin: 0;
+    font-size: 1.15rem;
+    line-height: 1.4;
+    visibility: hidden;
+  }
+  .epilogue {
+    max-width: 44rem;
+    margin: 0 auto;
+    padding: 4rem 1.5rem;
+  }
+  .epilogue p {
+    opacity: 0.75;
+  }
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+    gap: 0.75rem;
+    margin: 2rem 0;
+  }
+  figure {
+    margin: 0;
+  }
+  figure canvas {
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    border-radius: 0.4rem;
+    background: linear-gradient(#01020a, #0c1331);
+  }
+  figcaption {
+    font: 0.8rem ui-monospace, monospace;
+    opacity: 0.7;
+  }
+  .source {
+    font-size: 0.85rem;
+  }
+</style>

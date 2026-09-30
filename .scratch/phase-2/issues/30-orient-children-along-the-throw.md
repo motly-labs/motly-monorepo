@@ -11,3 +11,4 @@ Questions for triage:
 - How it combines with the Child's own `angle`: added to it, so `angle` stays relative to the ray.
 - How it combines with a Swirl, whose throw turns: face the ray, or the path's tangent.
 - Whether it is v1 at all, or post-v1 (ADR-0007). It is a core API change and needs a changeset.
+- A related gap from the same example: a Burst cannot rotate its rays. They always start at 12 o'clock, so a Burst of one always throws straight up, and ticket 29's fireball had to be timed for when that direction had room. A start angle on the Burst would cover it; triage the two together.
