@@ -1,5 +1,13 @@
 # @motly/gsap
 
+## 0.1.3
+
+### Patch Changes
+
+- 0898cb5: The script build bundles the new Burst `angle`, `spread` and `orient` from `@motly/core`, and the effects' types accept them in `spec`.
+- Updated dependencies [0898cb5]
+  - @motly/core@0.2.0
+
 ## 0.1.2
 
 ### Patch Changes
