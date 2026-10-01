@@ -1,45 +1,34 @@
 # motly
 
-> Working codename. The name is not locked — see `.scratch/phase-0/issues/02-lock-name-and-npm-scope.md`.
-
 Procedural motion graphics for the web: bursts, swirls, generated shapes, declarative
 parametric animation. After Effects thinking, in code you'd write for React.
 
 GSAP, Motion and anime.js animate DOM that already exists. `motly` generates the thing
 being animated, and composes it.
 
-**Status: Phase 0 scaffold.** No engine code yet.
+**Status: pre-1.0.** `@motly/core` and `@motly/gsap` are on npm; the API can still
+change between minor versions.
+
+**[Read the docs →](https://motly-labs.github.io/motly-monorepo/)** Every Spec field with a live
+example, plus real-world examples to copy.
 
 ## Packages
 
-| Package | What |
-|---|---|
-| `@motly/core` | Renderer-agnostic engine. Zero runtime dependencies. |
-| `@motly/core/utils` | Shared numeric helpers. |
-| `@motly/gsap` | GSAP plugin — primitives as `gsap.effects.*`. |
-| `@motly/motion` | Motion adapter. |
-| `@motly/react` | React components and hooks. |
-| `@motly/presets` | Ready-made effects on the public core API. |
+| Package | Version | What |
+| --- | --- | --- |
+| [`@motly/core`](packages/core) | [![npm](https://img.shields.io/npm/v/@motly/core)](https://www.npmjs.com/package/@motly/core) | The engine. Zero runtime dependencies. Renderers ship as subpaths: `/svg`, `/canvas`, `/auto`. |
+| [`@motly/gsap`](packages/gsap) | [![npm](https://img.shields.io/npm/v/@motly/gsap)](https://www.npmjs.com/package/@motly/gsap) | GSAP plugin. Bursts as `gsap.effects.*`, so they live in timelines, scrub and clean up with GSAP. |
 
-## Develop
+Start with `@motly/gsap` if you already use GSAP, `@motly/core` if you don't. Each package's
+README has install steps and a first burst.
 
-```sh
-pnpm install
-pnpm build
-pnpm test
-pnpm typecheck
-pnpm lint
-```
+Planned after v1, not published: `@motly/motion` (Motion adapter), `@motly/react` (components
+and hooks) and `@motly/presets` (ready-made effects).
 
-## Docs in this repo
+## Contributing
 
-- `product.md` — the plan: problem, API, architecture, phases.
-- `product-review.md` — critical review of that plan.
-- `mojs-exploration.md` — why the mojs rewrite was rejected.
-- `docs/adr/` — every locked decision, one file each.
-- `.scratch/` — open questions and tickets.
-- `CLAUDE.md` — working rules and architecture invariants.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, the architecture rules and how releases work.
 
 ## License
 
-MIT
+[MIT](LICENSE)
