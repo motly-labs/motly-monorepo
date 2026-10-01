@@ -1,6 +1,6 @@
 {
   "name": "@motly/core",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Renderer-agnostic procedural motion-graphics engine. Zero runtime dependencies.",
   "homepage": "https://motly-labs.github.io/motly-monorepo/",
   "license": "MIT",
